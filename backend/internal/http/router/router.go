@@ -153,6 +153,7 @@ func PrivateRoutes(
 	orderHandler handler.OrderHandler,
 	transactionHandler handler.TransactionHandler,
 	salesReportHandler handler.SalesReportHandler,
+	shipmentHandler handler.ShipmentHandler,
 ) []route.Route {
 	return []route.Route{
 		{
@@ -219,6 +220,12 @@ func PrivateRoutes(
 			Method:  http.MethodGet,
 			Path:    "/sales-report",
 			Handler: salesReportHandler.GetSalesReport,
+			Roles:   []string{"admin"},
+		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/shipments/add-resi-number",
+			Handler: shipmentHandler.AddResiNumber,
 			Roles:   []string{"admin"},
 		},
 	}
