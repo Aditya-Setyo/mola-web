@@ -29,9 +29,7 @@ func (h *UserHandler) Register(ctx echo.Context) error {
 		return ctx.JSON(http.StatusConflict, response.ErrorResponse(http.StatusConflict, err.Error()))
 	}
 
-	return ctx.JSON(http.StatusCreated, response.SuccessResponse("user created successfully", map[string]interface{}{
-		"user": req,
-	}))
+	return ctx.JSON(http.StatusCreated, response.SuccessResponse("user created successfully", map[string]interface{}{}))
 }
 
 func (h *UserHandler) Login(ctx echo.Context) error {
