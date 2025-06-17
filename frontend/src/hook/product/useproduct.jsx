@@ -1,0 +1,16 @@
+const product = {
+    id: "123e4567-e89b-12d3-a456-426614174000",
+    name: "Kaos Keren",
+    stock: 100,
+    weight: 0.5,
+    price: 150000,
+    description: "Kaos bahan katun adem",
+    imageUrl: "/images/kaos.jpg",
+    categoryId: 1,
+    categoryName: "Pakaian",
+    hasVariant: true,
+    colorId: 2,
+    colorName: "Hitam",
+    sizeId: 3,
+    sizeName: "L",
+};
