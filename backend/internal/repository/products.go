@@ -138,7 +138,7 @@ func (r *productRepository) GetByID(db *gorm.DB, id uuid.UUID) (*dto.GetProductB
 		Joins("LEFT JOIN sizes ON sizes.id = products.size_id").
 		Where("products.id = ?", id).
 		Where("products.deleted_at IS NULL").
-		Scan(&products).Error
+		Take(&products).Error
 
 	if err != nil {
 		return nil, err

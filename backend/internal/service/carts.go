@@ -107,40 +107,49 @@ func (s *cartService) AddToCart(ctx context.Context, userID uuid.UUID, req *dto.
 		}
 	}
 
+	if err := tx.Commit().Error; err != nil {
+		tx.Error = err
+		return err
+	}
+
 	key := "carts:" + userID.String()
 	_ = s.cacheable.Delete(key)
 
 	return nil
 }
 
-func (s *cartService) GetCartByUserID(db *gorm.DB, userID uuid.UUID) (result *dto.GetCartItemsResponse, err error) {
-	dataPayment, _ := s.orderRepo.GetPendingPaymentStatusByUserID(db, userID)
-	if dataPayment.PaymentStatus == "pending" {
-		result = &dto.GetCartItemsResponse{
+func (s *cartService) GetCartByUserID(db *gorm.DB, userID uuid.UUID) (*dto.GetCartItemsResponse, error) {
+	dataPayment, err := s.orderRepo.GetPendingPaymentStatusByUserID(db, userID)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err 
+	}
+
+	if err == nil && dataPayment.PaymentStatus == "pending" {
+		return &dto.GetCartItemsResponse{
 			PaymentUrl:    dataPayment.PaymentUrl,
 			TokenMidtrans: dataPayment.TokenMidtrans,
-		}
-		return result, nil
+		}, nil
 	}
+
 	key := "carts:" + userID.String()
 	data := s.cacheable.Get(key)
 	if data != "" {
-		err = json.Unmarshal([]byte(data), &result)
-		if err != nil {
+		var result *dto.GetCartItemsResponse
+		if err := json.Unmarshal([]byte(data), &result); err != nil {
 			return nil, err
 		}
 		return result, nil
 	}
+
 	res, err := s.cartRepo.GetCartItemsByUserID(db, userID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, errors.New("cart not found")
-	}else if err != nil {
+	} else if err != nil {
 		return nil, err
 	}
-	items := []dto.CartItems{}
-	var totalAmount float64
-	var totalWeight float64
 
+	items := []dto.CartItems{}
+	var totalAmount, totalWeight float64
 	for _, dataItem := range res.CartItems {
 		item := dto.CartItems{
 			CartItemsID: dataItem.ID,
@@ -162,25 +171,23 @@ func (s *cartService) GetCartByUserID(db *gorm.DB, userID uuid.UUID) (result *dt
 			},
 			Subtotal: float64(dataItem.Quantity) * dataItem.Product.Price,
 		}
-		totalAmount += float64(dataItem.Quantity) * dataItem.Product.Price
+		totalAmount += item.Subtotal
 		totalWeight += float64(dataItem.Quantity) * dataItem.Product.Weight
 		items = append(items, item)
 	}
 
-	result = &dto.GetCartItemsResponse{
+	result := &dto.GetCartItemsResponse{
 		CartID:      res.ID,
 		TotalWeight: totalWeight,
 		TotalAmount: totalAmount,
 		CartItems:   items,
 	}
-	mashalledData, err := json.Marshal(result)
-	if err != nil {
-		return nil, err
+	if cached, err := json.Marshal(result); err == nil {
+		_ = s.cacheable.Set(key, cached)
 	}
-
-	_ = s.cacheable.Set(key, mashalledData)
 	return result, nil
 }
+
 
 func (s *cartService) UpdateCartItem(ctx context.Context, userID uuid.UUID, req *dto.UpdateCartItemRequest) error {
 	tx := s.DB.WithContext(ctx).Begin()

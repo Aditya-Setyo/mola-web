@@ -164,7 +164,7 @@ func (s *transactionService) PaymentNotification(ctx context.Context, request *d
 		}
 		return updateOrder("failure", false)
 	}
-
+	
 	if err := tx.Commit().Error; err != nil {
 		tx.Error = err
 		return err
