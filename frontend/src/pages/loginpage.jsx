@@ -2,7 +2,7 @@ import React from "react";
 import ilustrasilogin from "../assets/loginlogo.png";
 import ilustrasibg from "../assets/bg.png";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/authcontext";
+import { useAuth } from "../context/AuthContext";
 import { auth, googleProvider, signInWithPopup } from "../firebase";
 
 

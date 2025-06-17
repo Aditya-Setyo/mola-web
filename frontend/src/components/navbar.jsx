@@ -58,7 +58,7 @@ const Navbar = () => {
             placeholder="Search..."
             className="border rounded-xl px-4 py-1 text-sm bg-gray-100 w-64 mr-10"
           />
-          <button onClick={() => navigate("/chartpage")}>
+          <button onClick={() => navigate("/userprofile")}>
             <img src={LogoKeranjang} alt="Cart" className="w-6 h-6" />
           </button>
           <button onClick={() => navigate("/loginpage")}>
@@ -89,11 +89,10 @@ const Navbar = () => {
               placeholder="Search..."
               className="border rounded-xl px-3 py-1 text-sm bg-gray-100 flex-1"
             />
-            <img src={LogoKeranjang} alt="Cart" className="w-6 h-6" />
             <button onClick={() => navigate("/loginpage")}>
               <img src={LogoAccount} alt="Account" className="w-6 h-6" />
             </button>
-            <button onClick={() => navigate("/userprofile")} className="ml-10">
+            <button onClick={() => navigate("/chartpage")} className="ml-10">
               <img src={Logo1} alt="Account" className="w-6 h-6" />
             </button>
           </div>
