@@ -101,7 +101,6 @@ func (h *ProductHandler) UpdateStock(ctx echo.Context) error {
 func (h *ProductHandler) Create(ctx echo.Context) error {
 	var req dto.CreateProductRequest
 
-	// Ambil nilai form
 	req.Name = ctx.FormValue("name")
 	categoryIDStr := ctx.FormValue("category_id")
 	description := ctx.FormValue("description")
@@ -113,7 +112,6 @@ func (h *ProductHandler) Create(ctx echo.Context) error {
 	sizeIDStr := ctx.FormValue("size_id")
 	stockStr := ctx.FormValue("stock")
 
-	// Konversi dan validasi nilai
 	if categoryIDStr != "" {
 		if id, err := strconv.ParseUint(categoryIDStr, 10, 64); err == nil {
 			temp := uint(id)
@@ -122,8 +120,14 @@ func (h *ProductHandler) Create(ctx echo.Context) error {
 	}
 	if description != "" {
 		req.Description = &description
+	}else{
+		description = "-"
+		req.Description = &description
 	}
 	if imageURL != "" {
+		req.ImageURL = &imageURL
+	}else {
+		imageURL = "-"
 		req.ImageURL = &imageURL
 	}
 	if hasVariantStr == "true" {
@@ -211,8 +215,14 @@ func (h *ProductHandler) Update(ctx echo.Context) error {
 	}
 	if description != "" {
 		req.Description = &description
+	}else {
+		description = "-"
+		req.Description = &description
 	}
 	if imageURL != "" {
+		req.ImageURL = &imageURL
+	} else {
+		imageURL = "-"
 		req.ImageURL = &imageURL
 	}
 	if hasVariantStr == "true" {

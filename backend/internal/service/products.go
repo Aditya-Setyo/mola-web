@@ -201,10 +201,7 @@ func (s *productService) UpdateStockProductOnOrder(tx *gorm.DB, productID uuid.U
 		return err
 	}
 
-	err = s.invalidateProductListCaches()
-	if err != nil {
-		return err
-	}
+	_ = s.invalidateProductListCaches()
 
 	return nil
 }
@@ -231,6 +228,7 @@ func (s *productService) UpdateStockProduct(ctx context.Context, productID uuid.
 		tx.Error = err
 		return err
 	}
+	_ = s.invalidateProductListCaches()
 	return nil
 }
 
@@ -290,10 +288,7 @@ func (s *productService) Create(ctx context.Context, request *dto.CreateProductR
 		return err
 	}
 
-	err = s.invalidateProductListCaches()
-	if err != nil {
-		return err
-	}
+	_ = s.invalidateProductListCaches()
 
 	return nil
 }
@@ -352,10 +347,7 @@ func (s *productService) Update(ctx context.Context, request *dto.UpdateProductR
 		return err
 	}
 
-	err = s.invalidateProductListCaches()
-	if err != nil {
-		return err
-	}
+	_ = s.invalidateProductListCaches()
 
 	return error(nil)
 }
@@ -386,10 +378,7 @@ func (s *productService) Delete(ctx context.Context, id uuid.UUID) error {
 		return err
 	}
 
-	err = s.invalidateProductListCaches()
-	if err != nil {
-		return err
-	}
+	_ = s.invalidateProductListCaches()
 
 	return nil
 }

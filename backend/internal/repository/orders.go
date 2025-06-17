@@ -71,7 +71,7 @@ func (r *orderRepository) GetOrderItemsByOrderID(ctx context.Context, id uuid.UU
 
 func (r *orderRepository) GetPendingPaymentStatusByUserID(db *gorm.DB, id uuid.UUID) (*dto.GetPaymentStatusResponse, error) {
 	var paymentStatus dto.GetPaymentStatusResponse
-	if err := db.Table("orders").Select("payment_url, token, status").Where("user_id = ? AND status = ?", id, "pending").Scan(&paymentStatus).Error; err != nil {
+	if err := db.Table("orders").Select("payment_url, token_midtrans, payment_status").Where("user_id = ? AND payment_status = ?", id, "pending").First(&paymentStatus).Error; err != nil {
 		return nil, err
 	}
 	return &paymentStatus, nil
@@ -85,7 +85,7 @@ func (r *orderRepository) SetAdminOrderStatus(db *gorm.DB, id uuid.UUID, status 
 }
 
 func (r *orderRepository) UpdatePaymentUrl(db *gorm.DB, id uuid.UUID, token string, paymentUrl string) error {
-	if err := db.Table("orders").Where("id = ?", id).Update("payment_url", paymentUrl).Error; err != nil {
+	if err := db.Table("orders").Where("id = ?", id).Update("payment_url", paymentUrl).Update("token_midtrans", token).Error; err != nil {
 		return err
 	}
 	return nil

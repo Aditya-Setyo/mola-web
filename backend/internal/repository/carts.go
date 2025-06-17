@@ -49,7 +49,7 @@ func (r *cartRepository) GetCartItemsByUserID(db *gorm.DB, userID uuid.UUID) (*e
 		Preload("CartItems.Product.Color").
 		Preload("CartItems.Product.Size").
 		Where("user_id = ?", userID).
-		Find(&req).Error; err != nil {
+		Take(&req).Error; err != nil {
 		return nil, err
 	}
 	return &req, nil

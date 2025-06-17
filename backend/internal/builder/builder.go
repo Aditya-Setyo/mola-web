@@ -60,6 +60,7 @@ func BuildPrivateRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []r
 	productHandler := handler.NewProductHandler(productService)
 	transactionRepository := repository.NewTransactionRepository(db)
 	salesReportRepository := repository.NewSalesReportRepository(db)
+	shipmentRepository := repository.NewShipmentRepository(db)
 
 	cartRepository := repository.NewCartRepository(db)
 	orderRepository := repository.NewOrderRepository(db)
@@ -67,11 +68,13 @@ func BuildPrivateRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []r
 	orderService := service.NewOrderService(db, orderRepository, cartRepository, cartService, productService, cacheable, tokenUseCase, cfg.MidtransConfig)
 	transactionService := service.NewTransactionService(db, productRepository, transactionRepository, orderRepository, tokenUseCase, cacheable, cfg.MidtransConfig)
 	salesReportService := service.NewSalesReportService(db, salesReportRepository)
+	shipmentService := service.NewShipmentService(db, shipmentRepository)
 
 	cartHandler := handler.NewCartHandler(cartService, db)
 	orderHandler := handler.NewOrderHandler(orderService)
 	transactionHandler := handler.NewTransactionHandler(transactionService)
 	salesReportHandler := handler.NewSalesReportHandler(salesReportService)
+	shipmentHandler := handler.NewShipmentHandler(shipmentService)
 
-	return router.PrivateRoutes(userHandler, productHandler, cartHandler, orderHandler, transactionHandler, salesReportHandler)
+	return router.PrivateRoutes(userHandler, productHandler, cartHandler, orderHandler, transactionHandler, salesReportHandler, shipmentHandler)
 }

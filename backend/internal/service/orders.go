@@ -259,6 +259,7 @@ func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email str
 		return nil, err
 	}
 	if err := tx.Commit().Error; err != nil {
+		tx.Error = err
 		return nil, err
 	}
 	return &response, nil
