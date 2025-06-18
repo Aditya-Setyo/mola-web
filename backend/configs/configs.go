@@ -14,6 +14,7 @@ type Config struct {
 	JWT            JWTConfig      `envPrefix:"JWT_"`
 	RedisConfig    RedisConfig    `envPrefix:"REDIS_"`
 	MidtransConfig MidtransConfig `envPrefix:"MIDTRANS_"`
+	GoogleConfig   GoogleConfig   `envPrefix:"GOOGLE_"`
 }
 
 type RedisConfig struct {
@@ -39,6 +40,10 @@ type MidtransConfig struct {
 	ClientKey string `env:"CLIENT_KEY" envDefault:""`
 }
 
+type GoogleConfig struct {
+	ClientID     string `env:"CLIENT_ID" envDefault:""`
+	ClientSecret string `env:"CLIENT_SECRET" envDefault:""`
+}
 func NewConfig(envPath string) (*Config, error) {
 	err := godotenv.Load(envPath)
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"mola-web/configs"
 	"mola-web/internal/entity"
 	"mola-web/internal/http/dto"
 	"mola-web/internal/repository"
@@ -15,11 +16,13 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/api/idtoken"
 	"gorm.io/gorm"
 )
 
 type UserService interface {
 	Login(ctx context.Context, request *dto.LoginRequest) (string, error)
+	GoogleLogin(ctx context.Context, request *dto.GoogleLoginRequest) (string, error)
 	Register(ctx context.Context, req *dto.RegisterRequest) error
 	GetUserProfile(ctx context.Context, userID uuid.UUID) (*dto.GetUserProfileResponse, error)
 	UpdateUserProfile(ctx context.Context, UserID uuid.UUID, request *dto.UpdateUserProfileRequest) error
@@ -32,6 +35,7 @@ type userService struct {
 	userRepository repository.UserRepository
 	tokenUseCase   token.TokenUseCase
 	cacheable      cache.Cacheable
+	configs        configs.GoogleConfig
 }
 
 func NewUserService(
@@ -39,12 +43,14 @@ func NewUserService(
 	userRepository repository.UserRepository,
 	tokenUseCase token.TokenUseCase,
 	cacheable cache.Cacheable,
+	configs configs.GoogleConfig,
 ) UserService {
 	return &userService{
 		DB:             db,
 		userRepository: userRepository,
 		tokenUseCase:   tokenUseCase,
 		cacheable:      cacheable,
+		configs:        configs,
 	}
 }
 
@@ -112,6 +118,44 @@ func (s *userService) Login(ctx context.Context, request *dto.LoginRequest) (str
 		},
 	}
 
+	token, err := s.tokenUseCase.GenerateAccessToken(claims)
+	if err != nil {
+		return "", errors.New("ada kesalahan di server")
+	}
+	return token, nil
+}
+
+func (s *userService) GoogleLogin(ctx context.Context, request *dto.GoogleLoginRequest) (string, error) {
+	payload, err := idtoken.Validate(context.Background(), request.IdToken, s.configs.ClientID)
+	if err != nil {
+		return "", errors.New("invalid Google token")
+	}
+
+	email, _ := payload.Claims["email"].(string)
+	if email == "" {
+		return "", errors.New("email not found in token")
+	}
+	user, err := s.userRepository.FindByEmail(ctx, email)
+	if err != nil {
+		s.userRepository.Create(s.DB, &entity.User{
+			Email: email,
+			Name:  payload.Claims["name"].(string),
+			Role:  "user",
+		})
+	}
+
+	expiredTime := time.Now().Local().Add(time.Minute * 60)
+
+	claims := token.JwtCustomClaims{
+		UserID: user.ID,
+		Name:   user.Name,
+		Role:   user.Role,
+		Email:  user.Email,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    "mola-web",
+			ExpiresAt: jwt.NewNumericDate(expiredTime),
+		},
+	}
 	token, err := s.tokenUseCase.GenerateAccessToken(claims)
 	if err != nil {
 		return "", errors.New("ada kesalahan di server")

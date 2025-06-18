@@ -50,6 +50,22 @@ func (h *UserHandler) Login(ctx echo.Context) error {
 	}))
 }
 
+func (h *UserHandler) GoogleLogin(ctx echo.Context) error {
+	var req dto.GoogleLoginRequest
+	if err := ctx.Bind(&req); err != nil {
+		return ctx.JSON(http.StatusBadRequest, response.ErrorResponse(http.StatusBadRequest, err.Error()))
+	}
+
+	token, err := h.userService.GoogleLogin(ctx.Request().Context(), &req)
+	if err != nil {
+		return ctx.JSON(http.StatusUnauthorized, response.ErrorResponse(http.StatusUnauthorized, err.Error()))
+	}
+
+	return ctx.JSON(http.StatusOK, response.SuccessResponse("successfully login", map[string]interface{}{
+		"token": token,
+	}))
+}
+
 func (h *UserHandler) GetUserProfile(ctx echo.Context) error {
 	userID, ok := ctx.Get("user_id").(uuid.UUID)
 	if !ok {
