@@ -6,6 +6,7 @@ import (
 	"mola-web/pkg/response"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
@@ -20,10 +21,12 @@ func NewShipmentHandler(shipmentService service.ShipmentService) ShipmentHandler
 }
 
 func (s ShipmentHandler) AddResiNumber(ctx echo.Context) error {
+	orderID := ctx.Param("orderID")
 	shipmentRequest := &dto.ShipmentRequest{}
 	if err := ctx.Bind(shipmentRequest); err != nil {
 		return ctx.JSON(http.StatusBadRequest, response.ErrorResponse(http.StatusBadRequest, err.Error()))
 	}
+	shipmentRequest.OrderID, _ = uuid.Parse(orderID)
 	if err := s.shipmentService.AddResiNumber(ctx.Request().Context(), shipmentRequest); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, response.ErrorResponse(http.StatusInternalServerError, err.Error()))
 	}
