@@ -4,10 +4,78 @@ import ilustrasibg from "../assets/bg.png";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { auth, googleProvider, signInWithPopup } from "../firebase";
+import { jwtDecode } from "jwt-decode";
 
 
 const LoginPage = () => {
   const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  // Cek token saat component dimuat
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      try {
+        const decoded = jwtDecode < DecodedToken > (token);
+        const role = decoded.role;
+
+        if (role === "admin") {
+          navigate("/admin/adminpage");
+        } else if (role === "user") {
+          navigate("/user/dashboard");
+        } else {
+          navigate("/loginpage");
+        }
+      } catch (error) {
+        console.error("Token tidak valid:", error);
+        navigate("/loginpage");
+      }
+    }
+  }, [navigate]);
+
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
+    try {
+      // Simulasi login ke backend kamu
+      const response = await fetch("http://localhost:3000/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Login gagal");
+      }
+
+      const data = await response.json();
+      const token = data.token;
+      localStorage.setItem("token", token);
+
+      const decoded = jwtDecode < DecodedToken > (token);
+      const role = decoded.role;
+
+      if (role === "admin") {
+        navigate("/admin/adminpage");
+      } else if (role === "user") {
+        navigate("/user/dashboard");
+      } else {
+        navigate("/loginpage");
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      alert("Login gagal: " + err.message);
+    }
+
+    return null;
+  }
+
   const handleGoogleLogin = () => {
     signInWithPopup(auth, googleProvider)
       .then((result) => {
@@ -67,7 +135,7 @@ const LoginPage = () => {
               Lupa Password?
             </Link>
           </div>
-          <button
+          <button onClick={handleLogin}
             type="submit"
             className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 transition"
           >
