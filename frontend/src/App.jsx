@@ -12,6 +12,7 @@ import DetailProduct from "./pages/detailproduct";
 import UserProfile from "./pages/userprofile";
 import ResetPage from "./pages/resetpage";
 import ForgetPage from "./pages/forgetpage";
+import AdminPage from "./pages/adminpage";
 
 const App = () => {
   return (
@@ -29,6 +30,7 @@ const App = () => {
       <Route path="/userprofile" element={<UserProfile />} />
       <Route path="/resetpage" element={<ResetPage />} />
       <Route path="/forgetpage" element={<ForgetPage />} />
+      <Route path="/adminpage" element={<AdminPage />} />
     </Routes>
   );
 };
