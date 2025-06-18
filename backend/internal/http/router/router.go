@@ -25,6 +25,11 @@ func PublicRoutes(
 		},
 		{
 			Method:  http.MethodPost,
+			Path:    "/login/google",
+			Handler: userHandler.GoogleLogin,
+		},
+		{
+			Method:  http.MethodPost,
 			Path:    "/register",
 			Handler: userHandler.Register,
 		},

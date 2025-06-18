@@ -52,3 +52,7 @@ type UserLogs struct{
 	Email string `json:"email" validate:"required"`
 	Name string `json:"name" validate:"required"`
 }
+
+type GoogleLoginRequest struct {
+	IdToken string `json:"id_token"`
+}
