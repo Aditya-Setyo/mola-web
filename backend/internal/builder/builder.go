@@ -27,7 +27,7 @@ func BuildPublicRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []ro
 	salesReportRepository := repository.NewSalesReportRepository(db)
 
 	tokenUseCase := token.NewTokenUseCase(cfg.JWT.SecretKey)
-	userService := service.NewUserService(db, userRepository, tokenUseCase, cacheable)
+	userService := service.NewUserService(db, userRepository, tokenUseCase, cacheable, cfg.GoogleConfig)
 	productService := service.NewProductService(db, productRepository, tokenUseCase, cacheable)
 	categoryService := service.NewCategoryService(db, categoryRepository, tokenUseCase, cacheable)
 	colorService := service.NewColorService(db, colorRepository, tokenUseCase, cacheable)
@@ -53,7 +53,7 @@ func BuildPrivateRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []r
 	cacheable := cache.NewCacheable(rdb)
 	userRepository := repository.NewUserRepository(db)
 	tokenUseCase := token.NewTokenUseCase(cfg.JWT.SecretKey)
-	userService := service.NewUserService(db, userRepository, tokenUseCase, cacheable)
+	userService := service.NewUserService(db, userRepository, tokenUseCase, cacheable, cfg.GoogleConfig)
 	userHandler := handler.NewUserHandler(userService)
 	productRepository := repository.NewProductRepository(db)
 	productService := service.NewProductService(db, productRepository, tokenUseCase, cacheable)
