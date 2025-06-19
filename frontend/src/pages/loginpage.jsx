@@ -16,10 +16,14 @@ const LoginPage = () => {
   // Cek token saat component dimuat
   useEffect(() => {
     const token = localStorage.getItem("token");
+    console.log("Token dari localStorage:", token);
 
-    if (token) {
+    // Tambahkan pengecekan apakah token valid
+    if (token && token.split(".").length === 3) {
       try {
-        const decoded = jwtDecode < DecodedToken > (token);
+        const decoded = jwtDecode(token);
+        console.log("Decoded token:", decoded);
+
         const role = decoded.role;
 
         if (role === "admin") {
@@ -33,16 +37,19 @@ const LoginPage = () => {
         console.error("Token tidak valid:", error);
         navigate("/loginpage");
       }
+    } else {
+      console.warn("Token kosong atau tidak valid formatnya");
+      navigate("/loginpage");
     }
   }, [navigate]);
+
 
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
     try {
-      // Simulasi login ke backend kamu
-      const response = await fetch("http://localhost:3000/api/login", {
+      const response = await fetch("http://localhost:8081/api/v1/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -50,15 +57,25 @@ const LoginPage = () => {
         body: JSON.stringify({ email, password }),
       });
 
+      const raw = await response.text();
+
       if (!response.ok) {
-        throw new Error("Login gagal");
+        const errorData = JSON.parse(raw);
+        throw new Error(errorData.meta?.message || "Login gagal");
       }
 
-      const data = await response.json();
-      const token = data.token;
+      const data = JSON.parse(raw);
+      const token = data.data?.token;
+
+      // Validasi token sebelum dipakai
+      if (!token || typeof token !== "string" || token.split(".").length !== 3) {
+        throw new Error("Token dari server tidak valid");
+      }
+
+      // Simpan token yang valid
       localStorage.setItem("token", token);
 
-      const decoded = jwtDecode < DecodedToken > (token);
+      const decoded = jwtDecode(token);
       const role = decoded.role;
 
       if (role === "admin") {
@@ -68,13 +85,16 @@ const LoginPage = () => {
       } else {
         navigate("/loginpage");
       }
+
     } catch (err) {
       console.error("Login error:", err);
       alert("Login gagal: " + err.message);
     }
 
-    return null;
-  }
+    console.log("Email:", email);
+    console.log("Password:", password);
+  };
+
 
   const handleGoogleLogin = () => {
     signInWithPopup(auth, googleProvider)
@@ -124,12 +144,18 @@ const LoginPage = () => {
             type="email"
             placeholder="Masukkan Email"
             className="w-full px-4 py-3 rounded-lg bg-gray-100 text-sm outline-none"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
+
           <input
             type="password"
             placeholder="••••••••"
             className="w-full px-4 py-3 rounded-lg bg-gray-100 text-sm outline-none"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
+
           <div className="text-right text-xs text-gray-500">
             <Link to="/resetpage" className="hover:underline">
               Lupa Password?

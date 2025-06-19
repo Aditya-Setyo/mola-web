@@ -4,8 +4,8 @@ import { useContext } from "react";
 // import js-cookie
 import Cookies from "js-cookie";
 
-// import hook useNavigate dari react-router
-import { useNavigate } from "react-router";
+// import hook useNavigate dari react-router-dom
+import { useNavigate } from "react-router-dom";
 
 // import context
 import { AuthContext } from "../../context/AuthContext";
@@ -35,7 +35,7 @@ export const useLogout = () => {
     setIsAuthenticated(false);
 
     // Arahkan ke halaman login
-    navigate("/login");
+    navigate("/loginpage");
   };
 
   return logout;
