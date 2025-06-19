@@ -1,15 +1,69 @@
 // src/pages/UserProfile.jsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
+import { jwtDecode } from "jwt-decode";
+import { useNavigate } from "react-router-dom";
 
 const UserProfile = () => {
+  const [profile, setProfile] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+  });
+
+  const [isEditing, setIsEditing] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        setProfile({
+          name: decoded.name || "",
+          email: decoded.email || "",
+          phone: decoded.phone || "",
+          address: decoded.address || "",
+        });
+      } catch (err) {
+        console.error("Token tidak valid", err);
+        navigate("/loginpage");
+      }
+    } else {
+      navigate("/loginpage");
+    }
+  }, [navigate]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/loginpage");
+  };
+
+  const handleChange = (e) => {
+    setProfile({ ...profile, [e.target.name]: e.target.value });
+  };
+
+  const handleSave = () => {
+    // Simpan ke database di sini kalau ada
+    setIsEditing(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <Navbar />
 
       <section className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-6 mt-10">
-        <h1 className="text-2xl font-bold mb-6 text-gray-800">Profil Pengguna</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-800">Profil Pengguna</h1>
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 text-sm bg-red-500 text-white rounded hover:bg-red-600"
+          >
+            Logout
+          </button>
+        </div>
 
         <div className="flex flex-col md:flex-row md:space-x-10">
           {/* Foto dan Info Ringkas */}
@@ -19,8 +73,8 @@ const UserProfile = () => {
               alt="User Profile"
               className="w-32 h-32 rounded-full border border-gray-300"
             />
-            <h2 className="mt-4 text-lg font-semibold text-gray-700">Nama Pengguna</h2>
-            <p className="text-sm text-gray-500">user@email.com</p>
+            <h2 className="mt-4 text-lg font-semibold text-gray-700">{profile.name}</h2>
+            <p className="text-sm text-gray-500">{profile.email}</p>
           </div>
 
           {/* Info Detail */}
@@ -29,37 +83,62 @@ const UserProfile = () => {
               <label className="block text-gray-600 font-medium mb-1">Nama Lengkap</label>
               <input
                 type="text"
-                value="Nama Pengguna"
+                name="name"
+                value={profile.name}
+                onChange={handleChange}
                 className="w-full border border-gray-300 px-4 py-2 rounded bg-gray-50"
-                readOnly
+                readOnly={!isEditing}
               />
             </div>
             <div>
               <label className="block text-gray-600 font-medium mb-1">Email</label>
               <input
                 type="email"
-                value="user@email.com"
+                name="email"
+                value={profile.email}
+                onChange={handleChange}
                 className="w-full border border-gray-300 px-4 py-2 rounded bg-gray-50"
-                readOnly
+                readOnly={!isEditing}
               />
             </div>
             <div>
               <label className="block text-gray-600 font-medium mb-1">No. Telepon</label>
               <input
                 type="tel"
-                value="081234567890"
+                name="phone"
+                value={profile.phoneNumber}
+                onChange={handleChange}
                 className="w-full border border-gray-300 px-4 py-2 rounded bg-gray-50"
-                readOnly
+                readOnly={!isEditing}
               />
             </div>
             <div>
               <label className="block text-gray-600 font-medium mb-1">Alamat</label>
               <textarea
-                value="Jl. Contoh No. 123, Yogyakarta"
+                name="address"
+                value={profile.address}
+                onChange={handleChange}
                 className="w-full border border-gray-300 px-4 py-2 rounded bg-gray-50"
                 rows={3}
-                readOnly
+                readOnly={!isEditing}
               />
+            </div>
+            <div className="text-right">
+              {!isEditing ? (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="px-4 py-2 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  Edit Profil
+                </button>
+              ) : (
+                <button
+                  onClick={handleSave}
+                  className="px-4 py-2 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+                >
+                  Simpan
+                </button>
+              )}
             </div>
           </div>
         </div>

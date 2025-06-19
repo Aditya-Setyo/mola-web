@@ -75,7 +75,7 @@ func (s *adsService) UploadAd(ctx context.Context, request *dto.CreateAdRequest)
 		os.Remove(oldPath)
 	}
 	fileName := fmt.Sprintf("%s-Category:%s-%s", dataAds.ID, request.Category, request.Image.Filename)
-	imagePath :=  filepath.Join("public/ads", fileName) 
+	imagePath := filepath.Join("public/ads", fileName)
 	dst, err := os.Create(imagePath)
 	if err != nil {
 		return err
@@ -101,7 +101,6 @@ func (s *adsService) UploadAd(ctx context.Context, request *dto.CreateAdRequest)
 
 	return nil
 }
-
 
 func (s *adsService) GetAdsByCategory(ctx context.Context, category string) (result *dto.GetAdsByCategoryResponse, err error) {
 	key := "ads:all"
@@ -132,6 +131,6 @@ func (s *adsService) GetAdsByCategory(ctx context.Context, category string) (res
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return result, nil
 }
