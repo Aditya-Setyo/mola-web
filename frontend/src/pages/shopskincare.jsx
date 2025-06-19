@@ -1,16 +1,38 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
 import IlustrasiSkincare from "../assets/bgskincare.png";
 import IlustrasiSkincare1 from "../assets/bgskincare1.png";
 import IlustrasiSkincare2 from "../assets/bgskincare2.png";
 import Pagination from "../components/pagination";
+import axios from "axios";
 
 const ShopSkincare = () => {
     const productRef = useRef(null);
+    const [products, setProducts] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
 
     const handleScrollToProducts = () => {
         productRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    useEffect(() => {
+        fetchProducts(currentPage);
+    }, [currentPage]);
+
+    const fetchProducts = async (page) => {
+        try {
+            const response = await axios.get(`http://localhost:8081/api/v1/products?category=skincare&page=${page}`);
+            setProducts(response.data.data);
+            setTotalPages(response.data.totalPages || 1);
+        } catch (error) {
+            console.error("Gagal mengambil data produk:", error);
+        }
+    };
+
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
     };
 
     return (
@@ -24,8 +46,7 @@ const ShopSkincare = () => {
             >
                 <div className="backdrop-blur-sm p-6 sm:p-10 w-full md:w-1/2 max-w-xl rounded-lg">
                     <h1 className="text-7xl font-bold leading-snug text-gray-900">
-                        Enhance <br />
-                        your Natural Radiance
+                        Enhance <br /> your Natural Radiance
                     </h1>
                     <button
                         onClick={handleScrollToProducts}
@@ -46,28 +67,33 @@ const ShopSkincare = () => {
                 </h2>
 
                 <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-4 md:gap-20 justify-items-center">
-                    {[1, 2, 3, 4].map((item) => (
-                        <div
-                            key={item}
-                            className="w-full max-w-sm bg-white rounded-lg shadow-md overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-lg"
-                        >
-                            <img
-                                src="https://via.placeholder.com/300x150"
-                                alt={`Shop Item ${item}`}
-                                className="w-full h-40 object-cover"
-                            />
-                            <div className="p-4 text-center">
-                                <h3 className="text-lg font-semibold text-gray-700">{`Shop Item ${item}`}</h3>
+                    {products.length > 0 ? (
+                        products.map((product) => (
+                            <div
+                                key={product.id}
+                                className="w-full max-w-sm bg-white rounded-lg shadow-md overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-lg"
+                            >
+                                <img
+                                    src={product.image || "https://via.placeholder.com/300x150"}
+                                    alt={product.name}
+                                    className="w-full h-40 object-cover"
+                                />
+                                <div className="p-4 text-center">
+                                    <h3 className="text-lg font-semibold text-gray-700">{product.name}</h3>
+                                    <p className="text-sm text-gray-500">Rp {product.price}</p>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))
+                    ) : (
+                        <p className="text-center col-span-3 text-gray-500">Produk tidak ditemukan.</p>
+                    )}
                 </div>
 
                 <div className="flex justify-center mt-20">
                     <Pagination
-                        currentPage={1}
-                        totalPages={5}
-                        onPageChange={(page) => console.log(page)}
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
                     />
                 </div>
             </section>
@@ -79,8 +105,7 @@ const ShopSkincare = () => {
             >
                 <div className="backdrop-blur-sm p-6 sm:p-10 w-full md:w-1/2 max-w-xl rounded-lg">
                     <h1 className="text-7xl font-bold leading-snug text-gray-900">
-                        Penawaran Khusus <br />
-                        Diskon 30%
+                        Penawaran Khusus <br /> Diskon 30%
                     </h1>
                     <button
                         onClick={handleScrollToProducts}
