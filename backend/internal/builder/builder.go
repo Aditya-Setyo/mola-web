@@ -18,9 +18,6 @@ func BuildPublicRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []ro
 	cacheable := cache.NewCacheable(rdb)
 	userRepository := repository.NewUserRepository(db)
 	productRepository := repository.NewProductRepository(db)
-	categoryRepository := repository.NewCategoryRepository(db)
-	colorRepository := repository.NewColorRepository(db)
-	sizeRepository := repository.NewSizeRepository(db)
 	cartRepository := repository.NewCartRepository(db)
 	orderRepository := repository.NewOrderRepository(db)
 	transactionRepository := repository.NewTransactionRepository(db)
@@ -30,9 +27,6 @@ func BuildPublicRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []ro
 	tokenUseCase := token.NewTokenUseCase(cfg.JWT.SecretKey)
 	userService := service.NewUserService(db, userRepository, tokenUseCase, cacheable, cfg.GoogleConfig)
 	productService := service.NewProductService(db, productRepository, tokenUseCase, cacheable)
-	categoryService := service.NewCategoryService(db, categoryRepository, tokenUseCase, cacheable)
-	colorService := service.NewColorService(db, colorRepository, tokenUseCase, cacheable)
-	sizeService := service.NewSizeService(db, sizeRepository, tokenUseCase, cacheable)
 	cartService := service.NewCartService(db, cartRepository, orderRepository, productRepository, tokenUseCase, cacheable, cfg.MidtransConfig)
 	orderService := service.NewOrderService(db, orderRepository, cartRepository, cartService, productService, cacheable, tokenUseCase, cfg.MidtransConfig)
 	transactionService := service.NewTransactionService(db, productRepository, transactionRepository, orderRepository, tokenUseCase, cacheable, cfg.MidtransConfig)
@@ -41,16 +35,13 @@ func BuildPublicRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []ro
 
 	userHandler := handler.NewUserHandler(userService)
 	productHandler := handler.NewProductHandler(productService)
-	categoryHandler := handler.NewCategoryHandler(categoryService)	
-	colorHandler := handler.NewColorHandler(colorService)
-	sizeHandler := handler.NewSizeHandler(sizeService)
 	cartHandler := handler.NewCartHandler(cartService, db)
 	orderHandler := handler.NewOrderHandler(orderService)
 	transactionHandler := handler.NewTransactionHandler(transactionService)
 	salesReportHandler := handler.NewSalesReportHandler(salesReportService)
 	adsHandler := handler.NewAdHandler(adsService)
 
-	return router.PublicRoutes(userHandler,productHandler, categoryHandler, colorHandler, sizeHandler, cartHandler, orderHandler, transactionHandler, salesReportHandler, adsHandler)
+	return router.PublicRoutes(userHandler,productHandler, cartHandler, orderHandler, transactionHandler, salesReportHandler, adsHandler)
 }
 func BuildPrivateRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []route.Route {
 	cacheable := cache.NewCacheable(rdb)
@@ -64,6 +55,12 @@ func BuildPrivateRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []r
 	transactionRepository := repository.NewTransactionRepository(db)
 	salesReportRepository := repository.NewSalesReportRepository(db)
 	shipmentRepository := repository.NewShipmentRepository(db)
+	categoryRepository := repository.NewCategoryRepository(db)
+	colorRepository := repository.NewColorRepository(db)
+	sizeRepository := repository.NewSizeRepository(db)
+	adsRepository := repository.NewAdRepository(db)
+
+
 
 	cartRepository := repository.NewCartRepository(db)
 	orderRepository := repository.NewOrderRepository(db)
@@ -72,12 +69,22 @@ func BuildPrivateRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []r
 	transactionService := service.NewTransactionService(db, productRepository, transactionRepository, orderRepository, tokenUseCase, cacheable, cfg.MidtransConfig)
 	salesReportService := service.NewSalesReportService(db, salesReportRepository)
 	shipmentService := service.NewShipmentService(db, shipmentRepository)
+	categoryService := service.NewCategoryService(db, categoryRepository, tokenUseCase, cacheable)
+	colorService := service.NewColorService(db, colorRepository, tokenUseCase, cacheable)
+	sizeService := service.NewSizeService(db, sizeRepository, tokenUseCase, cacheable)
+	adsService := service.NewAdsService(db, adsRepository, tokenUseCase, cacheable)
+
 
 	cartHandler := handler.NewCartHandler(cartService, db)
 	orderHandler := handler.NewOrderHandler(orderService)
 	transactionHandler := handler.NewTransactionHandler(transactionService)
 	salesReportHandler := handler.NewSalesReportHandler(salesReportService)
 	shipmentHandler := handler.NewShipmentHandler(shipmentService)
+	categoryHandler := handler.NewCategoryHandler(categoryService)	
+	colorHandler := handler.NewColorHandler(colorService)
+	sizeHandler := handler.NewSizeHandler(sizeService)
+	adsHandler := handler.NewAdHandler(adsService)
 
-	return router.PrivateRoutes(userHandler, productHandler, cartHandler, orderHandler, transactionHandler, salesReportHandler, shipmentHandler)
+
+	return router.PrivateRoutes(userHandler, productHandler, categoryHandler, colorHandler, sizeHandler, cartHandler, orderHandler, transactionHandler, salesReportHandler, shipmentHandler, adsHandler)
 }

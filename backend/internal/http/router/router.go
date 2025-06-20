@@ -9,9 +9,6 @@ import (
 func PublicRoutes(
 	userHandler handler.UserHandler,
 	productHandler handler.ProductHandler,
-	categoryHandler handler.CategoryHandler,
-	colorHandler handler.ColorHandler,
-	sizeHandler handler.SizeHandler,
 	cartHandler handler.CartHandler,
 	orderHandler handler.OrderHandler,
 	transactionHandler handler.TransactionHandler,
@@ -35,19 +32,9 @@ func PublicRoutes(
 			Handler: userHandler.Register,
 		},
 		{
-			Method:  http.MethodPost,
-			Path:    "/admin/products",
-			Handler: productHandler.Create,
-		},
-		{
 			Method:  http.MethodGet,
 			Path:    "/products",
 			Handler: productHandler.GetAll,
-		},
-		{
-			Method:  http.MethodPut,
-			Path:    "/admin/products/:productID",
-			Handler: productHandler.Update,
 		},
 		{
 			Method:  http.MethodGet,
@@ -65,94 +52,14 @@ func PublicRoutes(
 			Handler: productHandler.GetByID,
 		},
 		{
-			Method:  http.MethodPut,
-			Path:    "/admin/products/stock/:productID",
-			Handler: productHandler.UpdateStock,
-		},
-		{
-			Method:  http.MethodDelete,
-			Path:    "/admin/products/:productID",
-			Handler: productHandler.Delete,
-		},
-		{
-			Method:  http.MethodPost,
-			Path:    "/admin/categories",
-			Handler: categoryHandler.Create,
-		},
-		{
-			Method:  http.MethodGet,
-			Path:    "/categories",
-			Handler: categoryHandler.GetAll,
-		},
-		{
-			Method:  http.MethodDelete,
-			Path:    "/admin/categories/:categoryID",
-			Handler: categoryHandler.Delete,
-		},
-		{
-			Method:  http.MethodPut,
-			Path:    "/admin/categories/:categoryID",
-			Handler: categoryHandler.Update,
-		},
-		{
-			Method:  http.MethodPost,
-			Path:    "/admin/colors",
-			Handler: colorHandler.Create,
-		},
-		{
-			Method:  http.MethodGet,
-			Path:    "/colors",
-			Handler: colorHandler.GetAll,
-		},
-		{
-			Method:  http.MethodDelete,
-			Path:    "/admin/colors/:colorID",
-			Handler: colorHandler.Delete,
-		},
-		{
-			Method:  http.MethodPut,
-			Path:    "/admin/colors/:colorID",
-			Handler: colorHandler.Update,
-		},
-		{
-			Method:  http.MethodPost,
-			Path:    "/admin/sizes",
-			Handler: sizeHandler.Create,
-		},
-		{
-			Method:  http.MethodGet,
-			Path:    "/sizes",
-			Handler: sizeHandler.GetAll,
-		},
-		{
-			Method:  http.MethodDelete,
-			Path:    "/admin/sizes/:sizeID",
-			Handler: sizeHandler.Delete,
-		},
-		{
-			Method:  http.MethodPut,
-			Path:    "/admin/sizes/:sizeID",
-			Handler: sizeHandler.Update,
-		},
-		{
 			Method:  http.MethodPost,
 			Path:    "/payments/midtrans",
 			Handler: transactionHandler.PaymentNotification,
 		},
 		{
 			Method:  http.MethodGet,
-			Path:    "/admin/sales-report",
-			Handler: salesReportHandler.GetSalesReport,
-		},
-		{
-			Method:  http.MethodGet,
-			Path:    "/ads/:category",
+			Path:    "/admin/ads/:category",
 			Handler: adsHandler.GetAds,
-		},
-		{
-			Method:  http.MethodPost,
-			Path:    "/ads",
-			Handler: adsHandler.UploadAd,
 		},
 	}
 }
@@ -160,11 +67,15 @@ func PublicRoutes(
 func PrivateRoutes(
 	userHandler handler.UserHandler,
 	productHandler handler.ProductHandler,
+	categoryHandler handler.CategoryHandler,
+	colorHandler handler.ColorHandler,
+	sizeHandler handler.SizeHandler,
 	cartHandler handler.CartHandler,
 	orderHandler handler.OrderHandler,
 	transactionHandler handler.TransactionHandler,
 	salesReportHandler handler.SalesReportHandler,
 	shipmentHandler handler.ShipmentHandler,
+	adsHandler handler.AdHandler,
 ) []route.Route {
 	return []route.Route{
 		{
@@ -178,6 +89,102 @@ func PrivateRoutes(
 			Path:    "/users/profile",
 			Handler: userHandler.UpdateUserProfile,
 			Roles:   []string{"admin", "user"},
+		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/admin/products",
+			Handler: productHandler.Create,
+			Roles:   []string{"admin"},
+		},
+		{
+			Method:  http.MethodPut,
+			Path:    "/admin/products/:productID",
+			Handler: productHandler.Update,
+			Roles:   []string{"admin"},
+		},
+		{
+			Method:  http.MethodPut,
+			Path:    "/admin/products/stock/:productID",
+			Handler: productHandler.UpdateStock,
+			Roles:   []string{"admin"},
+		},
+		{
+			Method:  http.MethodDelete,
+			Path:    "/admin/products/:productID",
+			Handler: productHandler.Delete,
+			Roles:   []string{"admin"},
+		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/admin/categories",
+			Handler: categoryHandler.Create,
+			Roles:   []string{"admin"},
+		},
+		{
+			Method:  http.MethodGet,
+			Path:    "/categories",
+			Handler: categoryHandler.GetAll,
+			Roles:   []string{"admin"},//masih bingung
+		},
+		{
+			Method:  http.MethodDelete,
+			Path:    "/admin/categories/:categoryID",
+			Handler: categoryHandler.Delete,
+			Roles:   []string{"admin"},
+		},
+		{
+			Method:  http.MethodPut,
+			Path:    "/admin/categories/:categoryID",
+			Handler: categoryHandler.Update,
+			Roles:   []string{"admin"},
+		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/admin/colors",
+			Handler: colorHandler.Create,
+			Roles:   []string{"admin"},
+		},
+		{
+			Method:  http.MethodGet,
+			Path:    "/colors",
+			Handler: colorHandler.GetAll,
+			Roles:   []string{"admin"},//masih bingung
+		},
+		{
+			Method:  http.MethodDelete,
+			Path:    "/admin/colors/:colorID",
+			Handler: colorHandler.Delete,
+			Roles:   []string{"admin"},
+		},
+		{
+			Method:  http.MethodPut,
+			Path:    "/admin/colors/:colorID",
+			Handler: colorHandler.Update,
+			Roles:   []string{"admin"},
+		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/admin/sizes",
+			Handler: sizeHandler.Create,
+			Roles:   []string{"admin"},
+		},
+		{
+			Method:  http.MethodGet,
+			Path:    "/sizes",
+			Handler: sizeHandler.GetAll,
+			Roles:   []string{"admin"},//masih bingung
+		},
+		{
+			Method:  http.MethodDelete,
+			Path:    "/admin/sizes/:sizeID",
+			Handler: sizeHandler.Delete,
+			Roles:   []string{"admin"},
+		},
+		{
+			Method:  http.MethodPut,
+			Path:    "/admin/sizes/:sizeID",
+			Handler: sizeHandler.Update,
+			Roles:   []string{"admin"},
 		},
 		{
 			Method:  http.MethodPost,
@@ -231,6 +238,18 @@ func PrivateRoutes(
 			Method:  http.MethodPost,
 			Path:    "/admin/shipments/add-resi-number/:orderID",
 			Handler: shipmentHandler.AddResiNumber,
+			Roles:   []string{"admin"},
+		},
+		{
+			Method:  http.MethodGet,
+			Path:    "/admin/sales-report",
+			Handler: salesReportHandler.GetSalesReport,
+			Roles:   []string{"admin"},
+		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/admin/ads",
+			Handler: adsHandler.UploadAd,
 			Roles:   []string{"admin"},
 		},
 	}
