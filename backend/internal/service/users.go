@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"mola-web/configs"
 	"mola-web/internal/entity"
@@ -11,6 +12,7 @@ import (
 	"mola-web/internal/repository"
 	"mola-web/pkg/cache"
 	"mola-web/pkg/token"
+	"net/smtp"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -28,6 +30,7 @@ type UserService interface {
 	UpdateUserProfile(ctx context.Context, UserID uuid.UUID, request *dto.UpdateUserProfileRequest) error
 	GetUserAddress(ctx context.Context, userID uuid.UUID) (*dto.GetUserAddressResponse, error)
 	UpdateUserAddress(ctx context.Context, userID uuid.UUID, userAddress *dto.UpdateUserAddressRequest) error
+	ForgotPassword(ctx context.Context, request string) error
 }
 
 type userService struct {
@@ -35,7 +38,8 @@ type userService struct {
 	userRepository repository.UserRepository
 	tokenUseCase   token.TokenUseCase
 	cacheable      cache.Cacheable
-	configs        configs.GoogleConfig
+	GoogleConfigs  configs.GoogleConfig
+	SMTPConfigs    configs.SMPTGmailConfig
 }
 
 func NewUserService(
@@ -43,14 +47,16 @@ func NewUserService(
 	userRepository repository.UserRepository,
 	tokenUseCase token.TokenUseCase,
 	cacheable cache.Cacheable,
-	configs configs.GoogleConfig,
+	GoogleConfigs configs.GoogleConfig,
+	SMTPConfigs configs.SMPTGmailConfig,
 ) UserService {
 	return &userService{
 		DB:             db,
 		userRepository: userRepository,
 		tokenUseCase:   tokenUseCase,
 		cacheable:      cacheable,
-		configs:        configs,
+		GoogleConfigs:  GoogleConfigs,
+		SMTPConfigs:    SMTPConfigs,
 	}
 }
 
@@ -89,7 +95,7 @@ func (s *userService) Register(ctx context.Context, req *dto.RegisterRequest) er
 		return err
 	}
 	err = s.userRepository.UpdateUserProfile(tx, &entity.UserProfile{
-		UserID: &user.ID,
+		UserID:      &user.ID,
 		PhoneNumber: &req.PhoneNumber,
 	})
 	if err != nil {
@@ -134,7 +140,7 @@ func (s *userService) Login(ctx context.Context, request *dto.LoginRequest) (str
 }
 
 func (s *userService) GoogleLogin(ctx context.Context, request *dto.GoogleLoginRequest) (string, error) {
-	payload, err := idtoken.Validate(context.Background(), request.IdToken, s.configs.ClientID)
+	payload, err := idtoken.Validate(context.Background(), request.IdToken, s.GoogleConfigs.ClientID)
 	if err != nil {
 		return "", errors.New("invalid Google token")
 	}
@@ -326,4 +332,46 @@ func (s *userService) UpdateUserAddress(ctx context.Context, userID uuid.UUID, r
 		return err
 	}
 	return nil
+}
+
+func (s *userService) ForgotPassword(ctx context.Context, email string) error {
+	tx := s.DB.WithContext(ctx).Begin()
+	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			log.Printf("PANIC RECOVERED: Rolling back transaction due to panic: %v", p)
+			panic(p)
+		} else if tx.Error != nil {
+			tx.Rollback()
+			log.Printf("ERROR: Rolling back transaction due to service error: %v", tx.Error)
+		}
+	}()
+	user, err := s.userRepository.FindByEmail(ctx, email)
+	if err != nil {
+		errors.New("user not found")
+	}
+
+	// Buat token dan simpan
+	token := uuid.New().String()
+	user.ResetToken = token
+	user.ResetTokenExp = time.Now().Add(15 * time.Minute)
+	s.userRepository.UpdateUser(tx, user)
+
+	// Kirim email
+	resetLink := fmt.Sprintf("http://localhost/reset-password?token=%s", token) //atur dulu gengs
+	if err := s.sendResetEmail(user.Email, resetLink); err != nil {
+		return errors.New("gagal mengirim email")
+	}
+	return nil
+}
+
+func (s *userService) sendResetEmail(toEmail, resetLink string) error {
+	from := s.SMTPConfigs.Email
+	password := s.SMTPConfigs.Password
+
+	msg := "Subject: Reset Password Request\n\n" +
+		"Silakan klik link berikut untuk mengatur ulang password Anda:\n" + resetLink
+
+	auth := smtp.PlainAuth("", from, password, "smtp.gmail.com")
+	return smtp.SendMail("smtp.gmail.com:587", auth, from, []string{toEmail}, []byte(msg))
 }

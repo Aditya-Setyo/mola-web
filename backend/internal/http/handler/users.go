@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"mola-web/internal/http/dto"
 	"mola-web/internal/service"
 	"mola-web/pkg/response"
@@ -138,4 +139,22 @@ func (h *UserHandler) UpdateUserAddress(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, response.SuccessResponse("success", map[string]interface{}{
 		"address": req,
 	}))
+}
+
+func (h *UserHandler) ForgotPassword(ctx echo.Context) error {
+    type Request struct {
+        Email string `json:"email"`
+    }
+
+    var req Request
+    if err := ctx.Bind(&req); err != nil {
+        return ctx.JSON(http.StatusBadRequest, response.ErrorResponse(http.StatusBadRequest, errors.New("invalid request body").Error()))
+    }
+
+	err := h.userService.ForgotPassword(ctx.Request().Context(), req.Email)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, response.ErrorResponse(http.StatusInternalServerError, err.Error()))
+	}
+
+    return ctx.JSON(200, echo.Map{"message": "link reset telah dikirim ke email"})
 }

@@ -8,13 +8,14 @@ import (
 )
 
 type Config struct {
-	ENV            string         `env:"ENV" envDefault:"dev"`
-	PORT           string         `env:"PORT" envDefault:"8080"`
-	PostgresConfig PostgresConfig `envPrefix:"POSTGRES_"`
-	JWT            JWTConfig      `envPrefix:"JWT_"`
-	RedisConfig    RedisConfig    `envPrefix:"REDIS_"`
-	MidtransConfig MidtransConfig `envPrefix:"MIDTRANS_"`
-	GoogleConfig   GoogleConfig   `envPrefix:"GOOGLE_"`
+	ENV             string          `env:"ENV" envDefault:"dev"`
+	PORT            string          `env:"PORT" envDefault:"8080"`
+	PostgresConfig  PostgresConfig  `envPrefix:"POSTGRES_"`
+	JWT             JWTConfig       `envPrefix:"JWT_"`
+	RedisConfig     RedisConfig     `envPrefix:"REDIS_"`
+	MidtransConfig  MidtransConfig  `envPrefix:"MIDTRANS_"`
+	GoogleConfig    GoogleConfig    `envPrefix:"GOOGLE_"`
+	SMPTGmailConfig SMPTGmailConfig `envPrefix:"SMTP_GMAIL_"`
 }
 
 type RedisConfig struct {
@@ -44,6 +45,12 @@ type GoogleConfig struct {
 	ClientID     string `env:"CLIENT_ID" envDefault:""`
 	ClientSecret string `env:"CLIENT_SECRET" envDefault:""`
 }
+
+type SMPTGmailConfig struct {
+	Email    string `env:"EMAIL" envDefault:""`
+	Password string `env:"PASSWORD" envDefault:""`
+}
+
 func NewConfig(envPath string) (*Config, error) {
 	err := godotenv.Load(envPath)
 	if err != nil {

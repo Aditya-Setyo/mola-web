@@ -25,7 +25,7 @@ func BuildPublicRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []ro
 	adsRepository := repository.NewAdRepository(db)
 
 	tokenUseCase := token.NewTokenUseCase(cfg.JWT.SecretKey)
-	userService := service.NewUserService(db, userRepository, tokenUseCase, cacheable, cfg.GoogleConfig)
+	userService := service.NewUserService(db, userRepository, tokenUseCase, cacheable, cfg.GoogleConfig, cfg.SMPTGmailConfig)
 	productService := service.NewProductService(db, productRepository, tokenUseCase, cacheable)
 	cartService := service.NewCartService(db, cartRepository, orderRepository, productRepository, tokenUseCase, cacheable, cfg.MidtransConfig)
 	orderService := service.NewOrderService(db, orderRepository, cartRepository, cartService, productService, cacheable, tokenUseCase, cfg.MidtransConfig)
@@ -47,7 +47,7 @@ func BuildPrivateRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []r
 	cacheable := cache.NewCacheable(rdb)
 	userRepository := repository.NewUserRepository(db)
 	tokenUseCase := token.NewTokenUseCase(cfg.JWT.SecretKey)
-	userService := service.NewUserService(db, userRepository, tokenUseCase, cacheable, cfg.GoogleConfig)
+	userService := service.NewUserService(db, userRepository, tokenUseCase, cacheable, cfg.GoogleConfig, cfg.SMPTGmailConfig)
 	userHandler := handler.NewUserHandler(userService)
 	productRepository := repository.NewProductRepository(db)
 	productService := service.NewProductService(db, productRepository, tokenUseCase, cacheable)
