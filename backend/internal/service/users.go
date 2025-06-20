@@ -88,6 +88,14 @@ func (s *userService) Register(ctx context.Context, req *dto.RegisterRequest) er
 		tx.Error = err
 		return err
 	}
+	err = s.userRepository.UpdateUserProfile(tx, &entity.UserProfile{
+		UserID: &user.ID,
+		PhoneNumber: &req.PhoneNumber,
+	})
+	if err != nil {
+		tx.Error = err
+		return err
+	}
 	if err := tx.Commit().Error; err != nil {
 		tx.Error = err
 		return err
