@@ -22,7 +22,6 @@ type User struct {
 	UserProfile   *UserProfile    `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"user_profile,omitempty"`
 	UserAddresses *UserAddress   `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"user_addresses,omitempty"`
 	ProductReviews []ProductReview `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"product_reviews,omitempty"`
-	Wishlists     []Wishlist      `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"wishlists,omitempty"`
 	Carts         []Cart          `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"carts,omitempty"`
 
 }
