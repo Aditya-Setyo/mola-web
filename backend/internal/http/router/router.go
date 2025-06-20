@@ -32,6 +32,11 @@ func PublicRoutes(
 			Handler: userHandler.Register,
 		},
 		{
+			Method:  http.MethodPost,
+			Path:    "/forgot-password",
+			Handler: userHandler.ForgotPassword,
+		},
+		{
 			Method:  http.MethodGet,
 			Path:    "/products",
 			Handler: productHandler.GetAll,
