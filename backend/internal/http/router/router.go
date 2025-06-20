@@ -17,6 +17,11 @@ func PublicRoutes(
 ) []route.Route {
 	return []route.Route{
 		{
+			Method:  http.MethodGet,
+			Path:    "/users",
+			Handler: userHandler.GetAllUsers,
+		},
+		{
 			Method:  http.MethodPost,
 			Path:    "/login",
 			Handler: userHandler.Login,

@@ -27,6 +27,7 @@ type UserService interface {
 	Login(ctx context.Context, request *dto.LoginRequest) (string, error)
 	GoogleLogin(ctx context.Context, request *dto.GoogleLoginRequest) (string, error)
 	Register(ctx context.Context, req *dto.RegisterRequest) error
+	GetAll(ctx context.Context) ([]dto.GetAllUserResponse, error)
 	GetUserProfile(ctx context.Context, userID uuid.UUID) (*dto.GetUserProfileResponse, error)
 	UpdateUserProfile(ctx context.Context, UserID uuid.UUID, request *dto.UpdateUserProfileRequest) error
 	GetUserAddress(ctx context.Context, userID uuid.UUID) (*dto.GetUserAddressResponse, error)
@@ -177,6 +178,48 @@ func (s *userService) GoogleLogin(ctx context.Context, request *dto.GoogleLoginR
 		return "", errors.New("ada kesalahan di server")
 	}
 	return token, nil
+}
+
+func (s *userService) GetAll(ctx context.Context) ([]dto.GetAllUserResponse, error) {
+	key := "users:all"
+
+	data := s.cacheable.Get(key)
+	if data != "" {
+		var cached []dto.GetAllUserResponse
+		if err := json.Unmarshal([]byte(data), &cached); err == nil {
+			return cached, nil
+		}
+	}
+
+	// Ambil dari database
+	dataUser, err := s.userRepository.FindAll(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch users: %w", err)
+	}
+	if len(dataUser) == 0 {
+		return nil, errors.New("no users found")
+	}
+
+	results := make([]dto.GetAllUserResponse, len(dataUser))
+	for i, user := range dataUser {
+		results[i] = dto.GetAllUserResponse{
+			UserID:    user.ID,
+			ProfileID: user.UserProfile.ID,
+			FullName:  user.UserProfile.FullName,
+			Name:  user.Name,
+			Email: user.Email,
+			Phone: *user.UserProfile.PhoneNumber,
+		}
+	}
+
+	// Simpan data ke cache
+	marshalledData, err := json.Marshal(results)
+	if err == nil {
+		_ = s.cacheable.Set(key, marshalledData)
+	}
+	
+	return results, nil
+
 }
 
 func (s *userService) GetUserProfile(ctx context.Context, userID uuid.UUID) (*dto.GetUserProfileResponse, error) {
@@ -355,8 +398,8 @@ func (s *userService) ForgotPassword(ctx context.Context, email string) error {
 	}
 
 	// Buat token dan simpan
-	idToken := uuid.New().String()           // contoh: "c623a7be-3b13-4f0d-86f1-0123456789ab"
-    shortToken := strings.ReplaceAll(idToken, "-", "")[:8] // ambil 8 karakter pertama
+	idToken := uuid.New().String()                         // contoh: "c623a7be-3b13-4f0d-86f1-0123456789ab"
+	shortToken := strings.ReplaceAll(idToken, "-", "")[:8] // ambil 8 karakter pertama
 	token := shortToken
 	user.ResetToken = token
 	user.ResetTokenExp = time.Now().Add(15 * time.Minute)

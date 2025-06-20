@@ -67,6 +67,16 @@ func (h *UserHandler) GoogleLogin(ctx echo.Context) error {
 	}))
 }
 
+func (h *UserHandler) GetAllUsers(ctx echo.Context) error {
+	users, err := h.userService.GetAll(ctx.Request().Context())
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, response.ErrorResponse(http.StatusInternalServerError, err.Error()))
+	}
+
+	return ctx.JSON(http.StatusOK, response.SuccessResponse("success", map[string]interface{}{
+		"users": users,
+	}))
+}
 func (h *UserHandler) GetUserProfile(ctx echo.Context) error {
 	userID, ok := ctx.Get("user_id").(uuid.UUID)
 	if !ok {

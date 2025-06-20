@@ -30,7 +30,9 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 
 func (r *userRepository) FindAll(ctx context.Context) ([]entity.User, error) {
 	user := make([]entity.User, 0)
-	if err := r.db.WithContext(ctx).Find(&user).Error; err != nil {
+	if err := r.db.WithContext(ctx).
+		Preload("UserProfile").
+		Find(&user).Error; err != nil {
 		return nil, err
 	}
 	return user, nil
