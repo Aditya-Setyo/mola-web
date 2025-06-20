@@ -22,11 +22,11 @@ func NewServer(cfg *configs.Config,
 	e := echo.New()
 	e.Static("/static", "public")
 	e.HideBanner = true
-	
+
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-        AllowOrigins: []string{"*"}, // Bisa juga di-set ke origin tertentu
-        AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE},
-    }))
+		AllowOrigins: []string{"*"}, // Bisa juga di-set ke origin tertentu
+		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE},
+	}))
 	v1 := e.Group("/api/v1")
 
 	if len(publicRoutes) > 0 {
@@ -61,11 +61,9 @@ func RBACMiddleware(roles []string) echo.MiddlewareFunc {
 			user := ctx.Get("user").(*jwt.Token)
 			claims := user.Claims.(*token.JwtCustomClaims)
 
-			if claims.Role != "admin" {
-				ctx.Set("user_id", claims.UserID)
-				ctx.Set("name", claims.Name)
-				ctx.Set("email", claims.Email)
-			}
+			ctx.Set("user_id", claims.UserID)
+			ctx.Set("name", claims.Name)
+			ctx.Set("email", claims.Email)
 
 			allowed := false
 			for _, role := range roles {
