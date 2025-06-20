@@ -17,19 +17,29 @@ const Navbar = () => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+    console.log("Checking token on Navbar mount:", token);
     try {
       if (token) {
         const decoded = jwtDecode(token);
+        console.log("Decoded token:", decoded);
         const now = Date.now() / 1000;
         if (decoded.exp && decoded.exp > now) {
           setIsLoggedIn(true);
           setUserName(decoded.full_name || "User");
+        } else {
+          localStorage.removeItem("token"); // auto hapus kalau expired
+          setIsLoggedIn(false);
         }
+      } else {
+        setIsLoggedIn(false);
       }
     } catch (err) {
+      console.error("Token decoding failed", err);
+      localStorage.removeItem("token");
       setIsLoggedIn(false);
     }
   }, []);
+
 
   const toggleMenu = () => setIsOpen(!isOpen);
   const toggleCategories = () => setShowCategories(!showCategories);
