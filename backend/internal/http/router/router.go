@@ -36,11 +36,11 @@ func PublicRoutes(
 			Path:    "/forgot-password",
 			Handler: userHandler.ForgotPassword,
 		},
-		{
-			Method:  http.MethodPost,
-			Path:    "/forgot-password/token/:token",
-			Handler: userHandler.ForgotPasswordToken,
-		},
+		// {
+		// 	Method:  http.MethodPost,
+		// 	Path:    "/forgot-password/token/:token",
+		// 	Handler: userHandler.ForgotPasswordToken,
+		// },
 		{
 			Method:  http.MethodGet,
 			Path:    "/products",
