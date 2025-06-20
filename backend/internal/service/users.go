@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"mola-web/configs"
 	"mola-web/internal/entity"
@@ -11,6 +12,8 @@ import (
 	"mola-web/internal/repository"
 	"mola-web/pkg/cache"
 	"mola-web/pkg/token"
+	"net/smtp"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -24,10 +27,13 @@ type UserService interface {
 	Login(ctx context.Context, request *dto.LoginRequest) (string, error)
 	GoogleLogin(ctx context.Context, request *dto.GoogleLoginRequest) (string, error)
 	Register(ctx context.Context, req *dto.RegisterRequest) error
+	GetAll(ctx context.Context) ([]dto.GetAllUserResponse, error)
 	GetUserProfile(ctx context.Context, userID uuid.UUID) (*dto.GetUserProfileResponse, error)
 	UpdateUserProfile(ctx context.Context, UserID uuid.UUID, request *dto.UpdateUserProfileRequest) error
 	GetUserAddress(ctx context.Context, userID uuid.UUID) (*dto.GetUserAddressResponse, error)
 	UpdateUserAddress(ctx context.Context, userID uuid.UUID, userAddress *dto.UpdateUserAddressRequest) error
+	ForgotPassword(ctx context.Context, request string) error
+	// ForgotPasswordToken(ctx context.Context, request string) error
 }
 
 type userService struct {
@@ -35,7 +41,8 @@ type userService struct {
 	userRepository repository.UserRepository
 	tokenUseCase   token.TokenUseCase
 	cacheable      cache.Cacheable
-	configs        configs.GoogleConfig
+	GoogleConfigs  configs.GoogleConfig
+	SMTPConfigs    configs.SMPTGmailConfig
 }
 
 func NewUserService(
@@ -43,14 +50,16 @@ func NewUserService(
 	userRepository repository.UserRepository,
 	tokenUseCase token.TokenUseCase,
 	cacheable cache.Cacheable,
-	configs configs.GoogleConfig,
+	GoogleConfigs configs.GoogleConfig,
+	SMTPConfigs configs.SMPTGmailConfig,
 ) UserService {
 	return &userService{
 		DB:             db,
 		userRepository: userRepository,
 		tokenUseCase:   tokenUseCase,
 		cacheable:      cacheable,
-		configs:        configs,
+		GoogleConfigs:  GoogleConfigs,
+		SMTPConfigs:    SMTPConfigs,
 	}
 }
 
@@ -89,7 +98,7 @@ func (s *userService) Register(ctx context.Context, req *dto.RegisterRequest) er
 		return err
 	}
 	err = s.userRepository.UpdateUserProfile(tx, &entity.UserProfile{
-		UserID: &user.ID,
+		UserID:      &user.ID,
 		PhoneNumber: &req.PhoneNumber,
 	})
 	if err != nil {
@@ -134,7 +143,7 @@ func (s *userService) Login(ctx context.Context, request *dto.LoginRequest) (str
 }
 
 func (s *userService) GoogleLogin(ctx context.Context, request *dto.GoogleLoginRequest) (string, error) {
-	payload, err := idtoken.Validate(context.Background(), request.IdToken, s.configs.ClientID)
+	payload, err := idtoken.Validate(context.Background(), request.IdToken, s.GoogleConfigs.ClientID)
 	if err != nil {
 		return "", errors.New("invalid Google token")
 	}
@@ -169,6 +178,48 @@ func (s *userService) GoogleLogin(ctx context.Context, request *dto.GoogleLoginR
 		return "", errors.New("ada kesalahan di server")
 	}
 	return token, nil
+}
+
+func (s *userService) GetAll(ctx context.Context) ([]dto.GetAllUserResponse, error) {
+	key := "users:all"
+
+	data := s.cacheable.Get(key)
+	if data != "" {
+		var cached []dto.GetAllUserResponse
+		if err := json.Unmarshal([]byte(data), &cached); err == nil {
+			return cached, nil
+		}
+	}
+
+	// Ambil dari database
+	dataUser, err := s.userRepository.FindAll(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch users: %w", err)
+	}
+	if len(dataUser) == 0 {
+		return nil, errors.New("no users found")
+	}
+
+	results := make([]dto.GetAllUserResponse, len(dataUser))
+	for i, user := range dataUser {
+		results[i] = dto.GetAllUserResponse{
+			UserID:    user.ID,
+			ProfileID: user.UserProfile.ID,
+			FullName:  user.UserProfile.FullName,
+			Name:  user.Name,
+			Email: user.Email,
+			Phone: *user.UserProfile.PhoneNumber,
+		}
+	}
+
+	// Simpan data ke cache
+	marshalledData, err := json.Marshal(results)
+	if err == nil {
+		_ = s.cacheable.Set(key, marshalledData)
+	}
+	
+	return results, nil
+
 }
 
 func (s *userService) GetUserProfile(ctx context.Context, userID uuid.UUID) (*dto.GetUserProfileResponse, error) {
@@ -327,3 +378,82 @@ func (s *userService) UpdateUserAddress(ctx context.Context, userID uuid.UUID, r
 	}
 	return nil
 }
+
+func (s *userService) ForgotPassword(ctx context.Context, email string) error {
+	tx := s.DB.WithContext(ctx).Begin()
+	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			log.Printf("PANIC RECOVERED: Rolling back transaction due to panic: %v", p)
+			panic(p)
+		} else if tx.Error != nil {
+			tx.Rollback()
+			log.Printf("ERROR: Rolling back transaction due to service error: %v", tx.Error)
+		}
+	}()
+	user, err := s.userRepository.FindByEmail(ctx, email)
+	if err != nil {
+		tx.Error = err
+		return errors.New("user not found")
+	}
+
+	// Buat token dan simpan
+	idToken := uuid.New().String()                         // contoh: "c623a7be-3b13-4f0d-86f1-0123456789ab"
+	shortToken := strings.ReplaceAll(idToken, "-", "")[:8] // ambil 8 karakter pertama
+	token := shortToken
+	user.ResetToken = token
+	user.ResetTokenExp = time.Now().Add(15 * time.Minute)
+	s.userRepository.UpdateUser(tx, user)
+
+	// Kirim email
+	resetLink := fmt.Sprintf("http://localhost:8080/api/v1/forgot-password/token/%s", token) //atur dulu gengs
+	if err := s.sendResetEmail(user.Email, resetLink); err != nil {
+		tx.Error = err
+		log.Printf("ERROR: Gagal mengirim email: %v", err)
+		return errors.New("gagal mengirim email")
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Error = err
+		return err
+	}
+	return nil
+}
+
+func (s *userService) sendResetEmail(toEmail, resetLink string) error {
+	from := s.SMTPConfigs.Email
+	password := s.SMTPConfigs.Password
+	log.Println("Sending email from", from, password)
+
+	msg := "Subject: Reset Password Request\n\n" +
+		"Silakan klik link berikut untuk mengatur ulang password Anda:\n" + resetLink
+
+	auth := smtp.PlainAuth("", from, password, "smtp.gmail.com")
+	return smtp.SendMail("smtp.gmail.com:587", auth, from, []string{toEmail}, []byte(msg))
+}
+
+// func (s *userService) ForgotPasswordToken(ctx context.Context, resetToken string) error {
+// 	tx := s.DB.WithContext(ctx).Begin()
+// 	defer func() {
+// 		if p := recover(); p != nil {
+// 			tx.Rollback()
+// 			log.Printf("PANIC RECOVERED: Rolling back transaction due to panic: %v", p)
+// 			panic(p)
+// 		} else if tx.Error != nil {
+// 			tx.Rollback()
+// 			log.Printf("ERROR: Rolling back transaction due to service error: %v", tx.Error)
+// 		}
+// 	}()
+
+// 	user, err := s.userRepository.FindByResetToken(ctx, resetToken)
+// 	if err != nil {
+// 		tx.Error = err
+// 		return errors.New("user not found")
+// 	}
+
+// 	if err := tx.Commit().Error; err != nil {
+// 		tx.Error = err
+// 		return err
+// 	}
+// 	return nil
+// }

@@ -17,6 +17,7 @@ type UserRepository interface {
 	UpdateUserProfile(db *gorm.DB, userProfile *entity.UserProfile) error
 	GetUserAddress(ctx context.Context, userID uuid.UUID) (*entity.UserAddress, error)
 	UpdateUserAddress(db *gorm.DB, userAddress *entity.UserAddress) error
+	ForgotPassword(db *gorm.DB, email string) error
 }
 
 type userRepository struct {
@@ -29,7 +30,9 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 
 func (r *userRepository) FindAll(ctx context.Context) ([]entity.User, error) {
 	user := make([]entity.User, 0)
-	if err := r.db.WithContext(ctx).Find(&user).Error; err != nil {
+	if err := r.db.WithContext(ctx).
+		Preload("UserProfile").
+		Find(&user).Error; err != nil {
 		return nil, err
 	}
 	return user, nil
@@ -78,4 +81,8 @@ func (r *userRepository) GetUserAddress(ctx context.Context, userID uuid.UUID) (
 }
 func (r *userRepository) UpdateUserAddress(db *gorm.DB, userAddress *entity.UserAddress) error {
 	return db.Where("user_id = ?", userAddress.UserID).Save(userAddress).Error
+}
+
+func (r *userRepository) ForgotPassword(db *gorm.DB, email string) error {
+	return db.Model(&entity.User{}).Where("email = ?", email).Update("password", "").Error
 }
