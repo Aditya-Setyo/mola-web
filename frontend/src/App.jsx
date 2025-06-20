@@ -12,7 +12,16 @@ import DetailProduct from "./pages/detailproduct";
 import UserProfile from "./pages/userprofile";
 import ResetPage from "./pages/resetpage";
 import ForgetPage from "./pages/forgetpage";
-import AdminPage from "./pages/adminpage";
+import AdminPage from "./pages/admin/adminpage";
+import Categories from "./pages/admin/Categories";
+import Products from "./pages/admin/Product";
+import Orders from "./pages/admin/Order";
+import Users from "./pages/admin/Users";  
+import Payments from "./pages/admin/Payments";
+import Reviews from "./pages/admin/Review";
+import Wishlists from "./pages/admin/Wishlist";
+import Settings from "./pages/admin/Setting";
+
 
 const App = () => {
   return (
@@ -31,6 +40,14 @@ const App = () => {
       <Route path="/resetpage" element={<ResetPage />} />
       <Route path="/forgetpage" element={<ForgetPage />} />
       <Route path="/adminpage" element={<AdminPage />} />
+      <Route path="/admin/categories" element={<Categories />} />
+      <Route path="/admin/products" element={<Products />} /> 
+      <Route path="/admin/orders" element={<Orders />} />
+      <Route path="/admin/users" element={<Users />} />
+      <Route path="/admin/payments" element={<Payments />} />
+      <Route path="/admin/reviews" element={<Reviews />} />
+      <Route path="/admin/wishlists" element={<Wishlists />} />
+      <Route path="/admin/settings" element={<Settings />} />
     </Routes>
   );
 };

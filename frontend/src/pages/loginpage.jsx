@@ -27,7 +27,7 @@ const LoginPage = () => {
         const role = decoded.role;
 
         if (role === "admin") {
-          navigate("/adminpage");
+          navigate("/admin/adminpage");
         } else if (role === "user") {
           navigate("/dashboard");
         } else {

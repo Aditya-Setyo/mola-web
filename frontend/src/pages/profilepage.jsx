@@ -146,25 +146,79 @@ const ProfilePage = () => {
                     </HashLink>
                 </div>
             </section>
-            <NewArrival />
             <section className="px-4 py-12 md:px-20 md:py-10 mb-10">
                 <h2 className="md:text-3xl font-bold mb-8 text-center mx-6 md:mx-26 text-gray-800">
                     What People Say
                 </h2>
 
-                <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-20 justify-items-center">
-                    {[1, 2, 3, 4, 5, 6].map((item) => (
+                <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-10 justify-items-center">
+                    {[
+                        {
+                            quote:
+                                "Saya sudah mencoba banyak produk skincare sebelumnya, tapi baru kali ini kulit saya terasa benar-benar sehat dan glowing alami. Teksturnya ringan, cepat meresap, dan tidak menimbulkan iritasi. Highly recommended untuk yang punya kulit sensitif seperti saya!",
+                            name: "Alisha Ramadhani",
+                            role: "Beauty Enthusiast",
+                            image: "/images/alisha.jpg", // ganti sesuai path gambarmu
+                        },
+                        {
+                            quote:
+                                "Koleksi aksesoris di sini benar-benar unik dan elegan. Setiap detailnya terlihat eksklusif dan cocok banget dipakai untuk daily look maupun acara formal. Saya selalu dapat pujian setiap kali memakainya!",
+                            name: "Nadya Pramesti",
+                            role: "Fashion Blogger",
+                            image: "/images/nadya.jpg",
+                        },
+                        {
+                            quote:
+                                "Baju-bajunya stylish dan super nyaman dipakai. Bahannya adem, potongannya modern, dan ukurannya pas. Belanja di sini bikin saya tampil percaya diri tanpa harus keluar banyak biaya.",
+                            name: "Dwi Anindya",
+                            role: "Mahasiswi & Content Creator",
+                            image: "/images/dwi.jpg",
+                        },
+                        {
+                            quote:
+                                "Saya sudah mencoba banyak produk skincare sebelumnya, tapi baru kali ini kulit saya terasa benar-benar sehat dan glowing alami. Teksturnya ringan, cepat meresap, dan tidak menimbulkan iritasi. Highly recommended untuk yang punya kulit sensitif seperti saya!",
+                            name: "Alisha Ramadhani",
+                            role: "Beauty Enthusiast",
+                            image: "/images/alisha.jpg", // ganti sesuai path gambarmu
+                        },
+                        {
+                            quote:
+                                "Koleksi aksesoris di sini benar-benar unik dan elegan. Setiap detailnya terlihat eksklusif dan cocok banget dipakai untuk daily look maupun acara formal. Saya selalu dapat pujian setiap kali memakainya!",
+                            name: "Nadya Pramesti",
+                            role: "Fashion Blogger",
+                            image: "/images/nadya.jpg",
+                        },
+                        {
+                            quote:
+                                "Baju-bajunya stylish dan super nyaman dipakai. Bahannya adem, potongannya modern, dan ukurannya pas. Belanja di sini bikin saya tampil percaya diri tanpa harus keluar banyak biaya.",
+                            name: "Dwi Anindya",
+                            role: "Mahasiswi & Content Creator",
+                            image: "/images/dwi.jpg",
+                        },
+                    ].map((person, index) => (
                         <div
-                            key={item}
+                            key={index}
                             className="w-full max-w-sm bg-white rounded-lg shadow-md overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-lg"
                         >
-                            <div className="p-4 text-center">
-                                <h3 className="text-lg font-semibold text-gray-700">{`Shop Item ${item}`}</h3>
+                            <div className="p-6">
+                                <p className="text-gray-600 text-sm mb-6 italic">"{person.quote}"</p>
+                                <div className="flex items-center">
+                                    <img
+                                        src={person.image}
+                                        alt={person.name}
+                                        className="w-10 h-10 rounded-full mr-4 object-cover"
+                                    />
+                                    <div>
+                                        <h3 className="text-sm font-bold text-gray-800">{person.name}</h3>
+                                        <p className="text-xs text-gray-500">{person.role}</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     ))}
                 </div>
             </section>
+
             <Footer />
         </div>
     );

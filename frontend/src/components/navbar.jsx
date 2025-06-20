@@ -117,11 +117,11 @@ const Navbar = () => {
             />
             {isLoggedIn ? (
               <>
+                <button onClick={() => navigate("/chartpage")} className="ml-10"> {/* Keranjang */}
+                  <img src={LogoKeranjang} alt="Chart" className="w-6 h-6" />
+                </button>
                 <button onClick={() => navigate("/userprofile")}>
                   <img src={LogoAccount} alt="Profile" className="w-6 h-6" />
-                </button>
-                <button onClick={() => navigate("/chartpage")} className="ml-10"> {/* Keranjang */}
-                  <img src={Logo1} alt="Chart" className="w-6 h-6" />
                 </button>
               </>
             ) : (
@@ -130,7 +130,7 @@ const Navbar = () => {
                   <img src={LogoAccount} alt="Account" className="w-6 h-6" />
                 </button>
                 <button onClick={() => navigate("/chartpage")} className="ml-10"> {/* Keranjang */}
-                  <img src={Logo1} alt="Chart" className="w-6 h-6" />
+                  <img src={LogoKeranjang} alt="Chart" className="w-6 h-6" />
                 </button>
               </>
             )}
@@ -141,4 +141,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar ;
+export default Navbar;
