@@ -30,7 +30,6 @@ type Product struct {
 	Size           *Size           `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:NO ACTION;" json:"size,omitempty"`
 	OrderItems     []OrderItem     `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:NO ACTION;" json:"order_items,omitempty"`
 	ProductReviews []ProductReview `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"product_reviews,omitempty"`
-	Wishlists      []Wishlist      `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"wishlists,omitempty"`
 }
 
 func (Product) TableName() string {
