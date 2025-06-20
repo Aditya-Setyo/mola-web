@@ -13,6 +13,7 @@ import (
 	"mola-web/pkg/cache"
 	"mola-web/pkg/token"
 	"net/smtp"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -31,6 +32,7 @@ type UserService interface {
 	GetUserAddress(ctx context.Context, userID uuid.UUID) (*dto.GetUserAddressResponse, error)
 	UpdateUserAddress(ctx context.Context, userID uuid.UUID, userAddress *dto.UpdateUserAddressRequest) error
 	ForgotPassword(ctx context.Context, request string) error
+	// ForgotPasswordToken(ctx context.Context, request string) error
 }
 
 type userService struct {
@@ -348,19 +350,29 @@ func (s *userService) ForgotPassword(ctx context.Context, email string) error {
 	}()
 	user, err := s.userRepository.FindByEmail(ctx, email)
 	if err != nil {
-		errors.New("user not found")
+		tx.Error = err
+		return errors.New("user not found")
 	}
 
 	// Buat token dan simpan
-	token := uuid.New().String()
+	idToken := uuid.New().String()           // contoh: "c623a7be-3b13-4f0d-86f1-0123456789ab"
+    shortToken := strings.ReplaceAll(idToken, "-", "")[:8] // ambil 8 karakter pertama
+	token := shortToken
 	user.ResetToken = token
 	user.ResetTokenExp = time.Now().Add(15 * time.Minute)
 	s.userRepository.UpdateUser(tx, user)
 
 	// Kirim email
-	resetLink := fmt.Sprintf("http://localhost/reset-password?token=%s", token) //atur dulu gengs
+	resetLink := fmt.Sprintf("http://localhost:8080/api/v1/forgot-password/token/%s", token) //atur dulu gengs
 	if err := s.sendResetEmail(user.Email, resetLink); err != nil {
+		tx.Error = err
+		log.Printf("ERROR: Gagal mengirim email: %v", err)
 		return errors.New("gagal mengirim email")
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Error = err
+		return err
 	}
 	return nil
 }
@@ -368,6 +380,7 @@ func (s *userService) ForgotPassword(ctx context.Context, email string) error {
 func (s *userService) sendResetEmail(toEmail, resetLink string) error {
 	from := s.SMTPConfigs.Email
 	password := s.SMTPConfigs.Password
+	log.Println("Sending email from", from, password)
 
 	msg := "Subject: Reset Password Request\n\n" +
 		"Silakan klik link berikut untuk mengatur ulang password Anda:\n" + resetLink
@@ -375,3 +388,29 @@ func (s *userService) sendResetEmail(toEmail, resetLink string) error {
 	auth := smtp.PlainAuth("", from, password, "smtp.gmail.com")
 	return smtp.SendMail("smtp.gmail.com:587", auth, from, []string{toEmail}, []byte(msg))
 }
+
+// func (s *userService) ForgotPasswordToken(ctx context.Context, resetToken string) error {
+// 	tx := s.DB.WithContext(ctx).Begin()
+// 	defer func() {
+// 		if p := recover(); p != nil {
+// 			tx.Rollback()
+// 			log.Printf("PANIC RECOVERED: Rolling back transaction due to panic: %v", p)
+// 			panic(p)
+// 		} else if tx.Error != nil {
+// 			tx.Rollback()
+// 			log.Printf("ERROR: Rolling back transaction due to service error: %v", tx.Error)
+// 		}
+// 	}()
+
+// 	user, err := s.userRepository.FindByResetToken(ctx, resetToken)
+// 	if err != nil {
+// 		tx.Error = err
+// 		return errors.New("user not found")
+// 	}
+
+// 	if err := tx.Commit().Error; err != nil {
+// 		tx.Error = err
+// 		return err
+// 	}
+// 	return nil
+// }

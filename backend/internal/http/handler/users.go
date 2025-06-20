@@ -156,5 +156,20 @@ func (h *UserHandler) ForgotPassword(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, response.ErrorResponse(http.StatusInternalServerError, err.Error()))
 	}
 
-    return ctx.JSON(200, echo.Map{"message": "link reset telah dikirim ke email"})
+    return ctx.JSON(http.StatusOK, response.SuccessResponse("link reset telah dikirim ke email", map[string]interface{}{}))
+}
+
+func (h *UserHandler) ForgotPasswordToken(ctx echo.Context) error {
+	token := ctx.Param("token")
+
+    if err := ctx.Bind(&token); err != nil {
+        return ctx.JSON(http.StatusBadRequest, response.ErrorResponse(http.StatusBadRequest, errors.New("invalid request body").Error()))
+    }
+
+	err := h.userService.ForgotPasswordToken(ctx.Request().Context(), token)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, response.ErrorResponse(http.StatusInternalServerError, err.Error()))
+	}
+
+    return ctx.JSON(http.StatusOK, response.SuccessResponse("link reset telah dikirim ke email", map[string]interface{}{}))
 }
