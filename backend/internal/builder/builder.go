@@ -25,6 +25,7 @@ func BuildPublicRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []ro
 	orderRepository := repository.NewOrderRepository(db)
 	transactionRepository := repository.NewTransactionRepository(db)
 	salesReportRepository := repository.NewSalesReportRepository(db)
+	adsRepository := repository.NewAdRepository(db)
 
 	tokenUseCase := token.NewTokenUseCase(cfg.JWT.SecretKey)
 	userService := service.NewUserService(db, userRepository, tokenUseCase, cacheable, cfg.GoogleConfig)
@@ -36,6 +37,7 @@ func BuildPublicRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []ro
 	orderService := service.NewOrderService(db, orderRepository, cartRepository, cartService, productService, cacheable, tokenUseCase, cfg.MidtransConfig)
 	transactionService := service.NewTransactionService(db, productRepository, transactionRepository, orderRepository, tokenUseCase, cacheable, cfg.MidtransConfig)
 	salesReportService := service.NewSalesReportService(db, salesReportRepository)
+	adsService := service.NewAdsService(db, adsRepository, tokenUseCase, cacheable)
 
 	userHandler := handler.NewUserHandler(userService)
 	productHandler := handler.NewProductHandler(productService)
@@ -46,8 +48,9 @@ func BuildPublicRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []ro
 	orderHandler := handler.NewOrderHandler(orderService)
 	transactionHandler := handler.NewTransactionHandler(transactionService)
 	salesReportHandler := handler.NewSalesReportHandler(salesReportService)
+	adsHandler := handler.NewAdHandler(adsService)
 
-	return router.PublicRoutes(userHandler,productHandler, categoryHandler, colorHandler, sizeHandler, cartHandler, orderHandler, transactionHandler, salesReportHandler)
+	return router.PublicRoutes(userHandler,productHandler, categoryHandler, colorHandler, sizeHandler, cartHandler, orderHandler, transactionHandler, salesReportHandler, adsHandler)
 }
 func BuildPrivateRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []route.Route {
 	cacheable := cache.NewCacheable(rdb)

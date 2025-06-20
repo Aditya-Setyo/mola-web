@@ -16,6 +16,7 @@ func PublicRoutes(
 	orderHandler handler.OrderHandler,
 	transactionHandler handler.TransactionHandler,
 	salesReportHandler handler.SalesReportHandler,
+	adsHandler handler.AdHandler,
 ) []route.Route {
 	return []route.Route{
 		{
@@ -142,6 +143,16 @@ func PublicRoutes(
 			Method:  http.MethodGet,
 			Path:    "/admin/sales-report",
 			Handler: salesReportHandler.GetSalesReport,
+		},
+		{
+			Method:  http.MethodGet,
+			Path:    "/ads/:category",
+			Handler: adsHandler.GetAds,
+		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/ads",
+			Handler: adsHandler.UploadAd,
 		},
 	}
 }
