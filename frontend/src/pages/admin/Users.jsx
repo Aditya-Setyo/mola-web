@@ -11,7 +11,7 @@ const Users = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    fetch("http://localhost:8081/api/v1/users/profile", {
+    fetch("http://localhost:8081/api/v1/users", {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
