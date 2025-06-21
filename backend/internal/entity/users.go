@@ -8,28 +8,28 @@ import (
 )
 
 type User struct {
-	ID        uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	Name      string         `gorm:"type:varchar(100);not null" json:"name"`
-	Email     string         `gorm:"type:varchar(100);not null;unique" json:"email"`
-	Password  string         `gorm:"type:text;not null" json:"-"`
-	Role      string         `gorm:"type:varchar(20);not null;default:admin" json:"role"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	ID            uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	Name          string         `gorm:"type:varchar(100);not null" json:"name"`
+	Email         string         `gorm:"type:varchar(100);not null;unique" json:"email"`
+	Password      string         `gorm:"type:text;not null" json:"-"`
+	ResetToken    string         `gorm:"type:text" json:"-"`
+	ResetTokenExp time.Time      `json:"-"`
+	Role          string         `gorm:"type:varchar(20);not null;default:admin" json:"role"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
+	DeletedAt     gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 
 	// Relationships
-	Orders []Order `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"orders,omitempty"`
-	UserProfile   *UserProfile    `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"user_profile,omitempty"`
-	UserAddresses *UserAddress   `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"user_addresses,omitempty"`
+	Orders         []Order         `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"orders,omitempty"`
+	UserProfile    *UserProfile    `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"user_profile,omitempty"`
+	UserAddresses  *UserAddress    `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"user_addresses,omitempty"`
 	ProductReviews []ProductReview `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"product_reviews,omitempty"`
-	Carts         []Cart          `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"carts,omitempty"`
-
+	Carts          []Cart          `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"carts,omitempty"`
 }
 
 func (User) TableName() string {
 	return "public.users"
 }
-
 
 type UserProfile struct {
 	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
@@ -41,7 +41,7 @@ type UserProfile struct {
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 
 	// Relationships
-	User     *User     `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"user,omitempty"`
+	User *User `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"user,omitempty"`
 }
 
 func (UserProfile) TableName() string {
@@ -50,7 +50,7 @@ func (UserProfile) TableName() string {
 
 type UserAddress struct {
 	ID           uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	UserID       *uuid.UUID      `gorm:"type:uuid;not null" json:"user_id"`
+	UserID       *uuid.UUID     `gorm:"type:uuid;not null" json:"user_id"`
 	AddressLine1 string         `gorm:"type:text;not null" json:"address_line1"`
 	AddressLine2 *string        `gorm:"type:text" json:"address_line2"`
 	City         string         `gorm:"type:varchar(50);not null" json:"city"`

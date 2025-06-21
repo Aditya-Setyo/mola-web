@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"mola-web/internal/http/dto"
 	"mola-web/internal/service"
 	"mola-web/pkg/response"
@@ -66,6 +67,16 @@ func (h *UserHandler) GoogleLogin(ctx echo.Context) error {
 	}))
 }
 
+func (h *UserHandler) GetAllUsers(ctx echo.Context) error {
+	users, err := h.userService.GetAll(ctx.Request().Context())
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, response.ErrorResponse(http.StatusInternalServerError, err.Error()))
+	}
+
+	return ctx.JSON(http.StatusOK, response.SuccessResponse("success", map[string]interface{}{
+		"users": users,
+	}))
+}
 func (h *UserHandler) GetUserProfile(ctx echo.Context) error {
 	userID, ok := ctx.Get("user_id").(uuid.UUID)
 	if !ok {
@@ -139,3 +150,36 @@ func (h *UserHandler) UpdateUserAddress(ctx echo.Context) error {
 		"address": req,
 	}))
 }
+
+func (h *UserHandler) ForgotPassword(ctx echo.Context) error {
+    type Request struct {
+        Email string `json:"email"`
+    }
+
+    var req Request
+    if err := ctx.Bind(&req); err != nil {
+        return ctx.JSON(http.StatusBadRequest, response.ErrorResponse(http.StatusBadRequest, errors.New("invalid request body").Error()))
+    }
+
+	err := h.userService.ForgotPassword(ctx.Request().Context(), req.Email)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, response.ErrorResponse(http.StatusInternalServerError, err.Error()))
+	}
+
+    return ctx.JSON(http.StatusOK, response.SuccessResponse("link reset telah dikirim ke email", map[string]interface{}{}))
+}
+
+// func (h *UserHandler) ForgotPasswordToken(ctx echo.Context) error {
+// 	token := ctx.Param("token")
+
+//     if err := ctx.Bind(&token); err != nil {
+//         return ctx.JSON(http.StatusBadRequest, response.ErrorResponse(http.StatusBadRequest, errors.New("invalid request body").Error()))
+//     }
+
+// 	err := h.userService.ForgotPasswordToken(ctx.Request().Context(), token)
+// 	if err != nil {
+// 		return ctx.JSON(http.StatusInternalServerError, response.ErrorResponse(http.StatusInternalServerError, err.Error()))
+// 	}
+
+//     return ctx.JSON(http.StatusOK, response.SuccessResponse("link reset telah dikirim ke email", map[string]interface{}{}))
+// }

@@ -16,6 +16,7 @@ func PublicRoutes(
 	adsHandler handler.AdHandler,
 ) []route.Route {
 	return []route.Route{
+		
 		{
 			Method:  http.MethodPost,
 			Path:    "/login",
@@ -31,6 +32,16 @@ func PublicRoutes(
 			Path:    "/register",
 			Handler: userHandler.Register,
 		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/forgot-password",
+			Handler: userHandler.ForgotPassword,
+		},
+		// {
+		// 	Method:  http.MethodPost,
+		// 	Path:    "/forgot-password/token/:token",
+		// 	Handler: userHandler.ForgotPasswordToken,
+		// },
 		{
 			Method:  http.MethodGet,
 			Path:    "/products",
@@ -83,6 +94,12 @@ func PrivateRoutes(
 			Path:    "/users/profile",
 			Handler: userHandler.GetUserProfile,
 			Roles:   []string{"admin", "user"},
+		},
+		{
+			Method:  http.MethodGet,
+			Path:    "/users",
+			Handler: userHandler.GetAllUsers,
+			Roles:   []string{"admin"},
 		},
 		{
 			Method:  http.MethodPost,
