@@ -321,6 +321,7 @@ func (s *productService) Update(ctx context.Context, request *dto.UpdateProductR
 	}
 	*request.ImageURL = "/static/products/images/" + fileName
 	product := &entity.Product{
+		ID:          request.ID,
 		Name:        request.Name,
 		CategoryID:  request.CategoryID,
 		Description: request.Description,
