@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"mola-web/internal/entity"
 	"mola-web/internal/http/dto"
 
 	"gorm.io/gorm"
@@ -9,6 +10,7 @@ import (
 
 type SalesReportRepository interface {
 	GetSalesReport(ctx context.Context, filter dto.ReportFilter) ([]dto.SalesReport, error)
+	Create(db *gorm.DB, sales *entity.SalesReport) error
 }
 
 type salesReportRepository struct {
@@ -41,4 +43,12 @@ func (r *salesReportRepository) GetSalesReport(ctx context.Context, filter dto.R
 		Scan(&reports).Error
 
 	return reports, err
+}
+
+
+func (r *salesReportRepository) Create(db *gorm.DB, sales *entity.SalesReport) error{
+	if err := db.Create(sales).Error; err != nil {
+		return err
+	}
+	return nil
 }

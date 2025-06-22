@@ -41,7 +41,7 @@ type ProductReview struct {
 	ProductID uuid.UUID `gorm:"type:uuid;not null" json:"product_id"`
 	UserID    uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
 	Rating    int       `gorm:"not null" json:"rating"`
-	Review    *string   `gorm:"type:text" json:"review"`
+	Review    string   `gorm:"type:text" json:"review"`
 	CreatedAt time.Time `json:"created_at"`
 
 	// Relationships
