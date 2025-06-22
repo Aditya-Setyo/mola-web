@@ -1,22 +1,58 @@
+// src/pages/admin/AdminPage.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/sidebar";
 import DashboardCard from "../../components/dashboardCard";
 import DataTable from "../../components/dataTable";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 const AdminPage = () => {
   const navigate = useNavigate();
-  const [summary, setSummary] = useState({});
+  const token = localStorage.getItem("token");
+
+  const [summary, setSummary] = useState({ products: 0, users: 0, orders: 0, revenue: 0 });
   const [products, setProducts] = useState([]);
   const [users, setUsers] = useState([]);
   const [orders, setOrders] = useState([]);
 
+  const fetchDashboardData = async () => {
+    try {
+      const [resProducts, resUsers, resOrders, resSummary] = await Promise.all([
+        fetch("http://localhost:8081/api/v1/products", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch("http://localhost:8081/api/v1/users", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch("http://localhost:8081/api/v1/orders/show", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch("http://localhost:8081/api/v1/admin/sales-report", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      const dataProducts = await resProducts.json();
+      const dataUsers = await resUsers.json();
+      const dataOrders = await resOrders.json();
+      const dataSummary = await resSummary.json();
+
+      setProducts(dataProducts.data?.products || []);
+      setUsers(dataUsers.data?.users || []);
+      setOrders(dataOrders.data?.orders || []);
+      setSummary({
+        products: dataProducts.data?.products?.length || 0,
+        users: dataUsers.data?.users?.length || 0,
+        orders: dataOrders.data?.orders?.length || 0,
+        revenue: dataSummary.total_revenue || 0,
+      });
+    } catch (err) {
+      console.error("Gagal mengambil data dashboard:", err);
+    }
+  };
+
   useEffect(() => {
-    // Dummy Data
-    setSummary({ products: 120, users: 85, orders: 42, revenue: "Rp 25.000.000" });
-    setProducts([{ id: 1, name: "Serum", price: "Rp 120.000", stock: 20 }]);
-    setUsers([{ id: 1, name: "Alisha", email: "alisha@mail.com" }]);
-    setOrders([{ id: 1, user: "Alisha", total: "Rp 240.000", status: "Pending" }]);
+    fetchDashboardData();
   }, []);
 
   const handleLogout = () => {
@@ -44,13 +80,26 @@ const AdminPage = () => {
           <DashboardCard label="Products" value={summary.products} color="bg-indigo-500" />
           <DashboardCard label="Users" value={summary.users} color="bg-green-500" />
           <DashboardCard label="Orders" value={summary.orders} color="bg-yellow-500" />
-          <DashboardCard label="Revenue" value={summary.revenue} color="bg-purple-500" />
+          <DashboardCard label="Revenue" value={`Rp ${parseInt(summary.revenue).toLocaleString()}`} color="bg-purple-500" />
+        </div>
+
+        {/* Grafik Penjualan */}
+        <div className="bg-white p-4 mb-10 rounded shadow">
+          <h2 className="text-xl font-semibold mb-4">📈 Grafik Penjualan</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={orders.slice(0, 10)}>
+              <XAxis dataKey="id" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="total" fill="#4F46E5" />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
 
         {/* Tables */}
-        <DataTable title="🛒 Products" data={products} columns={["id", "name", "price", "stock"]} />
-        <DataTable title="👥 Users" data={users} columns={["id", "name", "email"]} />
-        <DataTable title="📦 Orders" data={orders} columns={["id", "user", "total", "status"]} />
+        <DataTable title="🛒 Produk Terbaru" data={products.slice(0, 5)} columns={["id", "name", "price", "stock"]} />
+        <DataTable title="👥 Pengguna Terbaru" data={users.slice(0, 5)} columns={["id", "name", "email"]} />
+        <DataTable title="📦 Order Terakhir" data={orders.slice(0, 5)} columns={["id", "user", "total", "status"]} />
       </main>
     </div>
   );
