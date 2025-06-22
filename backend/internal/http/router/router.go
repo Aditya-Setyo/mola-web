@@ -141,7 +141,7 @@ func PrivateRoutes(
 			Method:  http.MethodGet,
 			Path:    "/categories",
 			Handler: categoryHandler.GetAll,
-			Roles:   []string{"admin"},//masih bingung
+			Roles:   []string{"admin", "user"},//masih bingung
 		},
 		{
 			Method:  http.MethodDelete,
@@ -165,7 +165,7 @@ func PrivateRoutes(
 			Method:  http.MethodGet,
 			Path:    "/colors",
 			Handler: colorHandler.GetAll,
-			Roles:   []string{"admin"},//masih bingung
+			Roles:   []string{"admin", "user"},//masih bingung
 		},
 		{
 			Method:  http.MethodDelete,
@@ -189,7 +189,7 @@ func PrivateRoutes(
 			Method:  http.MethodGet,
 			Path:    "/sizes",
 			Handler: sizeHandler.GetAll,
-			Roles:   []string{"admin"},//masih bingung
+			Roles:   []string{"admin", "user"},//masih bingung
 		},
 		{
 			Method:  http.MethodDelete,
