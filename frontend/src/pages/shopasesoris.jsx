@@ -7,7 +7,7 @@ const ShopAsesoris = () => {
   const [products, setProducts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const itemsPerPage = 6; // jumlah produk per halaman
+  const itemsPerPage = 6;
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -19,15 +19,20 @@ const ShopAsesoris = () => {
           ? json.data.products
           : [];
 
-        // Filter produk kategori "asesoris"
-        const asesorisOnly = allProducts.filter(
-          (product) =>
-            product.category &&
-            product.category.name &&
-            product.category.name.toLowerCase().includes("asesoris")
-        );
+        console.log("🔥 Semua Produk:", allProducts);
 
-        // Pagination frontend
+        // Ambil nama kategori dari berbagai kemungkinan struktur
+        const asesorisOnly = allProducts.filter((product) => {
+          const categoryName =
+            product.category_name ||
+            product.category?.name ||
+            (typeof product.category === "string" ? product.category : "");
+
+          return categoryName?.toLowerCase().includes("aksesoris");
+        });
+
+        console.log("✅ Produk Asesoris:", asesorisOnly);
+
         const total = asesorisOnly.length;
         const pages = Math.ceil(total / itemsPerPage);
         setTotalPages(pages);
@@ -62,21 +67,24 @@ const ShopAsesoris = () => {
             products.map((product) => (
               <div
                 key={product.id}
-                className="w-full max-w-sm bg-white rounded-lg shadow-md overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-lg"
+                className="w-full max-w-xs bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden flex flex-col justify-between transition-transform hover:scale-105"
               >
                 <img
-                  src={product.image || "https://via.placeholder.com/300x150"}
+                  src={`http://localhost:8081${product.image_url}`}
                   alt={product.name}
-                  className="w-full h-40 object-cover"
+                  className="w-full h-48 object-contain bg-white"
                 />
                 <div className="p-4 text-center">
-                  <h3 className="text-lg font-semibold text-gray-700">{product.name}</h3>
-                  <p className="text-sm text-gray-500">Rp {product.price}</p>
+                  <h3 className="text-lg font-semibold text-gray-800 truncate">{product.name}</h3>
+                  <p className="text-sm text-gray-600 mt-1">Rp {product.price.toLocaleString()}</p>
                 </div>
               </div>
+
             ))
           ) : (
-            <p className="text-center col-span-3 text-gray-500">Produk tidak ditemukan.</p>
+            <p className="text-center col-span-3 text-gray-500">
+              Produk tidak ditemukan.
+            </p>
           )}
         </div>
       </section>
