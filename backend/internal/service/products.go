@@ -79,7 +79,7 @@ func (s *productService) GetAll(ctx context.Context) (results []*dto.GetAllProdu
 }
 
 func (s *productService) GetProductByCategoryID(ctx context.Context, categoryID uint) (results []*dto.GetProductByCategoryID, err error) {
-	key := cache.CacheKeyProductsGetByCategoryId
+	key := cache.CacheKeyProductsGetByCategoryId+fmt.Sprint(categoryID)
 	data := s.cacheable.Get(key)
 	if data != "" {
 		err := json.Unmarshal([]byte(data), &results)
