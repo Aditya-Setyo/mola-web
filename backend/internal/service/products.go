@@ -145,7 +145,7 @@ func (s *productService) GetProductByName(ctx context.Context, name string) (res
 
 func (s *productService) GetByID(ctx context.Context, id uuid.UUID) (result *dto.GetProductByID, err error) {
 	
-	key := cache.CacheKeyProductsGetById
+	key := cache.CacheKeyProductsGetById+fmt.Sprint(id)
 	data := s.cacheable.Get(key)
 	if data != "" {
 		err = json.Unmarshal([]byte(data), &result)
