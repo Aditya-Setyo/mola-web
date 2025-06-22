@@ -1,11 +1,9 @@
 import ilustrasilogin from "../assets/loginlogo.png";
 import ilustrasibg from "../assets/bg.png";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
 import { auth, googleProvider, signInWithPopup } from "../firebase";
 import { jwtDecode } from "jwt-decode";
 import React, { useState, useEffect } from "react";
-
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -13,37 +11,34 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // Cek token saat component dimuat
+  // ⏳ Cek token saat pertama kali load (jika sudah login sebelumnya)
   useEffect(() => {
     const token = localStorage.getItem("token");
-    console.log("Token dari localStorage:", token);
-
-    // Tambahkan pengecekan apakah token valid
     if (token && token.split(".").length === 3) {
       try {
         const decoded = jwtDecode(token);
-        console.log("Decoded token:", decoded);
+        const now = Date.now() / 1000;
 
-        const role = decoded.role;
-
-        if (role === "admin") {
-          navigate("/admin/adminpage");
-        } else if (role === "user") {
-          navigate("/dashboard");
-        } else {
-          navigate("/loginpage");
+        // Validasi apakah token expired
+        if (decoded.exp < now) {
+          console.warn("Token expired.");
+          localStorage.removeItem("token");
+          return;
         }
-      } catch (error) {
-        console.error("Token tidak valid:", error);
-        navigate("/loginpage");
+
+        // Arahkan user sesuai role
+        if (decoded.role === "admin") {
+          navigate("/adminpage");
+        } else if (decoded.role === "user") {
+          navigate("/dashboard");
+        }
+
+      } catch (err) {
+        console.error("Token invalid:", err);
+        localStorage.removeItem("token");
       }
-    } else {
-      console.warn("Token kosong atau tidak valid formatnya");
-      navigate("/loginpage");
     }
   }, [navigate]);
-
-
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -57,24 +52,23 @@ const LoginPage = () => {
         body: JSON.stringify({ email, password }),
       });
 
-      const raw = await response.text();
+      const data = await response.json(); // ✅ langsung parse JSON
 
       if (!response.ok) {
-        const errorData = JSON.parse(raw);
-        throw new Error(errorData.meta?.message || "Login gagal");
+        throw new Error(data.meta?.message || "Login gagal.");
       }
 
-      const data = JSON.parse(raw);
       const token = data.data?.token;
 
-      // Validasi token sebelum dipakai
-      if (!token || typeof token !== "string" || token.split(".").length !== 3) {
-        throw new Error("Token dari server tidak valid");
+      if (!token || token.split(".").length !== 3) {
+        throw new Error("Token dari server tidak valid.");
       }
 
-      // Simpan token yang valid
+      // Simpan token ke localStorage
       localStorage.setItem("token", token);
+      console.log("Token disimpan ke localStorage:", token);
 
+      // Arahkan sesuai role
       const decoded = jwtDecode(token);
       const role = decoded.role;
 
@@ -83,16 +77,13 @@ const LoginPage = () => {
       } else if (role === "user") {
         navigate("/dashboard");
       } else {
-        navigate("/loginpage");
+        alert("Role tidak dikenali.");
       }
 
     } catch (err) {
       console.error("Login error:", err);
       alert("Login gagal: " + err.message);
     }
-
-    console.log("Email:", email);
-    console.log("Password:", password);
   };
 
 
@@ -100,9 +91,8 @@ const LoginPage = () => {
     signInWithPopup(auth, googleProvider)
       .then((result) => {
         const user = result.user;
-        console.log("Login Google berhasil:", user.displayName);
         alert(`Selamat datang, ${user.displayName}`);
-        navigate("/dashboaruser"); // atau ke dashboard kamu
+        navigate("/dashboard"); // atau arahkan sesuai role Google
       })
       .catch((error) => {
         console.error("Login Google gagal:", error.message);
@@ -110,10 +100,10 @@ const LoginPage = () => {
       });
   };
 
-
   return (
     <div style={{ backgroundImage: `url(${ilustrasibg})` }} className="flex flex-col lg:flex-row min-h-screen bg-gradient-to-r from-white to-slate-100 font-sans px-4 py-8 gap-8 justify-between items-center">
-      {/* Kiri - gambar dan teks */}
+
+      {/* Kiri */}
       <div className="w-full lg:w-1/2 flex flex-col lg:flex-row items-center justify-between px-4 lg:px-10 text-center lg:text-left">
         <div className="mb-6 lg:mb-0">
           <h1 className="text-2xl sm:text-3xl lg:text-7xl font-semibold text-gray-800 mb-2">Login</h1>
@@ -122,7 +112,8 @@ const LoginPage = () => {
             Jika belum memiliki akun <br />
             Anda bisa{" "}
             <Link to="/registerpage" className="text-blue-600 font-medium">
-              Daftar di sini!</Link>
+              Daftar di sini!
+            </Link>
           </p>
         </div>
         <img
@@ -132,7 +123,7 @@ const LoginPage = () => {
         />
       </div>
 
-      {/* Kanan - Form login */}
+      {/* Kanan - Form */}
       <div className="w-full max-w-md mx-auto flex flex-col justify-center px-4 sm:px-8">
         <div className="flex justify-center gap-4 text-sm mb-8">
           <button onClick={() => navigate("/loginpage")} className="text-blue-600 border-b-2 border-blue-600 font-bold">Masuk</button>
@@ -183,7 +174,6 @@ const LoginPage = () => {
       </div>
     </div>
   );
-
 };
 
 export default LoginPage;

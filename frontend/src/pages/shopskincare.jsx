@@ -5,76 +5,53 @@ import IlustrasiSkincare from "../assets/bgskincare.png";
 import IlustrasiSkincare1 from "../assets/bgskincare1.png";
 import IlustrasiSkincare2 from "../assets/bgskincare2.png";
 import Pagination from "../components/pagination";
-import axios from "axios";
 
 const ShopSkincare = () => {
     const productRef = useRef(null);
     const [products, setProducts] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [skincareCategoryId, setSkincareCategoryId] = useState(null);
+    const itemsPerPage = 4;
 
     const handleScrollToProducts = () => {
         productRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
-    // Ambil ID kategori skincare dulu
     useEffect(() => {
-        const fetchCategoryId = async () => {
+        const fetchProducts = async () => {
             try {
-                const token = localStorage.getItem("token");
+                const res = await fetch("http://localhost:8081/api/v1/products");
+                const json = await res.json();
 
-                const res = await fetch("http://localhost:8081/api/v1/categories", {
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`, // ⬅️ wajib jika endpoint butuh otentikasi
-                    },
+                console.log("Full JSON dari /products:", json);
+
+                const produkMentah = json?.data?.products ?? json?.data ?? [];
+
+                if (!Array.isArray(produkMentah)) {
+                    console.warn("❌ produkMentah bukan array, struktur salah:", produkMentah);
+                    return;
+                }
+
+                const skincareOnly = produkMentah.filter((product) => {
+                    console.log("Cek kategori:", product.category);
+                    return (
+                        product.category &&
+                        product.category.name &&
+                        product.category.name.toLowerCase().includes("skincare")
+                    );
                 });
 
-                if (!res.ok) {
-                    throw new Error(`HTTP error! status: ${res.status}`);
-                }
-
-                const data = await res.json();
-                console.log("Kategori:", data);
-
-                const skincareCategory = data.find((cat) =>
-                    cat.name.toLowerCase().includes("skincare")
-                );
-
-                if (skincareCategory) {
-                    console.log("ID skincare:", skincareCategory.id);
-                    setSkincareCategoryId(skincareCategory.id);
-                } else {
-                    console.warn("Kategori skincare tidak ditemukan");
-                }
-            } catch (err) {
-                console.error("Gagal mengambil kategori:", err);
+                console.log("Produk skincare:", skincareOnly);
+                setProducts(skincareOnly);
+            } catch (error) {
+                console.error("Gagal ambil produk:", error);
             }
         };
 
-        fetchCategoryId();
+        fetchProducts();
     }, []);
 
 
-
-    // Ambil produk berdasarkan ID kategori
-    useEffect(() => {
-        if (skincareCategoryId) {
-            fetchProducts(currentPage, skincareCategoryId);
-        }
-    }, [currentPage, skincareCategoryId]);
-
-    const fetchProducts = async (page, categoryId) => {
-        try {
-            const response = await axios.get(`http://localhost:8081/api/v1/products/category/${categoryId}?page=${page}`);
-            console.log("Produk dari kategori:", response.data);
-            setProducts(response.data.data);
-            setTotalPages(response.data.totalPages || 1);
-        } catch (error) {
-            console.error("Gagal mengambil data produk:", error);
-        }
-    };
 
 
     const handlePageChange = (page) => {
@@ -103,10 +80,13 @@ const ShopSkincare = () => {
                 </div>
             </section>
 
-            {/* Produk Unggulan */}
-            <section ref={productRef} className="px-4 py-12 md:px-20 md:py-10 mb-10">
-                <h2 className="md:text-3xl font-bold mb-8 text-center mx-6 md:mx-26 text-gray-800 mt-10">
-                    Produk Unggulan Kami
+            {/* Produk Skincare */}
+            <section
+                ref={productRef}
+                className="px-4 py-12 md:px-20 md:py-10 mb-10"
+            >
+                <h2 className="md:text-3xl font-bold mb-8 text-center text-gray-800 mt-10">
+                    Produk Skincare Unggulan
                 </h2>
 
                 <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-4 md:gap-20 justify-items-center">

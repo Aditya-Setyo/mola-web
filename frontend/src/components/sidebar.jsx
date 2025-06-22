@@ -8,6 +8,8 @@ import {
     FaStar,
     FaHeart,
     FaCog,
+    FaMegaport,
+    FaChartLine,
 } from "react-icons/fa";
 import { useState } from "react";
 import { FaBars } from "react-icons/fa";
@@ -19,8 +21,10 @@ const sidebarItems = [
     { label: "Users", icon: <FaUser />, path: "/admin/users" },
     { label: "Orders", icon: <FaClipboardList />, path: "/admin/orders" },
     { label: "Payments", icon: <FaCreditCard />, path: "/admin/payments" },
+    { label: "advertisement", icon: <FaMegaport />, path: "/admin/advertisement" },
     { label: "Reviews", icon: <FaStar />, path: "/admin/reviews" },
     { label: "Wishlists", icon: <FaHeart />, path: "/admin/wishlists" },
+    { label: "Sales Report", icon: <FaChartLine  />, path: "/admin/report" },
     { label: "Settings", icon: <FaCog />, path: "/admin/settings" },
 ];
 
@@ -29,7 +33,6 @@ const Sidebar = () => {
 
     return (
         <>
-            {/* Mobile toggle button */}
             <div className="md:hidden p-4 bg-white shadow z-20 fixed top-0 left-0 w-full flex justify-between items-center">
                 <h1 className="text-xl font-bold text-indigo-600">Admin Panel</h1>
                 <button

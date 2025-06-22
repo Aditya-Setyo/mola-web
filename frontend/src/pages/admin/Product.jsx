@@ -1,3 +1,5 @@
+// ✅ FINAL FIXED Products.jsx — Filter, Edit, Tambah ✅
+
 import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/sidebar";
 
@@ -15,7 +17,7 @@ const Products = () => {
     name: "",
     price: "",
     stock: "",
-    category: null,
+    category: "",
     image: null,
     image_url: "",
     size: "",
@@ -23,15 +25,17 @@ const Products = () => {
     description: "",
   });
 
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token")?.trim();
 
   const fetchProducts = async () => {
+    if (!token) return;
     try {
       const res = await fetch("http://localhost:8081/api/v1/products", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      setProducts(Array.isArray(data.data?.products) ? data.data.products : []);
+      console.log("🔥 Produk:", data);
+      setProducts(Array.isArray(data?.data?.products) ? data.data.products : []);
     } catch (err) {
       console.error("Gagal ambil produk:", err);
       setProducts([]);
@@ -39,11 +43,23 @@ const Products = () => {
   };
 
   const fetchCategories = async () => {
+    if (!token) return;
     try {
       const res = await fetch("http://localhost:8081/api/v1/categories", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
       });
       const data = await res.json();
+      console.log("📂 Kategori:", data);
+      if (data.meta?.code === 401) {
+        alert("Sesi habis. Silakan login ulang.");
+        localStorage.removeItem("token");
+        window.location.href = "/loginpage";
+        return;
+      }
       setCategories(Array.isArray(data?.data?.categories) ? data.data.categories : []);
     } catch (err) {
       console.error("Gagal ambil kategori:", err);
@@ -52,10 +68,6 @@ const Products = () => {
   };
 
   useEffect(() => {
-    if (!token) {
-      alert("Sesi berakhir, silakan login kembali.");
-      return;
-    }
     fetchProducts();
     fetchCategories();
   }, []);
@@ -65,7 +77,7 @@ const Products = () => {
       name: "",
       price: "",
       stock: "",
-      category: null,
+      category: "",
       image: null,
       image_url: "",
       size: "",
@@ -77,68 +89,12 @@ const Products = () => {
     setEditId(null);
   };
 
-  const handleAddOrUpdateProduct = () => {
-    const { name, price, stock, category, image, image_url, size, color, description } = formData;
-    if (!name || !price || !stock || !category || (uploadType === "file" && !image) || (uploadType === "url" && !image_url)) {
-      alert("Lengkapi semua data produk dan pastikan kategori dipilih!");
-      return;
-    }
-
-    const data = new FormData();
-    data.append("name", name);
-    data.append("price", price);
-    data.append("stock", stock);
-    data.append("category_id", category);
-
-    const categoryName = categories.find(c => c._id === category)?.name;
-    if (categoryName === "Pakaian") {
-      data.append("size_id", size);
-      data.append("color_id", color);
-      data.append("description", description);
-    }
-
-    if (uploadType === "file" && image) data.append("image", image);
-    else if (uploadType === "url") data.append("image_url", image_url);
-
-    const method = editMode ? "PUT" : "POST";
-    const endpoint = editMode
-      ? `http://localhost:8081/api/v1/admin/products/${editId}`
-      : "http://localhost:8081/api/v1/admin/products";
-
-    fetch(endpoint, {
-      method,
-      headers: { Authorization: `Bearer ${token}` },
-      body: data,
-    })
-      .then(res => res.json())
-      .then(() => {
-        fetchProducts();
-        alert(editMode ? "Produk diperbarui." : "Produk ditambahkan.");
-        setShowModal(false);
-        resetForm();
-      })
-      .catch(err => {
-        console.error("Gagal simpan produk:", err);
-        alert("Gagal menyimpan produk.");
-      });
-  };
-
   const handleEdit = (item) => {
-    let categoryId = "";
-    if (typeof item.category === "object" && item.category !== null) {
-      categoryId = item.category._id;
-    } else if (categories.find((c) => c._id === item.category)) {
-      categoryId = item.category;
-    } else {
-      const matched = categories.find((c) => c.name === item.category);
-      categoryId = matched?._id || null;
-    }
-
     setFormData({
       name: item.name || "",
       price: item.price || "",
       stock: item.stock || "",
-      category: categoryId,
+      category: item.category_id?.toString() || "",
       image: null,
       image_url: item.image_url || "",
       size: item.size || "",
@@ -147,12 +103,57 @@ const Products = () => {
     });
     setEditMode(true);
     setEditId(item.id);
-    setUploadType("file");
+    setUploadType(item.image_url ? "url" : "file");
     setShowModal(true);
   };
 
+  const handleAddOrUpdateProduct = () => {
+    const { name, price, stock, category, image, image_url, size, color, description } = formData;
+    if (!name || !price || !stock || !category || (uploadType === "file" && !image) || (uploadType === "url" && !image_url)) {
+      alert("Lengkapi semua data produk!");
+      return;
+    }
+
+    const data = new FormData();
+    data.append("name", name);
+    data.append("price", price);
+    data.append("stock", stock);
+    data.append("category_id", Number(category));
+
+    const selectedCat = categories.find(c => c.id === Number(category));
+    if (selectedCat?.name === "Pakaian") {
+      data.append("size_id", size);
+      data.append("color_id", color);
+      data.append("description", description);
+    }
+
+    if (uploadType === "file") data.append("image", image);
+    else data.append("image_url", image_url);
+
+    const endpoint = editMode
+      ? `http://localhost:8081/api/v1/admin/products/${editId}`
+      : "http://localhost:8081/api/v1/admin/products";
+
+    fetch(endpoint, {
+      method: editMode ? "PUT" : "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: data,
+    })
+      .then((res) => res.json())
+      .then(() => {
+        fetchProducts();
+        alert(editMode ? "Produk diperbarui." : "Produk ditambahkan.");
+        setShowModal(false);
+        resetForm();
+      })
+      .catch((err) => {
+        console.error("Gagal simpan produk:", err);
+        alert("Gagal menyimpan produk.");
+      });
+  };
+
   const handleDelete = (id) => {
-    if (!window.confirm("Hapus produk ini?")) return;
+    if (!window.confirm("Yakin hapus produk ini?")) return;
     fetch(`http://localhost:8081/api/v1/admin/products/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
@@ -170,8 +171,8 @@ const Products = () => {
 
   const filteredProducts = products
     .filter(p => {
-      const catName = categories.find(c => c._id === p.category)?.name || p.category?.name || p.category;
-      return filter === "Semua" || catName === filter;
+      if (filter === "Semua") return true;
+      return p.category_id === Number(filter);
     })
     .filter(p => p.name?.toLowerCase().includes(search.toLowerCase()));
 
@@ -179,7 +180,6 @@ const Products = () => {
     <div className="flex">
       <Sidebar />
       <main className="ml-0 md:ml-64 flex-1 p-6 bg-gray-50 min-h-screen">
-        {/* Form search, filter, dan button tambah */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
           <h1 className="text-2xl font-bold">🛍️ Kelola Produk</h1>
           <div className="flex flex-col sm:flex-row gap-3">
@@ -197,24 +197,16 @@ const Products = () => {
             >
               <option value="Semua">Semua Kategori</option>
               {categories.map((cat) => (
-                <option key={cat._id} value={cat.name}>
-                  {cat.name}
-                </option>
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
             </select>
             <button
-              onClick={() => {
-                setShowModal(true);
-                resetForm();
-              }}
+              onClick={() => { setShowModal(true); resetForm(); }}
               className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 text-sm"
-            >
-              + Tambah Produk
-            </button>
+            >+ Tambah Produk</button>
           </div>
         </div>
 
-        {/* Tabel Produk */}
         <div className="overflow-x-auto bg-white rounded shadow">
           <table className="min-w-full text-sm">
             <thead className="bg-gray-100 text-gray-700">
@@ -233,10 +225,8 @@ const Products = () => {
                     <td className="px-4 py-2">{item.name}</td>
                     <td className="px-4 py-2">
                       {(() => {
-                        const cat = typeof item.category === "object"
-                          ? item.category?.name
-                          : categories.find((c) => c._id === item.category)?.name;
-                        return cat || "-";
+                        const cat = categories.find(c => c.id === item.category_id);
+                        return cat?.name || "(Kategori tidak ditemukan)";
                       })()}
                     </td>
                     <td className="px-4 py-2">Rp {item.price?.toLocaleString()}</td>
@@ -254,97 +244,124 @@ const Products = () => {
               )}
             </tbody>
           </table>
-        </div>
-        {showModal && (
-          <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
-            <div className="bg-white w-full max-w-md p-6 rounded shadow overflow-y-auto max-h-[90vh]">
-              <h2 className="text-xl font-semibold mb-4">
-                {editMode ? "Edit Produk" : "Tambah Produk"}
-              </h2>
-              <div className="space-y-3">
-                <input type="text" placeholder="Nama Produk" className="w-full border px-3 py-2 rounded"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
-                <input type="number" placeholder="Harga" className="w-full border px-3 py-2 rounded"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                />
-                <input type="number" placeholder="Stok" className="w-full border px-3 py-2 rounded"
-                  value={formData.stock}
-                  onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                />
-                <select className="w-full border px-3 py-2 rounded"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                >
-                  <option value="">Pilih Kategori</option>
-                  {categories.map((cat) => (
-                    <option key={cat._id} value={cat._id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
+          {/* MODAL FORM TAMBAH / EDIT */}
+          {showModal && (
+            <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
+              <div className="bg-white w-full max-w-md p-6 rounded shadow overflow-y-auto max-h-[90vh]">
+                <h2 className="text-xl font-semibold mb-4">{editMode ? "Edit Produk" : "Tambah Produk"}</h2>
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    placeholder="Nama Produk"
+                    className="w-full border px-3 py-2 rounded"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Harga"
+                    className="w-full border px-3 py-2 rounded"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Stok"
+                    className="w-full border px-3 py-2 rounded"
+                    value={formData.stock}
+                    onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                  />
+                  <select
+                    className="w-full border px-3 py-2 rounded"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  >
+                    <option value="">-- Pilih Kategori --</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
 
-                {categories.find((c) => c._id === formData.category)?.name === "Pakaian" && (
-                  <>
-                    <input type="text" placeholder="Ukuran" className="w-full border px-3 py-2 rounded"
-                      value={formData.size}
-                      onChange={(e) => setFormData({ ...formData, size: e.target.value })}
-                    />
-                    <input type="text" placeholder="Warna" className="w-full border px-3 py-2 rounded"
-                      value={formData.color}
-                      onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                    />
-                    <textarea placeholder="Deskripsi" className="w-full border px-3 py-2 rounded"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    />
-                  </>
-                )}
+                  {categories.find(c => c.id === Number(formData.category))?.name === "Pakaian" && (
+                    <>
+                      <input
+                        type="text"
+                        placeholder="Ukuran"
+                        className="w-full border px-3 py-2 rounded"
+                        value={formData.size}
+                        onChange={(e) => setFormData({ ...formData, size: e.target.value })}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Warna"
+                        className="w-full border px-3 py-2 rounded"
+                        value={formData.color}
+                        onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                      />
+                      <textarea
+                        placeholder="Deskripsi"
+                        className="w-full border px-3 py-2 rounded"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      />
+                    </>
+                  )}
 
-                <div className="flex gap-3 text-sm">
-                  <label>
-                    <input type="radio" name="uploadType" value="file"
-                      checked={uploadType === "file"}
-                      onChange={() => setUploadType("file")}
-                    /> Upload
-                  </label>
-                  <label>
-                    <input type="radio" name="uploadType" value="url"
-                      checked={uploadType === "url"}
-                      onChange={() => setUploadType("url")}
-                    /> Link Gambar
-                  </label>
+                  <div className="flex gap-3 text-sm">
+                    <label>
+                      <input
+                        type="radio"
+                        name="uploadType"
+                        value="file"
+                        checked={uploadType === "file"}
+                        onChange={() => setUploadType("file")}
+                      /> Upload
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="uploadType"
+                        value="url"
+                        checked={uploadType === "url"}
+                        onChange={() => setUploadType("url")}
+                      /> Link Gambar
+                    </label>
+                  </div>
+
+                  {uploadType === "file" ? (
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setFormData({ ...formData, image: e.target.files[0] })}
+                      className="w-full border px-3 py-2 rounded"
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      placeholder="https://..."
+                      className="w-full border px-3 py-2 rounded"
+                      value={formData.image_url}
+                      onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                    />
+                  )}
                 </div>
 
-                {uploadType === "file" ? (
-                  <input type="file" accept="image/*"
-                    onChange={(e) => setFormData({ ...formData, image: e.target.files[0] })}
-                    className="w-full border px-3 py-2 rounded"
-                  />
-                ) : (
-                  <input type="text" placeholder="https://..." className="w-full border px-3 py-2 rounded"
-                    value={formData.image_url}
-                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  />
-                )}
-              </div>
-
-              <div className="mt-6 flex justify-end gap-2">
-                <button onClick={() => { setShowModal(false); resetForm(); }} className="px-4 py-2 rounded border border-gray-300">Batal</button>
-                <button
-                  onClick={handleAddOrUpdateProduct}
-                  className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
-                >
-                  {editMode ? "Simpan Perubahan" : "Tambah"}
-                </button>
+                <div className="mt-6 flex justify-end gap-2">
+                  <button
+                    onClick={() => { setShowModal(false); resetForm(); }}
+                    className="px-4 py-2 rounded border border-gray-300"
+                  >Batal</button>
+                  <button
+                    onClick={handleAddOrUpdateProduct}
+                    className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
+                  >{editMode ? "Simpan Perubahan" : "Tambah"}</button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </main>
+          )}
 
+        </div>
+      </main>
     </div>
   );
 };

@@ -2,26 +2,47 @@ import React, { useEffect, useState } from "react";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
 import Pagination from "../components/pagination";
-import axios from "axios";
 
 const ShopAsesoris = () => {
   const [products, setProducts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 6; // jumlah produk per halaman
 
   useEffect(() => {
-    fetchProducts(currentPage);
-  }, [currentPage]);
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch("http://localhost:8081/api/v1/products");
+        const json = await res.json();
 
-  const fetchProducts = async (page) => {
-    try {
-      const response = await axios.get(`http://localhost:8081/api/v1/products?category=asesoris&page=${page}`);
-      setProducts(response.data.data);
-      setTotalPages(response.data.totalPages || 1); // tergantung format dari backend
-    } catch (error) {
-      console.error("Gagal mengambil data produk:", error);
-    }
-  };
+        const allProducts = Array.isArray(json?.data?.products)
+          ? json.data.products
+          : [];
+
+        // Filter produk kategori "asesoris"
+        const asesorisOnly = allProducts.filter(
+          (product) =>
+            product.category &&
+            product.category.name &&
+            product.category.name.toLowerCase().includes("asesoris")
+        );
+
+        // Pagination frontend
+        const total = asesorisOnly.length;
+        const pages = Math.ceil(total / itemsPerPage);
+        setTotalPages(pages);
+
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+
+        setProducts(asesorisOnly.slice(start, end));
+      } catch (error) {
+        console.error("Gagal mengambil data produk:", error);
+      }
+    };
+
+    fetchProducts();
+  }, [currentPage]);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -30,6 +51,7 @@ const ShopAsesoris = () => {
   return (
     <div>
       <Navbar />
+
       <section className="px-4 py-12 md:px-20 md:py-10 mb-2">
         <h2 className="md:text-3xl font-bold mb-8 text-left mx-6 md:mx-26 text-gray-800">
           Asesoris
