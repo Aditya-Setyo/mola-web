@@ -1,5 +1,3 @@
-// FINAL CODE: Products.jsx dengan perbaikan update produk tidak menambah data baru
-
 import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/sidebar";
 
@@ -17,7 +15,7 @@ const Products = () => {
     name: "",
     price: "",
     stock: "",
-    category: "",
+    category: null,
     image: null,
     image_url: "",
     size: "",
@@ -25,49 +23,39 @@ const Products = () => {
     description: "",
   });
 
-  const fetchProducts = () => {
-    const token = localStorage.getItem("token");
-    fetch("http://localhost:8081/api/v1/products", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        const productList = Array.isArray(data.data?.products)
-          ? data.data.products
-          : [];
-        setProducts(productList);
-      })
-      .catch((err) => {
-        console.error("Gagal ambil produk:", err);
-        setProducts([]);
-      });
-  };
+  const token = localStorage.getItem("token");
 
-  const fetchCategories = () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      console.warn("Token tidak ditemukan di localStorage");
-      return;
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch("http://localhost:8081/api/v1/products", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setProducts(Array.isArray(data.data?.products) ? data.data.products : []);
+    } catch (err) {
+      console.error("Gagal ambil produk:", err);
+      setProducts([]);
     }
-
-    fetch("http://localhost:8081/api/v1/categories", {
-      headers: {
-        Authorization: `Bearer ${token}`, 
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Data kategori:", data);
-        setCategories(data.data || []);
-      })
-      .catch((err) => {
-        console.error("Gagal ambil kategori:", err);
-        setCategories([]);
-      });
   };
 
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch("http://localhost:8081/api/v1/categories", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setCategories(Array.isArray(data?.data?.categories) ? data.data.categories : []);
+    } catch (err) {
+      console.error("Gagal ambil kategori:", err);
+      setCategories([]);
+    }
+  };
 
   useEffect(() => {
+    if (!token) {
+      alert("Sesi berakhir, silakan login kembali.");
+      return;
+    }
     fetchProducts();
     fetchCategories();
   }, []);
@@ -77,7 +65,7 @@ const Products = () => {
       name: "",
       price: "",
       stock: "",
-      category: "",
+      category: null,
       image: null,
       image_url: "",
       size: "",
@@ -89,54 +77,68 @@ const Products = () => {
     setEditId(null);
   };
 
-  const handleAddProduct = () => {
+  const handleAddOrUpdateProduct = () => {
     const { name, price, stock, category, image, image_url, size, color, description } = formData;
     if (!name || !price || !stock || !category || (uploadType === "file" && !image) || (uploadType === "url" && !image_url)) {
-      alert("Lengkapi semua data produk termasuk gambar!");
+      alert("Lengkapi semua data produk dan pastikan kategori dipilih!");
       return;
     }
 
-    const token = localStorage.getItem("token");
     const data = new FormData();
     data.append("name", name);
     data.append("price", price);
     data.append("stock", stock);
-    data.append("category", category);
+    data.append("category_id", category);
 
-    if (categories.find(c => c._id === category)?.name === "Pakaian") {
-      data.append("size", size);
-      data.append("color", color);
+    const categoryName = categories.find(c => c._id === category)?.name;
+    if (categoryName === "Pakaian") {
+      data.append("size_id", size);
+      data.append("color_id", color);
       data.append("description", description);
     }
 
-    if (uploadType === "file") data.append("image", image);
-    else data.append("image_url", image_url);
+    if (uploadType === "file" && image) data.append("image", image);
+    else if (uploadType === "url") data.append("image_url", image_url);
 
-    fetch("http://localhost:8081/api/v1/admin/products", {
-      method: "POST",
+    const method = editMode ? "PUT" : "POST";
+    const endpoint = editMode
+      ? `http://localhost:8081/api/v1/admin/products/${editId}`
+      : "http://localhost:8081/api/v1/admin/products";
+
+    fetch(endpoint, {
+      method,
       headers: { Authorization: `Bearer ${token}` },
       body: data,
     })
-      .then((res) => res.json())
+      .then(res => res.json())
       .then(() => {
         fetchProducts();
-        alert("Produk berhasil ditambahkan.");
+        alert(editMode ? "Produk diperbarui." : "Produk ditambahkan.");
         setShowModal(false);
         resetForm();
       })
-      .catch((err) => {
-        console.error("Tambah gagal:", err);
-        alert("Gagal menambahkan produk.");
+      .catch(err => {
+        console.error("Gagal simpan produk:", err);
+        alert("Gagal menyimpan produk.");
       });
   };
 
   const handleEdit = (item) => {
-    const matchedCategory = categories.find(cat => cat.name === item.category?.name || item.category);
+    let categoryId = "";
+    if (typeof item.category === "object" && item.category !== null) {
+      categoryId = item.category._id;
+    } else if (categories.find((c) => c._id === item.category)) {
+      categoryId = item.category;
+    } else {
+      const matched = categories.find((c) => c.name === item.category);
+      categoryId = matched?._id || null;
+    }
+
     setFormData({
       name: item.name || "",
       price: item.price || "",
       stock: item.stock || "",
-      category: matchedCategory?._id || "",
+      category: categoryId,
       image: null,
       image_url: item.image_url || "",
       size: item.size || "",
@@ -149,76 +151,35 @@ const Products = () => {
     setShowModal(true);
   };
 
-  const handleUpdateProduct = () => {
-    const token = localStorage.getItem("token");
-    const { name, price, stock, category, image, image_url, size, color, description } = formData;
-
-    if (!name || !price || !stock || !category || !editId) {
-      alert("Lengkapi semua data produk!");
-      return;
-    }
-
-    const data = new FormData();
-    data.append("name", name);
-    data.append("price", price);
-    data.append("stock", stock);
-    data.append("category", category);
-
-    if (categories.find(c => c._id === category)?.name === "Pakaian") {
-      data.append("size", size);
-      data.append("color", color);
-      data.append("description", description);
-    }
-
-    if (uploadType === "file" && image) data.append("image", image);
-    else if (uploadType === "url") data.append("image_url", image_url);
-
-    fetch(`http://localhost:8081/api/v1/admin/products/${editId}`, {
-      method: "PUT",
-      headers: { Authorization: `Bearer ${token}` },
-      body: data,
-    })
-      .then((res) => res.json())
-      .then(() => {
-        alert("Produk berhasil diperbarui.");
-        fetchProducts();
-        setShowModal(false);
-        resetForm();
-      })
-      .catch((err) => {
-        console.error("Update gagal:", err);
-        alert("Gagal update produk.");
-      });
-  };
-
   const handleDelete = (id) => {
     if (!window.confirm("Hapus produk ini?")) return;
-    const token = localStorage.getItem("token");
     fetch(`http://localhost:8081/api/v1/admin/products/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then((res) => res.json())
+      .then(res => res.json())
       .then(() => {
         alert("Produk dihapus.");
         fetchProducts();
       })
-      .catch((err) => {
-        console.error("Hapus gagal:", err);
+      .catch(err => {
+        console.error("Gagal hapus produk:", err);
         alert("Gagal menghapus produk.");
       });
   };
 
-  const filteredProducts = Array.isArray(products)
-    ? products
-      .filter((p) => (filter === "Semua" ? true : p.category?.name === filter))
-      .filter((p) => p.name?.toLowerCase().includes(search.toLowerCase()))
-    : [];
+  const filteredProducts = products
+    .filter(p => {
+      const catName = categories.find(c => c._id === p.category)?.name || p.category?.name || p.category;
+      return filter === "Semua" || catName === filter;
+    })
+    .filter(p => p.name?.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="flex">
       <Sidebar />
       <main className="ml-0 md:ml-64 flex-1 p-6 bg-gray-50 min-h-screen">
+        {/* Form search, filter, dan button tambah */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
           <h1 className="text-2xl font-bold">🛍️ Kelola Produk</h1>
           <div className="flex flex-col sm:flex-row gap-3">
@@ -235,9 +196,11 @@ const Products = () => {
               className="border px-3 py-1 rounded text-sm"
             >
               <option value="Semua">Semua Kategori</option>
-              <option value="Skincare">Skincare</option>
-              <option value="Aksesoris">Aksesoris</option>
-              <option value="Pakaian">Pakaian</option>
+              {categories.map((cat) => (
+                <option key={cat._id} value={cat.name}>
+                  {cat.name}
+                </option>
+              ))}
             </select>
             <button
               onClick={() => {
@@ -251,6 +214,7 @@ const Products = () => {
           </div>
         </div>
 
+        {/* Tabel Produk */}
         <div className="overflow-x-auto bg-white rounded shadow">
           <table className="min-w-full text-sm">
             <thead className="bg-gray-100 text-gray-700">
@@ -267,7 +231,14 @@ const Products = () => {
                 filteredProducts.map((item) => (
                   <tr key={item.id} className="border-t hover:bg-gray-50">
                     <td className="px-4 py-2">{item.name}</td>
-                    <td className="px-4 py-2">{item.category?.name || item.category || "-"}</td>
+                    <td className="px-4 py-2">
+                      {(() => {
+                        const cat = typeof item.category === "object"
+                          ? item.category?.name
+                          : categories.find((c) => c._id === item.category)?.name;
+                        return cat || "-";
+                      })()}
+                    </td>
                     <td className="px-4 py-2">Rp {item.price?.toLocaleString()}</td>
                     <td className="px-4 py-2">{item.stock}</td>
                     <td className="px-4 py-2 space-x-2">
@@ -284,7 +255,6 @@ const Products = () => {
             </tbody>
           </table>
         </div>
-
         {showModal && (
           <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
             <div className="bg-white w-full max-w-md p-6 rounded shadow overflow-y-auto max-h-[90vh]">
@@ -309,12 +279,14 @@ const Products = () => {
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 >
                   <option value="">Pilih Kategori</option>
-                  <option value="Skincare">Skincare</option>
-                  <option value="Aksesoris">Aksesoris</option>
-                  <option value="Pakaian">Pakaian</option>
+                  {categories.map((cat) => (
+                    <option key={cat._id} value={cat._id}>
+                      {cat.name}
+                    </option>
+                  ))}
                 </select>
 
-                {formData.category === "Pakaian" && (
+                {categories.find((c) => c._id === formData.category)?.name === "Pakaian" && (
                   <>
                     <input type="text" placeholder="Ukuran" className="w-full border px-3 py-2 rounded"
                       value={formData.size}
@@ -362,7 +334,7 @@ const Products = () => {
               <div className="mt-6 flex justify-end gap-2">
                 <button onClick={() => { setShowModal(false); resetForm(); }} className="px-4 py-2 rounded border border-gray-300">Batal</button>
                 <button
-                  onClick={editMode ? handleUpdateProduct : handleAddProduct}
+                  onClick={handleAddOrUpdateProduct}
                   className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
                 >
                   {editMode ? "Simpan Perubahan" : "Tambah"}
@@ -372,6 +344,7 @@ const Products = () => {
           </div>
         )}
       </main>
+
     </div>
   );
 };

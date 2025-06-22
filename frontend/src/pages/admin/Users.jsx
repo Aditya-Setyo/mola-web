@@ -7,40 +7,50 @@ const Users = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Ambil semua user dari backend
   useEffect(() => {
     const token = localStorage.getItem("token");
+    console.log("Token yang dikirim:", token); // Debug log
+
+    if (!token) {
+      setError("Token tidak ditemukan. Silakan login terlebih dahulu.");
+      setLoading(false);
+      return;
+    }
 
     fetch("http://localhost:8081/api/v1/users", {
+      method: "GET",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
     })
-      .then((res) => {
+      .then(async (res) => {
         if (!res.ok) {
-          throw new Error("Gagal mengambil data pengguna (Unauthorized atau Error Server)");
+          const errorData = await res.json();
+          throw new Error(errorData?.meta?.message || "Gagal mengambil data pengguna.");
         }
         return res.json();
       })
       .then((data) => {
-        setUsers(Array.isArray(data) ? data : data.data || []);
+        const userList = Array.isArray(data?.data?.users)
+          ? data.data.users
+          : [];
+
+        setUsers(userList);
         setLoading(false);
       })
       .catch((err) => {
-        console.error(err);
-        setError(err.message);
+        console.error("Fetch error:", err);
+        setError(err.message || "Terjadi kesalahan saat mengambil data.");
         setLoading(false);
       });
   }, []);
 
-  // Filter berdasarkan role
   const filteredUsers =
     roleFilter === "Semua"
       ? users
       : users.filter((user) => user.role === roleFilter);
 
-  // Ganti status user (dummy toggle)
   const toggleStatus = (id) => {
     setUsers((prev) =>
       prev.map((user) =>
@@ -74,7 +84,6 @@ const Users = () => {
             </div>
           </div>
 
-          {/* Loading & Error State */}
           {loading ? (
             <div className="text-center text-gray-600">Memuat data pengguna...</div>
           ) : error ? (
