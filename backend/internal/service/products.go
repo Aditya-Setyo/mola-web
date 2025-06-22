@@ -386,7 +386,7 @@ func (s *productService) Delete(ctx context.Context, id uuid.UUID) error {
 
 func (s *productService) invalidateProductListCaches() error {
 	for _, key := range cache.ListCacheKeysProductToInvalidate {
-		err := s.cacheable.Delete(key)
+		err := s.cacheable.DeleteByPrefix(key)
 		if err != nil {
 			return fmt.Errorf("WARNING: Failed to invalidate cache key %s: %v", key, err)
 		}
