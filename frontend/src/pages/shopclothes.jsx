@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
 import Pagination from "../components/pagination";
+import { Link } from "react-router-dom";
 
 const ShopClothes = () => {
     const [products, setProducts] = useState([]);
@@ -62,24 +63,26 @@ const ShopClothes = () => {
                 <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 justify-items-center">
                     {products.length > 0 ? (
                         products.map((product) => (
-                            <div
-                                key={product.id}
-                                className="w-full max-w-xs bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden flex flex-col justify-between transition-transform hover:scale-105"
-                            >
-                                <img
-                                    src={`http://localhost:8081${product.image_url}`}
-                                    alt={product.name}
-                                    className="w-full h-48 object-contain bg-white"
-                                />
-                                <div className="p-4 text-center">
-                                    <h3 className="text-lg font-semibold text-gray-800 truncate">
-                                        {product.name}
-                                    </h3>
-                                    <p className="text-sm text-gray-600 mt-1">
-                                        Rp {product.price?.toLocaleString("id-ID")}
-                                    </p>
+                            <Link to={`/productdetails/${product.id}`}>
+                                <div
+                                    key={product.id}
+                                    className="w-full max-w-xs bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden flex flex-col justify-between transition-transform hover:scale-105"
+                                >
+                                    <img
+                                        src={`http://localhost:8081${product.image_url}`}
+                                        alt={product.name}
+                                        className="w-full h-48 object-contain bg-white"
+                                    />
+                                    <div className="p-4 text-center">
+                                        <h3 className="text-lg font-semibold text-gray-800 truncate">
+                                            {product.name}
+                                        </h3>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Rp {product.price?.toLocaleString("id-ID")}
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
+                            </Link>
                         ))
                     ) : (
                         <p className="text-center col-span-3 text-gray-500">

@@ -10,6 +10,7 @@ import {
     FaCog,
     FaMegaport,
     FaChartLine,
+    FaTruck
 } from "react-icons/fa";
 import { useState } from "react";
 import { FaBars } from "react-icons/fa";
@@ -17,13 +18,13 @@ import { FaBars } from "react-icons/fa";
 const sidebarItems = [
     { label: "Dashboard", icon: <FaChartBar />, path: "/adminpage" },
     { label: "Products", icon: <FaBox />, path: "/admin/products" },
-    { label: "Maste Data", icon: <FaTags />, path: "/admin/masterdata" },
+    { label: "Master Data", icon: <FaTags />, path: "/admin/masterdata" },
     { label: "Users", icon: <FaUser />, path: "/admin/users" },
     { label: "Orders", icon: <FaClipboardList />, path: "/admin/orders" },
     { label: "Payments", icon: <FaCreditCard />, path: "/admin/payments" },
-    { label: "advertisement", icon: <FaMegaport />, path: "/admin/advertisement" },
+    { label: "Advertisement", icon: <FaMegaport />, path: "/admin/advertisement" },
     { label: "Reviews", icon: <FaStar />, path: "/admin/reviews" },
-    { label: "Wishlists", icon: <FaHeart />, path: "/admin/wishlists" },
+    { label: "Shipment", icon: <FaTruck />, path: "/admin/shipment" },
     { label: "Sales Report", icon: <FaChartLine  />, path: "/admin/report" },
     { label: "Settings", icon: <FaCog />, path: "/admin/settings" },
 ];

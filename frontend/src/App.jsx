@@ -19,7 +19,7 @@ import Orders from "./pages/admin/Order";
 import Users from "./pages/admin/Users";
 import Payments from "./pages/admin/Payments";
 import Reviews from "./pages/admin/Review";
-import Wishlists from "./pages/admin/Wishlist";
+import Shipment from "./pages/admin/Shipment";
 import Settings from "./pages/admin/Setting";
 import ProductDetailPage from "./pages/productdetails";
 
@@ -50,7 +50,7 @@ const App = () => {
       <Route path="/admin/users" element={<Users />} />
       <Route path="/admin/payments" element={<Payments />} />
       <Route path="/admin/reviews" element={<Reviews />} />
-      <Route path="/admin/wishlists" element={<Wishlists />} />
+      <Route path="/admin/shipment" element={<Shipment />} />
       <Route path="/admin/settings" element={<Settings />} />
     </Routes>
   );

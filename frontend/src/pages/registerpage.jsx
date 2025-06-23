@@ -8,7 +8,7 @@ const RegisterPage = () => {
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phone_number, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -24,7 +24,7 @@ const RegisterPage = () => {
         },
         body: JSON.stringify({
           name,
-          phoneNumber,
+          phone_number,
           email,
           password,
         }),
@@ -108,7 +108,7 @@ const RegisterPage = () => {
           <input
             type="text"
             placeholder="Masukkan No HP"
-            value={phoneNumber}
+            value={phone_number}
             onChange={(e) => setPhoneNumber(e.target.value)}
             className="w-full px-4 py-3 rounded-lg bg-gray-100 text-sm outline-none"
           />

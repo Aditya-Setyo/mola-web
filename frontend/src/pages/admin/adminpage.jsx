@@ -98,7 +98,8 @@ const AdminPage = () => {
 
         {/* Tables */}
         <DataTable title="🛒 Produk Terbaru" data={products.slice(0, 5)} columns={["id", "name", "price", "stock"]} />
-        <DataTable title="👥 Pengguna Terbaru" data={users.slice(0, 5)} columns={["id", "name", "email"]} />
+        <DataTable title="👥 Pengguna Terbaru" data={users.slice(0, 5)} columns={["user_id", "name", "email", "phone"]}/>
+
         <DataTable title="📦 Order Terakhir" data={orders.slice(0, 5)} columns={["id", "user", "total", "status"]} />
       </main>
     </div>
