@@ -209,6 +209,7 @@ func (s *userService) GetAll(ctx context.Context) ([]dto.GetAllUserResponse, err
 			Name:      user.Name,
 			Email:     user.Email,
 			Phone:     user.UserProfile.PhoneNumber,
+			Role:      user.Role,
 		}
 	}
 
