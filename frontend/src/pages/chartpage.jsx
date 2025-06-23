@@ -59,7 +59,6 @@ const ChartPage = () => {
     return (
         <div>
             <Navbar />
-
             <main className="px-4 md:px-20 py-10">
                 <h1 className="text-3xl font-extrabold mb-6">YOUR CART</h1>
 
@@ -68,7 +67,6 @@ const ChartPage = () => {
                         Anda belum login. Silakan login untuk melihat dan mengelola keranjang Anda.
                     </div>
                 )}
-
                 {loading ? (
                     <p>Loading...</p>
                 ) : (

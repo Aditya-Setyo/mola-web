@@ -6,6 +6,7 @@ const Users = () => {
   const [roleFilter, setRoleFilter] = useState("Semua");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -47,19 +48,28 @@ const Users = () => {
       });
   }, []);
 
-  const filteredUsers =
-    roleFilter === "Semua"
-      ? users
-      : users.filter((user) => user.role === roleFilter);
+  const filteredUsers = users
+  .filter((user) => {
+    if (roleFilter === "Semua") return true;
+    return user.role === roleFilter;
+  })
+  .filter((user) =>
+    user.name?.toLowerCase().includes(search.toLowerCase())
+    || user.email?.toLowerCase().includes(search.toLowerCase())
+    || user.phone?.toLowerCase().includes(search.toLowerCase())
+    || user.address?.toLowerCase().includes(search.toLowerCase())
+    || user.status?.toLowerCase().includes(search.toLowerCase())
+  );
+
 
   const toggleStatus = (id) => {
     setUsers((prev) =>
       prev.map((user) =>
         user.profile_id === id
           ? {
-              ...user,
-              status: user.status === "Aktif" ? "Nonaktif" : "Aktif",
-            }
+            ...user,
+            status: user.status === "Aktif" ? "Nonaktif" : "Aktif",
+          }
           : user
       )
     );
@@ -73,6 +83,13 @@ const Users = () => {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
             <h1 className="text-2xl font-bold">👤 Kelola Pengguna</h1>
             <div className="flex gap-3">
+              <input
+                type="text"
+                placeholder="Cari users..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="border px-3 py-1 rounded text-sm"
+              />
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
@@ -114,11 +131,10 @@ const Users = () => {
                         <td className="px-4 py-2">{user.address || "-"}</td>
                         <td className="px-4 py-2">
                           <span
-                            className={`px-2 py-1 rounded text-xs font-medium ${
-                              user.status === "Aktif"
-                                ? "bg-green-100 text-green-600"
-                                : "bg-red-100 text-red-600"
-                            }`}
+                            className={`px-2 py-1 rounded text-xs font-medium ${user.status === "Aktif"
+                              ? "bg-green-100 text-green-600"
+                              : "bg-red-100 text-red-600"
+                              }`}
                           >
                             {user.status || "Aktif"}
                           </span>
@@ -126,11 +142,10 @@ const Users = () => {
                         <td className="px-4 py-2">
                           <button
                             onClick={() => toggleStatus(user.profile_id)}
-                            className={`text-sm px-3 py-1 rounded ${
-                              user.status === "Aktif"
-                                ? "bg-red-500 text-white hover:bg-red-600"
-                                : "bg-green-500 text-white hover:bg-green-600"
-                            }`}
+                            className={`text-sm px-3 py-1 rounded ${user.status === "Aktif"
+                              ? "bg-red-500 text-white hover:bg-red-600"
+                              : "bg-green-500 text-white hover:bg-green-600"
+                              }`}
                           >
                             {user.status === "Aktif" ? "Blokir" : "Aktifkan"}
                           </button>

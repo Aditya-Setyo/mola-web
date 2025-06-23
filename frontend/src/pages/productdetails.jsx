@@ -16,6 +16,16 @@ const ProductDetailPage = () => {
   const increment = () => setQuantity((q) => q + 1);
   const decrement = () => setQuantity((q) => (q > 1 ? q - 1 : 1));
 
+  const handleBuyNow = () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Silakan login terlebih dahulu untuk melakukan pembelian.");
+        navigate("/loginpage"); 
+        return;
+      }
+      navigate("/userprofile"); 
+    };
+
   useEffect(() => {
     const controller = new AbortController();
     const { signal } = controller;
@@ -145,7 +155,7 @@ const ProductDetailPage = () => {
                   Keranjang
                 </button>
               </HashLink>
-              <button className="bg-black text-white px-6 py-2 rounded hover:bg-gray-800">
+              <button onClick={handleBuyNow} className="bg-black text-white px-6 py-2 rounded hover:bg-gray-800">
                 Beli Sekarang
               </button>
             </div>
@@ -157,21 +167,19 @@ const ProductDetailPage = () => {
           <div className="flex justify-center space-x-6 text-sm font-semibold text-gray-600 mb-4">
             <button
               onClick={() => setActiveTab("description")}
-              className={`pb-2 border-b-2 ${
-                activeTab === "description"
+              className={`pb-2 border-b-2 ${activeTab === "description"
                   ? "border-black text-black"
                   : "border-transparent"
-              }`}
+                }`}
             >
               Deskripsi Produk
             </button>
             <button
               onClick={() => setActiveTab("reviews")}
-              className={`pb-2 border-b-2 ${
-                activeTab === "reviews"
+              className={`pb-2 border-b-2 ${activeTab === "reviews"
                   ? "border-black text-black"
                   : "border-transparent"
-              }`}
+                }`}
             >
               Ulasan
             </button>
