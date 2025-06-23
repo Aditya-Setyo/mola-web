@@ -5,6 +5,7 @@ import IlustrasiSkincare from "../assets/bgskincare.png";
 import IlustrasiSkincare1 from "../assets/bgskincare1.png";
 import IlustrasiSkincare2 from "../assets/bgskincare2.png";
 import Pagination from "../components/pagination";
+import { Link } from "react-router-dom";
 
 const ShopSkincare = () => {
   const productRef = useRef(null);
@@ -89,24 +90,26 @@ const ShopSkincare = () => {
         <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-6 justify-items-center">
           {products.length > 0 ? (
             products.map((product) => (
-              <div
-                key={product.id}
-                className="w-full max-w-sm bg-white rounded-lg shadow-md overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-lg"
-              >
-                <img
-                  src={`http://localhost:8081${product.image_url}`}
-                  alt={product.name}
-                  className="w-full h-48 object-contain bg-white"
-                />
-                <div className="p-4 text-center">
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    {product.name}
-                  </h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Rp {product.price?.toLocaleString("id-ID")}
-                  </p>
+              <Link to={`/productdetails/${product.id}`}>
+                <div
+                  key={product.id}
+                  className="w-full max-w-sm bg-white rounded-lg shadow-md overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-lg"
+                >
+                  <img
+                    src={`http://localhost:8081${product.image_url}`}
+                    alt={product.name}
+                    className="w-full h-48 object-contain bg-white"
+                  />
+                  <div className="p-4 text-center">
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {product.name}
+                    </h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Rp {product.price?.toLocaleString("id-ID")}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              </Link>
             ))
           ) : (
             <p className="text-center col-span-3 text-gray-500">

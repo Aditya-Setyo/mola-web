@@ -32,6 +32,7 @@ const Users = () => {
         return res.json();
       })
       .then((data) => {
+        console.log("User list dari API:", data.data.users);
         const userList = Array.isArray(data?.data?.users)
           ? data.data.users
           : [];
@@ -108,7 +109,7 @@ const Users = () => {
                       <tr key={user.profile_id} className="border-t hover:bg-gray-50">
                         <td className="px-4 py-2">{user.full_name || user.name}</td>
                         <td className="px-4 py-2">{user.email}</td>
-                        <td className="px-4 py-2">{user.role || "User"}</td>
+                        <td className="px-4 py-2">{user.role || "-"}</td>
                         <td className="px-4 py-2">{user.phone || "-"}</td>
                         <td className="px-4 py-2">{user.address || "-"}</td>
                         <td className="px-4 py-2">

@@ -12,6 +12,9 @@ const Products = () => {
   const [uploadType, setUploadType] = useState("file");
   const [editMode, setEditMode] = useState(false);
   const [editId, setEditId] = useState(null);
+  const [sizes, setSizes] = useState([]);
+  const [colors, setColors] = useState([]);
+  const [expandedDesc, setExpandedDesc] = useState({});
 
   const [formData, setFormData] = useState({
     name: "",
@@ -34,7 +37,6 @@ const Products = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      console.log("🔥 Produk:", data);
       setProducts(Array.isArray(data?.data?.products) ? data.data.products : []);
     } catch (err) {
       console.error("Gagal ambil produk:", err);
@@ -42,34 +44,40 @@ const Products = () => {
     }
   };
 
-  const fetchCategories = async () => {
+  const fetchMasterData = async () => {
     if (!token) return;
     try {
-      const res = await fetch("http://localhost:8081/api/v1/categories", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-      });
-      const data = await res.json();
-      console.log("📂 Kategori:", data);
-      if (data.meta?.code === 401) {
+      const [resCat, resSizes, resColors] = await Promise.all([
+        fetch("http://localhost:8081/api/v1/categories", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("http://localhost:8081/api/v1/sizes", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("http://localhost:8081/api/v1/colors", { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+
+      const catData = await resCat.json();
+      const sizeData = await resSizes.json();
+      const colorData = await resColors.json();
+
+      if (catData.meta?.code === 401) {
         alert("Sesi habis. Silakan login ulang.");
         localStorage.removeItem("token");
         window.location.href = "/loginpage";
         return;
       }
-      setCategories(Array.isArray(data?.data?.categories) ? data.data.categories : []);
+
+      setCategories(catData?.data?.categories || []);
+      setSizes(sizeData?.data?.sizes || []);
+      setColors(colorData?.data?.colors || []);
     } catch (err) {
-      console.error("Gagal ambil kategori:", err);
+      console.error("Gagal mengambil data master:", err);
       setCategories([]);
+      setSizes([]);
+      setColors([]);
     }
   };
 
   useEffect(() => {
     fetchProducts();
-    fetchCategories();
+    fetchMasterData();
   }, []);
 
   const resetForm = () => {
@@ -176,6 +184,28 @@ const Products = () => {
     })
     .filter(p => p.name?.toLowerCase().includes(search.toLowerCase()));
 
+  const toggleDescription = (id) => {
+    setExpandedDesc(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const renderDescription = (desc, id) => {
+    const isExpanded = expandedDesc[id];
+    if (!desc) return "";
+    return (
+      <>
+        {isExpanded ? desc : desc.slice(0, 50) + (desc.length > 50 ? "..." : "")}
+        {desc.length > 50 && (
+          <button
+            onClick={() => toggleDescription(id)}
+            className="text-indigo-600 text-xs ml-2 underline"
+          >
+            {isExpanded ? "Sembunyikan" : "Lihat selengkapnya"}
+          </button>
+        )}
+      </>
+    );
+  };
+
   return (
     <div className="flex">
       <Sidebar />
@@ -215,6 +245,9 @@ const Products = () => {
                 <th className="px-4 py-3 text-left">Kategori</th>
                 <th className="px-4 py-3 text-left">Harga</th>
                 <th className="px-4 py-3 text-left">Stok</th>
+                <th className="px-4 py-3 text-left">Warna</th>
+                <th className="px-4 py-3 text-left">Size</th>
+                <th className="px-4 py-3 text-left">Deskripsi</th>
                 <th className="px-4 py-3 text-left">Aksi</th>
               </tr>
             </thead>
@@ -231,9 +264,12 @@ const Products = () => {
                     </td>
                     <td className="px-4 py-2">Rp {item.price?.toLocaleString()}</td>
                     <td className="px-4 py-2">{item.stock}</td>
-                    <td className="px-4 py-2 space-x-2">
-                      <button onClick={() => handleEdit(item)} className="text-blue-600 hover:underline text-sm">Edit</button>
-                      <button onClick={() => handleDelete(item.id)} className="text-red-600 hover:underline text-sm">Hapus</button>
+                    <td className="px-4 py-2">{item.color}</td>
+                    <td className="px-4 py-2">{item.size}</td>
+                    <td className="px-4 py-2">{item.description}</td>
+                    <td className="px-4 py-2 space-x-2 ">
+                      <button onClick={() => handleEdit(item)} className="bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-1 rounded text-xs mb-5">Edit</button>
+                      <button onClick={() => handleDelete(item.id)} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs">Hapus</button>
                     </td>
                   </tr>
                 ))
@@ -276,6 +312,12 @@ const Products = () => {
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   >
+                    <textarea
+                      placeholder="Deskripsi"
+                      className="w-full border px-3 py-2 rounded"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    />
                     <option value="">-- Pilih Kategori --</option>
                     {categories.map((cat) => (
                       <option key={cat.id} value={cat.id}>{cat.name}</option>
@@ -284,26 +326,44 @@ const Products = () => {
 
                   {categories.find(c => c.id === Number(formData.category))?.name === "Pakaian" && (
                     <>
-                      <input
-                        type="text"
-                        placeholder="Ukuran"
-                        className="w-full border px-3 py-2 rounded"
-                        value={formData.size}
-                        onChange={(e) => setFormData({ ...formData, size: e.target.value })}
-                      />
-                      <input
-                        type="text"
-                        placeholder="Warna"
-                        className="w-full border px-3 py-2 rounded"
-                        value={formData.color}
-                        onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                      />
-                      <textarea
-                        placeholder="Deskripsi"
-                        className="w-full border px-3 py-2 rounded"
-                        value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      />
+                      <div className="mb-3">
+                        <p className="text-sm font-semibold text-gray-700 mb-1">Ukuran</p>
+                        <div className="flex flex-wrap gap-2">
+                          {sizes.map((size) => (
+                            <button
+                              key={size.id}
+                              type="button"
+                              onClick={() => setFormData({ ...formData, size: size.id })}
+                              className={`px-4 py-1 rounded border ${formData.size === size.id
+                                ? "bg-black text-white border-black"
+                                : "bg-white text-gray-800 hover:bg-gray-100"
+                                }`}
+                            >
+                              {size.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mb-3">
+                        <p className="text-sm font-semibold text-gray-700 mb-1">Warna</p>
+                        <div className="flex flex-wrap gap-2">
+                          {colors.map((color) => (
+                            <button
+                              key={color.id}
+                              type="button"
+                              onClick={() => setFormData({ ...formData, color: color.id })}
+                              className={`px-4 py-1 rounded border ${formData.color === color.id
+                                ? "bg-black text-white border-black"
+                                : "bg-white text-gray-800 hover:bg-gray-100"
+                                }`}
+                            >
+                              {color.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
                     </>
                   )}
 

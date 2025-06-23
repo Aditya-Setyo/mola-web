@@ -106,7 +106,7 @@ const UserProfile = () => {
               <input
                 type="tel"
                 name="phone"
-                value={profile.phoneNumber}
+                value={profile.phone_number}
                 onChange={handleChange}
                 className="w-full border border-gray-300 px-4 py-2 rounded bg-gray-50"
                 readOnly={!isEditing}
