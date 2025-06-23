@@ -24,35 +24,79 @@ import (
 type OrderService interface {
 	CreateOrder(ctx context.Context, order entity.Order) (uuid.UUID, error)
 	CreateOrderItem(ctx context.Context, orderItem entity.OrderItem) error
+	GetAllOrdersPaid(ctx context.Context) ([]dto.GetOrdersPaidResponse, error)
 	// GetCartByUserID(ctx context.Context, userID uuid.UUID) (result *dto.GetCartItemsResponse, err error)
 	Checkout(ctx context.Context, userID uuid.UUID, email string, name string) (*dto.SnapRsponse, error)
 	SetAdminOrderStatus(ctx context.Context, id uuid.UUID, status string) error
 	ShowOrder(ctx context.Context, userID uuid.UUID) ([]dto.ShowOrderResponse, error)
-
 }
 
 type orderService struct {
-	DB        *gorm.DB
-	orderRepo repository.OrderRepository
-	cartRepo  repository.CartRepository
-	cartService CartService
+	DB             *gorm.DB
+	orderRepo      repository.OrderRepository
+	cartRepo       repository.CartRepository
+	cartService    CartService
 	productService ProductService
-	cacheable cache.Cacheable
-	token     token.TokenUseCase
-	config    configs.MidtransConfig
+	cacheable      cache.Cacheable
+	token          token.TokenUseCase
+	config         configs.MidtransConfig
 }
 
 func NewOrderService(db *gorm.DB, orderRepo repository.OrderRepository, cartRepo repository.CartRepository, cartService CartService, productService ProductService, cacheable cache.Cacheable, token token.TokenUseCase, config configs.MidtransConfig) OrderService {
 	return &orderService{
-		DB:        db,
-		orderRepo: orderRepo,
-		cartRepo:  cartRepo,
-		cartService: cartService,
+		DB:             db,
+		orderRepo:      orderRepo,
+		cartRepo:       cartRepo,
+		cartService:    cartService,
 		productService: productService,
-		cacheable: cacheable,
-		token:     token,
-		config:    config,
+		cacheable:      cacheable,
+		token:          token,
+		config:         config,
 	}
+}
+
+func (s *orderService) GetAllOrdersPaid(ctx context.Context) ([]dto.GetOrdersPaidResponse, error) {
+	key := "orders:AllOrdersPaid"
+	var results []dto.GetOrdersPaidResponse
+	data := s.cacheable.Get(key)
+	if data != "" {
+		err := json.Unmarshal([]byte(data), &results)
+		if err != nil {
+			return nil, err
+		}
+		return results, nil
+	}
+	orders, err := s.orderRepo.GetAllOrdersPaid(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, order := range orders {
+		var productNames []string
+		for _, item := range order.OrderItems {
+			if item.Product != nil {
+				productNames = append(productNames, item.Product.Name)
+			}
+		}
+		var resi string
+		if len(order.Shipments) > 0 {
+			if order.Shipments[0].ResiNumber != "" {
+				resi = order.Shipments[0].ResiNumber
+			}
+		}
+		result := dto.GetOrdersPaidResponse{
+			ID:            order.ID,
+			UserName:      order.User.Name,
+			Resi:          resi,
+			PaymentStatus: order.PaymentStatus,
+			ProductName:   productNames,
+		}
+
+		results = append(results, result)
+	}
+
+	s.cacheable.Set(key, orders)
+	return results, nil
 }
 
 func (s *orderService) CreateOrder(ctx context.Context, order entity.Order) (uuid.UUID, error) {
@@ -200,13 +244,13 @@ func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email str
 	}
 
 	order := entity.Order{
-		UserID:           userID,
-		OrderCode:        orderCode,
-		Status:           "pending",
-		IsPaid:           false,
-		TotalAmount:      float64(cartData.TotalAmount),
-		TotalWeight:      float64(cartData.TotalWeight),
-		PaymentStatus:    "pending",
+		UserID:        userID,
+		OrderCode:     orderCode,
+		Status:        "pending",
+		IsPaid:        false,
+		TotalAmount:   float64(cartData.TotalAmount),
+		TotalWeight:   float64(cartData.TotalWeight),
+		PaymentStatus: "pending",
 	}
 	orderID, err := s.orderRepo.CreateOrder(tx, &order)
 	if err != nil {
@@ -316,34 +360,39 @@ func (s *orderService) ShowOrder(ctx context.Context, userID uuid.UUID) ([]dto.S
 	}
 
 	for _, order := range orders {
-		var orderItems []dto.OrderItems
-		for _, item := range order.OrderItems {
-			var categoryName, colorName, sizeName *string
-			if item.Product.Category != nil {
-				categoryName = &item.Product.Category.Name
+		items := []dto.OrderItems{}
+
+		for _, dataItem := range order.OrderItems {
+			var categoryName, sizeName, colorName *string
+			if dataItem.Product.Category != nil {
+				categoryName = &dataItem.Product.Category.Name
 			}
-			if item.Product.Color != nil {
-				colorName = &item.Product.Color.Name
+			if dataItem.Product.Size != nil {
+				sizeName = &dataItem.Product.Size.Name
 			}
-			if item.Product.Size != nil {
-				sizeName = &item.Product.Size.Name
+			if dataItem.Product.Color != nil {
+				colorName = &dataItem.Product.Color.Name
 			}
-			orderItems = append(orderItems, dto.OrderItems{
-				Quantity: item.Quantity,
-				Subtotal: item.Subtotal,
-				Note:     item.Note,
+
+			item := dto.OrderItems{
+				Quantity:    dataItem.Quantity,
+				Note:        dataItem.Note,
 				Product: &dto.GetProductByIDShowOrder{
-					ID:           item.Product.ID,
-					Name:         item.Product.Name,
-					Description:  item.Product.Description,
-					Price:        item.Product.Price,
-					ImageURL:     item.Product.ImageURL,
-					Weight:       item.Product.Weight,
+					ID:           dataItem.Product.ID,
+					Name:         dataItem.Product.Name,
+					CategoryID:   dataItem.Product.CategoryID,
+					Description:  dataItem.Product.Description,
+					ImageURL:     dataItem.Product.ImageURL,
+					HasVariant:   dataItem.Product.HasVariant,
+					Price:        dataItem.Product.Price,
+					Weight:       dataItem.Product.Weight,
 					CategoryName: categoryName,
-					ColorName:    colorName,
 					SizeName:     sizeName,
+					ColorName:    colorName,
 				},
-			})
+				Subtotal: float64(dataItem.Quantity) * dataItem.Product.Price,
+			}
+			items = append(items, item)
 		}
 
 		results = append(results, dto.ShowOrderResponse{
@@ -352,8 +401,9 @@ func (s *orderService) ShowOrder(ctx context.Context, userID uuid.UUID) ([]dto.S
 			OrderCode:     order.OrderCode,
 			Status:        order.Status,
 			TotalAmount:   order.TotalAmount,
+			TotalWeight:   order.TotalWeight,
 			PaymentStatus: order.PaymentStatus,
-			OrderItems:    orderItems,
+			OrderItems:    items,
 		})
 	}
 

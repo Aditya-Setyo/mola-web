@@ -11,6 +11,7 @@ import (
 
 type OrderRepository interface {
 	GetAll(ctx context.Context) ([]entity.Order, error)
+	GetAllOrdersPaid(ctx context.Context) ([]entity.Order, error)
 	CreateOrder(db *gorm.DB, order *entity.Order) (uuid.UUID, error)
 	CreateOrderItem(db *gorm.DB, orderItem *entity.OrderItem) error
 	ShowOrder(ctx context.Context, userID uuid.UUID) ([]entity.Order, error)
@@ -37,7 +38,13 @@ func (r *orderRepository) GetAll(ctx context.Context) ([]entity.Order, error) {
 	}
 	return orders, nil
 }
-
+func (r *orderRepository) GetAllOrdersPaid(ctx context.Context) ([]entity.Order, error) {
+	var orders []entity.Order
+	if err := r.db.WithContext(ctx).Preload("User").Preload("OrderItems.Product").Preload("Shipments").Find(&orders).Where("payment_status = ?", "paid").Error; err != nil {
+		return nil, err
+	}
+	return orders, nil
+}
 func (r *orderRepository) CreateOrderItem(db *gorm.DB, orderItem *entity.OrderItem) error {
 	if err := db.Create(orderItem).Error; err != nil {
 		return err
@@ -47,7 +54,11 @@ func (r *orderRepository) CreateOrderItem(db *gorm.DB, orderItem *entity.OrderIt
 
 func (r *orderRepository) ShowOrder(ctx context.Context, userID uuid.UUID) ([]entity.Order, error) {
 	var orders []entity.Order
-	if err := r.db.WithContext(ctx).Preload("OrderItems.Product").Where("user_id = ?", userID).Find(&orders).Error; err != nil {
+	if err := r.db.WithContext(ctx).
+		Preload("OrderItems.Product").
+		Preload("OrderItems.Product.Category").
+		Preload("OrderItems.Product.Color").
+		Preload("OrderItems.Product.Size").Where("user_id = ?", userID).Find(&orders).Error; err != nil {
 		return nil, err
 	}
 	return orders, nil
