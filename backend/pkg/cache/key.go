@@ -1,9 +1,9 @@
 package cache
 
 const (
-    CacheKeyProductsGetById        = "products:get-by-id" 
+    CacheKeyProductsGetById        = "products:get-by-id:" 
     CacheKeyProductsGetAll         = "products:get-all"
-    CacheKeyProductsGetByCategoryId = "products:get-by-category-id"
+    CacheKeyProductsGetByCategoryId = "products:get-by-category-id:"
 )
 
 var ListCacheKeysProductToInvalidate = []string{

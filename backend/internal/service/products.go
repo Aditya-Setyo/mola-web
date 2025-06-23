@@ -79,7 +79,7 @@ func (s *productService) GetAll(ctx context.Context) (results []*dto.GetAllProdu
 }
 
 func (s *productService) GetProductByCategoryID(ctx context.Context, categoryID uint) (results []*dto.GetProductByCategoryID, err error) {
-	key := cache.CacheKeyProductsGetByCategoryId
+	key := cache.CacheKeyProductsGetByCategoryId+fmt.Sprint(categoryID)
 	data := s.cacheable.Get(key)
 	if data != "" {
 		err := json.Unmarshal([]byte(data), &results)
@@ -145,7 +145,7 @@ func (s *productService) GetProductByName(ctx context.Context, name string) (res
 
 func (s *productService) GetByID(ctx context.Context, id uuid.UUID) (result *dto.GetProductByID, err error) {
 	
-	key := cache.CacheKeyProductsGetById
+	key := cache.CacheKeyProductsGetById+fmt.Sprint(id)
 	data := s.cacheable.Get(key)
 	if data != "" {
 		err = json.Unmarshal([]byte(data), &result)
@@ -386,7 +386,7 @@ func (s *productService) Delete(ctx context.Context, id uuid.UUID) error {
 
 func (s *productService) invalidateProductListCaches() error {
 	for _, key := range cache.ListCacheKeysProductToInvalidate {
-		err := s.cacheable.Delete(key)
+		err := s.cacheable.DeleteByPrefix(key)
 		if err != nil {
 			return fmt.Errorf("WARNING: Failed to invalidate cache key %s: %v", key, err)
 		}
