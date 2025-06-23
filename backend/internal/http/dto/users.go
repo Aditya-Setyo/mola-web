@@ -29,6 +29,7 @@ type GetAllUserResponse struct {
 	Email     string    `json:"email"`
 	FullName  string    `json:"full_name"`
 	Phone     string    `json:"phone"`
+	Role      string    `json:"role"`
 }
 type UpdateUserProfileRequest struct {
 	ProfileID uuid.UUID `json:"profile_id" validate:"required"`

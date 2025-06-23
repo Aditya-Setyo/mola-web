@@ -42,6 +42,5 @@ type GetOrdersPaidResponse struct {
 	ID            uuid.UUID `json:"id"`
 	UserName      string    `json:"user_name"`
 	Resi          string    `json:"resi"`
-	PaymentStatus string    `json:"payment_status"`
 	ProductName   []string  `json:"product_name"`
 }

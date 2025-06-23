@@ -88,7 +88,6 @@ func (s *orderService) GetAllOrdersPaid(ctx context.Context) ([]dto.GetOrdersPai
 			ID:            order.ID,
 			UserName:      order.User.Name,
 			Resi:          resi,
-			PaymentStatus: order.PaymentStatus,
 			ProductName:   productNames,
 		}
 
