@@ -131,19 +131,19 @@ func (s *transactionService) PaymentNotification(ctx context.Context, request *d
 		}
 		return nil
 	}
-
+	var result error
 	switch transactionStatusResp.TransactionStatus {
 	case "capture":
 		switch transactionStatusResp.FraudStatus {
 		case "challenge":
-			return updateOrder("challenge", true)
+			result = updateOrder("challenge", true)
 		case "accept":
-			return updateOrder("paid", true)
+			result = updateOrder("paid", true)
 		}
 	case "settlement":
-		return updateOrder("paid", true)
+		result = updateOrder("paid", true)
 	case "deny":
-		return updateOrder("paid", true)
+		result = updateOrder("paid", true)
 	case "cancel", "expire":
 		dataOrder, err := s.orderRepo.GetOrderByID(ctx, orderID)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -162,17 +162,18 @@ func (s *transactionService) PaymentNotification(ctx context.Context, request *d
 				return errors.New("failed to update stock product")
 			}
 		}
-		return updateOrder("failure", false)
+		result = updateOrder("failure", false)
 	}
 	key := "carts:" + userID.String()
 	_ = s.cacheable.Delete(key)
+	
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Error = err
 		return err
 	}
 
-	return nil
+	return result
 }
 
 func (s *transactionService) Refund(ctx context.Context, request *dto.RefundRequest) error {

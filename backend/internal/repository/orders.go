@@ -55,7 +55,7 @@ func (r *orderRepository) ShowOrder(ctx context.Context, userID uuid.UUID) ([]en
 
 func (r *orderRepository) GetOrderByID(ctx context.Context, id uuid.UUID) (*entity.Order, error) {
 	var order entity.Order
-	if err := r.db.WithContext(ctx).Preload("OrderItems.Product").Find(&order, id).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("OrderItems.Product").First(&order, id).Error; err != nil {
 		return nil, err
 	}
 	return &order, nil

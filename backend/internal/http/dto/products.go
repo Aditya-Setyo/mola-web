@@ -116,3 +116,10 @@ type UpdateProductRequest struct {
 type DeleteProductRequest struct {
 	ID uuid.UUID `json:"id" validate:"required"`
 }
+
+type ProductReviewRequest struct {
+	ProductID uuid.UUID `json:"product_id" validate:"required"`
+	UserID    uuid.UUID `json:"user_id" validate:"required"`
+	Rating    int       `json:"rating" validate:"required"`
+	Review    string    `json:"review" validate:"required"`
+}

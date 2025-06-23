@@ -64,3 +64,7 @@ type UserLogs struct{
 type GoogleLoginRequest struct {
 	IdToken string `json:"id_token"`
 }
+type ResetPasswordRequest struct {
+	Token       string `json:"token" form:"token" validate:"required"`
+	NewPassword string `json:"new_password" form:"new_password" validate:"required,min=6"`
+}
