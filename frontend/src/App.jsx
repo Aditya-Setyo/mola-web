@@ -13,7 +13,7 @@ import UserProfile from "./pages/userprofile";
 import ResetPage from "./pages/resetpage";
 import ForgetPage from "./pages/forgetpage";
 import AdminPage from "./pages/admin/adminpage";
-import Categories from "./pages/admin/Categories";
+import MasterData from "./pages/admin/MasterData";
 import Products from "./pages/admin/Product";
 import Orders from "./pages/admin/Order";
 import Users from "./pages/admin/Users";
@@ -44,7 +44,7 @@ const App = () => {
       <Route path="/resetpage" element={<ResetPage />} />
       <Route path="/forgetpage" element={<ForgetPage />} />
       <Route path="/adminpage" element={<AdminPage />} />
-      <Route path="/admin/categories" element={<Categories />} />
+      <Route path="/admin/masterdata" element={<MasterData />} />
       <Route path="/admin/products" element={<Products />} />
       <Route path="/admin/orders" element={<Orders />} />
       <Route path="/admin/users" element={<Users />} />

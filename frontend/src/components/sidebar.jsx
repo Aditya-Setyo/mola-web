@@ -17,7 +17,7 @@ import { FaBars } from "react-icons/fa";
 const sidebarItems = [
     { label: "Dashboard", icon: <FaChartBar />, path: "/adminpage" },
     { label: "Products", icon: <FaBox />, path: "/admin/products" },
-    { label: "Categories", icon: <FaTags />, path: "/admin/categories" },
+    { label: "Maste Data", icon: <FaTags />, path: "/admin/masterdata" },
     { label: "Users", icon: <FaUser />, path: "/admin/users" },
     { label: "Orders", icon: <FaClipboardList />, path: "/admin/orders" },
     { label: "Payments", icon: <FaCreditCard />, path: "/admin/payments" },

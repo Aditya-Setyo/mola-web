@@ -27,7 +27,7 @@ const AdminPage = () => {
         fetch("http://localhost:8081/api/v1/orders/show", {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch("http://localhost:8081/api/v1/admin/sales-report", {
+        fetch("http://localhost:8081/api/v1/sales-report", {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
