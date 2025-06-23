@@ -12,7 +12,7 @@ type User struct {
 	Name          string         `gorm:"type:varchar(100);not null" json:"name"`
 	Email         string         `gorm:"type:varchar(100);not null;unique" json:"email"`
 	Password      string         `gorm:"type:text;not null" json:"-"`
-	ResetToken    string         `gorm:"type:text" json:"-"`
+	ResetToken    string         `gorm:"type:text;unique" json:"-"`
 	ResetTokenExp time.Time      `json:"-"`
 	Role          string         `gorm:"type:varchar(20);not null;default:admin" json:"role"`
 	CreatedAt     time.Time      `json:"created_at"`
@@ -35,7 +35,7 @@ type UserProfile struct {
 	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	UserID      *uuid.UUID     `gorm:"type:uuid;unique" json:"user_id"`
 	FullName    string         `gorm:"type:varchar(100);not null" json:"full_name"`
-	PhoneNumber *string        `gorm:"type:varchar(20)" json:"phone_number"`
+	PhoneNumber string        `gorm:"type:varchar(20)" json:"phone_number"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`

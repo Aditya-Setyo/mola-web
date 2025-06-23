@@ -16,6 +16,7 @@ type ProductRepository interface {
 	GetByName(ctx context.Context, name string) ([]*entity.Product, error)
 	GetStockProduct(db *gorm.DB, id uuid.UUID) (int64, error)
 	UpdateStockProduct(db *gorm.DB, stock int64, id uuid.UUID) error
+	InsertProductReview(db *gorm.DB, review *entity.ProductReview) error
 	Create(db *gorm.DB, product *entity.Product) error
 	Update(db *gorm.DB, product *entity.Product) error
 	Delete(db *gorm.DB, id uuid.UUID) error
@@ -164,6 +165,13 @@ func (r *productRepository) GetStockProduct(db *gorm.DB, id uuid.UUID) (int64, e
 
 func (r *productRepository) UpdateStockProduct(db *gorm.DB, stock int64, id uuid.UUID) error {
 	if err := db.Table("products").Where("id = ?", id).Update("stock", stock).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *productRepository) InsertProductReview (db *gorm.DB, review *entity.ProductReview) error {
+	if err := db.Create(review).Error; err != nil {
 		return err
 	}
 	return nil

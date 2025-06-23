@@ -25,6 +25,7 @@ type ProductService interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*dto.GetProductByID, error)
 	GetProductByCategoryID(ctx context.Context, categoryID uint) ([]*dto.GetProductByCategoryID, error)
 	GetProductByName(ctx context.Context, name string) ([]dto.GetProductByName, error)
+	InsertProductReview(ctx context.Context, request *dto.ProductReviewRequest) error
 	Create(ctx context.Context, request *dto.CreateProductRequest) error
 	Update(ctx context.Context, request *dto.UpdateProductRequest) error
 	CheckStockProduct(tx *gorm.DB, productID uuid.UUID) (int64, error)
@@ -232,6 +233,35 @@ func (s *productService) UpdateStockProduct(ctx context.Context, productID uuid.
 	return nil
 }
 
+func (s *productService) InsertProductReview(ctx context.Context, request *dto.ProductReviewRequest) error {
+	tx := s.DB.WithContext(ctx).Begin()
+	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			log.Printf("PANIC RECOVERED: Rolling back transaction due to panic: %v", p)
+			panic(p)
+		} else if tx.Error != nil {
+			tx.Rollback()
+			log.Printf("ERROR: Rolling back transaction due to service error: %v", tx.Error)
+		}
+	}()
+	data := &entity.ProductReview{
+		ProductID: request.ProductID,
+		UserID:    request.UserID,
+		Rating:    request.Rating,
+		Review:   request.Review,
+	}
+	err := s.repo.InsertProductReview(tx, data)
+	if err != nil {
+		tx.Error = err
+		return err
+	}
+	if err := tx.Commit().Error; err != nil {
+		tx.Error = err
+		return err
+	}
+	return nil
+}
 
 func (s *productService) Create(ctx context.Context, request *dto.CreateProductRequest) error {
 	src, err := request.Image.Open()
