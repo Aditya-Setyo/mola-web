@@ -169,7 +169,7 @@ const Categories = () => {
                               setEditCategoryId(id);
                               setEditValues({ ...editValues, [id]: category.name });
                             }}
-                            className="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded text-xs"
+                            className="bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-1 rounded text-xs"
                           >
                             Edit
                           </button>

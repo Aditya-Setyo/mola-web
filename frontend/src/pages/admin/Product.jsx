@@ -232,8 +232,8 @@ const Products = () => {
                     <td className="px-4 py-2">Rp {item.price?.toLocaleString()}</td>
                     <td className="px-4 py-2">{item.stock}</td>
                     <td className="px-4 py-2 space-x-2">
-                      <button onClick={() => handleEdit(item)} className="text-blue-600 hover:underline text-sm">Edit</button>
-                      <button onClick={() => handleDelete(item.id)} className="text-red-600 hover:underline text-sm">Hapus</button>
+                      <button onClick={() => handleEdit(item)} className="bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-1 rounded text-xs">Edit</button>
+                      <button onClick={() => handleDelete(item.id)} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs">Hapus</button>
                     </td>
                   </tr>
                 ))
