@@ -166,6 +166,7 @@ func (s *transactionService) PaymentNotification(ctx context.Context, request *d
 	}
 	key := "carts:" + userID.String()
 	_ = s.cacheable.Delete(key)
+	
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Error = err

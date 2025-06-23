@@ -39,7 +39,7 @@ func (s *shipmentService) AddResiNumber(ctx context.Context, request *dto.Shipme
 	}()
 	shipment := &entity.Shipment{
 		OrderID: request.OrderID,
-		ResiNumber: &request.ResiNumber,
+		ResiNumber: request.ResiNumber,
 		Cost: request.Cost,
 	}
 	err := s.repo.CreateShipment(tx, shipment)

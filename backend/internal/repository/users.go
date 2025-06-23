@@ -12,6 +12,7 @@ type UserRepository interface {
 	Create(db *gorm.DB, user *entity.User) error
 	FindAll(ctx context.Context) ([]entity.User, error)
 	FindByEmail(ctx context.Context, email string) (*entity.User, error)
+	FindByResetToken(ctx context.Context, resetToken string) (*entity.User, error)
 	GetUserProfile(ctx context.Context, userID uuid.UUID) (*entity.User, error)
 	UpdateUser(db *gorm.DB, user *entity.User) error
 	UpdateUserProfile(db *gorm.DB, userProfile *entity.UserProfile) error
@@ -85,4 +86,14 @@ func (r *userRepository) UpdateUserAddress(db *gorm.DB, userAddress *entity.User
 
 func (r *userRepository) ForgotPassword(db *gorm.DB, email string) error {
 	return db.Model(&entity.User{}).Where("email = ?", email).Update("password", "").Error
+}
+
+func (r *userRepository) FindByResetToken(ctx context.Context, resetToken string) (*entity.User, error) {
+	user := new(entity.User)
+	if err := r.db.WithContext(ctx).
+		Where("reset_token = ?", resetToken).
+		First(&user).Error; err != nil {
+		return nil, err
+	}
+	return user, nil
 }
