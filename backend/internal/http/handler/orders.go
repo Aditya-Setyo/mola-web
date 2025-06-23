@@ -17,6 +17,17 @@ func NewOrderHandler(orderService service.OrderService) OrderHandler {
 	return OrderHandler{orderService}
 }
 
+func (h *OrderHandler) GetOrdersPaid (ctx echo.Context) error {
+	orders, err := h.orderService.GetAllOrdersPaid(ctx.Request().Context())
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, response.ErrorResponse(http.StatusInternalServerError, err.Error()))
+	}
+
+	return ctx.JSON(http.StatusOK, response.SuccessResponse("success", map[string]interface{}{
+		"orders": orders,
+	}))
+}
+
 func (h *OrderHandler) Checkout(ctx echo.Context) error {
 	userID, ok := ctx.Get("user_id").(uuid.UUID)
 	if !ok {

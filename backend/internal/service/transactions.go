@@ -126,8 +126,9 @@ func (s *transactionService) PaymentNotification(ctx context.Context, request *d
 		dataOrder.PaymentStatus = status
 		dataOrder.IsPaid = isPaid
 		if err := s.orderRepo.Update(tx, dataOrder); err != nil {
+			err = errors.New("failed to update order")
 			tx.Error = err
-			return errors.New("failed to update order")
+			return err
 		}
 		return nil
 	}
@@ -138,12 +139,12 @@ func (s *transactionService) PaymentNotification(ctx context.Context, request *d
 		case "challenge":
 			result = updateOrder("challenge", true)
 		case "accept":
-			result = updateOrder("paid", true)
+			result = updateOrder("lunas", true)
 		}
 	case "settlement":
-		result = updateOrder("paid", true)
+		result = updateOrder("lunas", true)
 	case "deny":
-		result = updateOrder("paid", true)
+		result = updateOrder("lunas", true)
 	case "cancel", "expire":
 		dataOrder, err := s.orderRepo.GetOrderByID(ctx, orderID)
 		if errors.Is(err, gorm.ErrRecordNotFound) {

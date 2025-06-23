@@ -20,12 +20,12 @@ type ShowOrderResponse struct {
 	OrderCode     string       `json:"order_code"`
 	Status        string       `json:"status"`
 	TotalAmount   float64      `json:"total_amount"`
+	TotalWeight   float64      `json:"total_weight"`
 	PaymentStatus string       `json:"payment_status"`
 	OrderItems    []OrderItems `json:"order_items"`
 }
 
 type OrderItems struct {
-	ProductID uuid.UUID                `json:"product_id"`
 	Quantity  int                      `json:"quantity"`
 	Subtotal  float64                  `json:"subtotal"`
 	Note      *string                  `json:"note"`
@@ -36,4 +36,11 @@ type GetPaymentStatusResponse struct {
 	TokenMidtrans string `json:"token_midtrans" gorm:"column:payment_url"`
 	PaymentUrl    string `json:"payment_url" gorm:"column:token_midtrans"`
 	PaymentStatus string `json:"payment_status" gorm:"column:payment_status"`
+}
+
+type GetOrdersPaidResponse struct {
+	ID            uuid.UUID `json:"id"`
+	UserName      string    `json:"user_name"`
+	Resi          string    `json:"resi"`
+	ProductName   []string  `json:"product_name"`
 }

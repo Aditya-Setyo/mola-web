@@ -25,23 +25,44 @@ type Product struct {
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 
 	// Relationships
-	Category       *Category       `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:NO ACTION;" json:"category,omitempty"`
-	Color          *Color          `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:NO ACTION;" json:"color,omitempty"`
-	Size           *Size           `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:NO ACTION;" json:"size,omitempty"`
-	OrderItems     []OrderItem     `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:NO ACTION;" json:"order_items,omitempty"`
-	ProductReviews []ProductReview `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"product_reviews,omitempty"`
+	Category       *Category        `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:NO ACTION;" json:"category,omitempty"`
+	Color          *Color           `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:NO ACTION;" json:"color,omitempty"`
+	Size           *Size            `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:NO ACTION;" json:"size,omitempty"`
+	OrderItems     []OrderItem      `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:NO ACTION;" json:"order_items,omitempty"`
+	ProductReviews []ProductReview  `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"product_reviews,omitempty"`
+	// Variants       []ProductVariant `gorm:"foreignKey:ProductID" json:"variants,omitempty"`
 }
 
 func (Product) TableName() string {
 	return "public.products"
 }
 
+// type ProductVariant struct {
+// 	ID        uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+// 	ProductID uuid.UUID `gorm:"type:uuid;not null" json:"product_id"`
+// 	ColorID   *uint     `gorm:"not null" json:"color_id"`
+// 	SizeID    *uint     `gorm:"not null" json:"size_id"`
+// 	Stock     int       `gorm:"default:0" json:"stock"`
+// 	Price     float64   `gorm:"type:numeric(12,2);not null" json:"price"`
+// 	CreatedAt time.Time `json:"created_at"`
+// 	UpdatedAt time.Time `json:"updated_at"`
+
+// 	// Relations
+// 	Product *Product `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"product,omitempty"`
+// 	Color   *Color   `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:NO ACTION;" json:"color,omitempty"`
+// 	Size    *Size    `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:NO ACTION;" json:"size,omitempty"`
+// }
+
+// func (ProductVariant) TableName() string {
+// 	return "public.product_variants"
+// }
+
 type ProductReview struct {
 	ID        uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	ProductID uuid.UUID `gorm:"type:uuid;not null" json:"product_id"`
 	UserID    uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
 	Rating    int       `gorm:"not null" json:"rating"`
-	Review    string   `gorm:"type:text" json:"review"`
+	Review    string    `gorm:"type:text" json:"review"`
 	CreatedAt time.Time `json:"created_at"`
 
 	// Relationships
