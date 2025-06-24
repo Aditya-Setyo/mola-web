@@ -9,7 +9,7 @@ const Shipment = () => {
 
   const fetchShipments = async () => {
     try {
-      const res = await fetch("http://localhost:8081/api/v1/shipments", {
+      const res = await fetch("http://localhost:8081/api/v1/orders/paid", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
