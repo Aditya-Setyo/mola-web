@@ -12,16 +12,24 @@ const Advertisment = () => {
   const token = localStorage.getItem("token")?.trim();
 
   const fetchAds = async () => {
-    if (!token || !category) return;
+    if (!token) {
+      console.warn("⚠️ Token tidak ditemukan!");
+      return;
+    }
+
     try {
       const res = await fetch(`http://localhost:8081/api/v1/ads/${category}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      setAds(Array.isArray(data?.data?.ads) ? data.data.ads : []);
+
+      const adsData = Array.isArray(data?.data) ? data.data : [];
+      console.log("✅ Ads fetched:", adsData);
+      setAds(adsData);
     } catch (err) {
-      console.error("Gagal mengambil iklan:", err);
-      setAds([]);
+      console.error("❌ Gagal mengambil iklan:", err.message || err);
     }
   };
 
@@ -43,17 +51,44 @@ const Advertisment = () => {
       });
 
       const result = await res.json();
+      console.log("🚀 Upload result:", result);
+
       if (result.meta?.code === 200) {
-        alert("Iklan berhasil ditambahkan.");
+        alert("✅ Iklan berhasil ditambahkan.");
         setShowModal(false);
         setImage(null);
         fetchAds();
       } else {
-        alert("Gagal menambahkan iklan.");
+        alert(result.meta?.message || "❌ Gagal menambahkan iklan.");
       }
     } catch (err) {
-      console.error("Error saat upload iklan:", err);
-      alert("Terjadi kesalahan.");
+      console.error("❌ Error saat upload:", err.message || err);
+      alert("Terjadi kesalahan saat upload.");
+    }
+  };
+
+  const handleDelete = async (adId) => {
+    if (!window.confirm("Yakin ingin menghapus iklan ini?")) return;
+
+    try {
+      const res = await fetch(`http://localhost:8081/api/v1/admin/ads/${adId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const result = await res.json();
+      console.log("🗑️ Delete result:", result);
+
+      if (result.meta?.code === 200) {
+        alert("✅ Iklan berhasil dihapus.");
+        fetchAds();
+      } else {
+        alert(result.meta?.message || "❌ Gagal menghapus iklan.");
+      }
+    } catch (err) {
+      console.error("❌ Gagal hapus iklan:", err.message || err);
     }
   };
 
@@ -97,19 +132,54 @@ const Advertisment = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {filteredAds.map((ad, idx) => (
-            <div key={idx} className="border rounded shadow overflow-hidden bg-white">
-              <img
-                src={ad.image_url}
-                alt={`Ad ${idx}`}
-                className="w-full h-48 object-cover"
-              />
-              <div className="p-2 text-sm text-center">{ad.category}</div>
-            </div>
-          ))}
-        </div>
+        <table className="min-w-full text-sm mb-6">
+          <thead className="bg-gray-100 text-gray-700">
+            <tr>
+              <th className="px-4 py-3 text-left">Gambar</th>
+              <th className="px-4 py-3 text-left">Kategori</th>
+              <th className="px-4 py-3 text-left">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredAds.length > 0 ? (
+              filteredAds.map((ad, idx) => (
+                <tr key={ad.id || idx} className="border-t hover:bg-gray-50">
+                  <td className="px-4 py-2">
+                    <img
+                      src={
+                        ad.image_url?.startsWith("http")
+                          ? ad.image_url
+                          : `http://localhost:8081${ad.image_url}`
+                      }
+                      alt={`Ad ${idx}`}
+                      className="w-32 h-20 object-cover rounded border"
+                      onError={(e) =>
+                        (e.target.src = "/fallback-image.jpg")
+                      }
+                    />
+                  </td>
+                  <td className="px-4 py-2 capitalize">{ad.category}</td>
+                  <td className="px-4 py-2">
+                    <button
+                      onClick={() => handleDelete(ad.id)}
+                      className="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600"
+                    >
+                      Hapus
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={3} className="text-center py-6 text-gray-500">
+                  Tidak ada iklan ditampilkan.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
 
+        {/* Modal Tambah Iklan */}
         {showModal && (
           <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
             <div className="bg-white p-6 rounded w-full max-w-md shadow">
@@ -142,7 +212,7 @@ const Advertisment = () => {
                   onClick={uploadAd}
                   className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
                 >
-                  Upload
+                  Tambah
                 </button>
               </div>
             </div>
