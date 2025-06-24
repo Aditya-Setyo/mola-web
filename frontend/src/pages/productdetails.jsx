@@ -53,14 +53,59 @@ const ProductDetailPage = () => {
     }
   };
 
-  const handleBuyNow = () => {
+  const handleBuyNow = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
       alert("Silakan login terlebih dahulu untuk melakukan pembelian.");
       navigate("/loginpage");
       return;
     }
-    navigate("/userprofile");
+
+    try {
+      const orderId = `ORDER-${Date.now()}`;
+      const grossAmount = product.price * quantity;
+
+      const payload = {
+        transaction_details: {
+          order_id: orderId,
+          gross_amount: grossAmount,
+        },
+        item_details: [
+          {
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            quantity: quantity,
+          },
+        ],
+      };
+
+      console.log("📦 Payload dikirim ke backend:", payload);
+
+      const res = await fetch("http://localhost:8081/api/v1/payments/midtrans", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json();
+      console.log("✅ Respon Midtrans:", json);
+
+      const redirectUrl = json.redirect_url || json.data?.redirect_url?.redirect_url;
+
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+      } else {
+        alert("URL pembayaran tidak ditemukan.");
+        console.error("❌ redirect_url tidak ada:", json);
+      }
+    } catch (error) {
+      console.error("❌ Gagal proses pembayaran:", error);
+      alert("Terjadi kesalahan saat memproses pembayaran.");
+    }
   };
 
   useEffect(() => {
@@ -86,6 +131,23 @@ const ProductDetailPage = () => {
     fetchProduct();
     return () => controller.abort();
   }, [id]);
+
+  const [reviews, setReviews] = useState([]);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const res = await fetch(`http://localhost:8081/api/v1/reviews`);
+        const json = await res.json();
+        const productReviews = json.filter(r => r.product_id === Number(id));
+        setReviews(productReviews);
+      } catch (err) {
+        console.error("Gagal ambil ulasan:", err);
+      }
+    };
+    fetchReviews();
+  }, [id]);
+
 
   if (loading) {
     return (
@@ -194,7 +256,6 @@ const ProductDetailPage = () => {
                 Keranjang
               </button>
 
-
               <button
                 onClick={handleBuyNow}
                 className="bg-black text-white px-6 py-2 rounded hover:bg-gray-800"
@@ -223,27 +284,36 @@ const ProductDetailPage = () => {
           </div>
 
           {activeTab === "description" ? (
-            <div className="text-gray-700 max-w-3xl mx-auto px-4">
+            <div className="text-gray-700 max-w-3xl mx-auto px-4 ml-4">
               <h4 className="text-xl font-semibold mb-2">Detail Produk</h4>
-              <p>{product.description || "Tidak ada deskripsi."}</p>
+              <p className="text-justify">{product.description || "Tidak ada deskripsi."}</p>
             </div>
           ) : (
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-2">
-              {[1, 2].map((i) => (
-                <div key={i} className="border p-4 rounded-lg">
-                  <div className="flex justify-between mb-2">
-                    <h4 className="font-bold text-gray-800">User {i}</h4>
-                    <div className="flex text-yellow-400">
-                      {[...Array(5)].map((_, j) => (
-                        <FaStar key={j} className="text-sm" />
-                      ))}
+              {reviews.length > 0 ? (
+                reviews.map((review, i) => (
+                  <div key={review.id || i} className="border p-4 rounded-lg bg-white shadow-sm">
+                    <div className="flex justify-between mb-2">
+                      <h4 className="font-bold text-gray-800">{review.user_name || `User ${i + 1}`}</h4>
+                      <div className="flex text-yellow-400">
+                        {[...Array(5)].map((_, j) => (
+                          <FaStar
+                            key={j}
+                            className={`text-sm ${j < review.rating ? "text-yellow-400" : "text-gray-300"}`}
+                          />
+                        ))}
+                      </div>
                     </div>
+                    <p className="text-gray-700 text-sm mb-1">
+                      <span className="font-medium text-gray-900">{review.product_name || "-"}</span>
+                    </p>
+                    <p className="text-gray-600 text-sm">{review.comment}</p>
                   </div>
-                  <p className="text-gray-700 text-sm">
-                    Produk bagus dan sesuai deskripsi. Recommended!
-                  </p>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-center text-sm text-gray-500 col-span-full">Belum ada ulasan.</p>
+              )}
+
             </div>
           )}
         </div>

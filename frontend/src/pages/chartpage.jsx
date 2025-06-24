@@ -1,206 +1,149 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
 import {
+  FaTrashAlt,
   FaMinus,
   FaPlus,
-  FaTrashAlt,
   FaArrowRight,
 } from "react-icons/fa";
 
 const ChartPage = () => {
   const [items, setItems] = useState([]);
-  const [cartId, setCartId] = useState(null); // ✅ Simpan cartId
-  const [selectedItems, setSelectedItems] = useState([]);
+  const [promo, setPromo] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
-  const token = localStorage.getItem("token");
 
   useEffect(() => {
-    if (!token) return setLoading(false);
-    fetchCart();
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+
+    const cart = JSON.parse(localStorage.getItem("cart")) || [];
+    setItems(cart.map((item) => ({ ...item, qty: item.quantity })));
+    setLoading(false);
   }, []);
 
-  const fetchCart = async () => {
-    try {
-      const res = await fetch("http://localhost:8081/api/v1/carts", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!res.ok) {
-        const errData = await res.json();
-        console.error("Gagal ambil keranjang:", errData);
-        return;
-      }
-
-      const data = await res.json();
-      console.log("Cart data:", data);
-
-      setCartId(data.data?.cart?.cart_id || null);
-      setItems(data.data?.cart?.cart_items || []);
-    } catch (err) {
-      console.error("Error:", err);
-    } finally {
-      setLoading(false);
-    }
+  const updateQty = (id, delta) => {
+    setItems((prev) => {
+      const updated = prev.map((it) =>
+        it.id === id ? { ...it, qty: Math.max(1, it.qty + delta) } : it
+      );
+      localStorage.setItem("cart", JSON.stringify(updated.map(({ qty, ...rest }) => ({ ...rest, quantity: qty }))));
+      return updated;
+    });
   };
 
-  const updateQty = async (item, newQty) => {
-    if (newQty < 1 || !cartId) return;
-
-    try {
-      await fetch(`http://localhost:8081/api/v1/carts/${cartId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          cart_item_id: item.cart_item_id,
-          cart_id: cartId,
-          product_id: item.product.id,
-          quantity: newQty,
-          note: item.note,
-        }),
-      });
-
-      fetchCart();
-    } catch (err) {
-      console.error("Update qty gagal:", err);
-    }
+  const removeItem = (id) => {
+    const filtered = items.filter((it) => it.id !== id);
+    setItems(filtered);
+    localStorage.setItem("cart", JSON.stringify(filtered.map(({ qty, ...rest }) => ({ ...rest, quantity: qty }))));
   };
 
-  const deleteItem = async (cartItemId) => {
-    try {
-      await fetch(`http://localhost:8081/api/v1/carts/${cartItemId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      fetchCart();
-    } catch (err) {
-      console.error("Gagal hapus item:", err);
-    }
-  };
-
-  const toggleSelect = (cartItemId) => {
-    setSelectedItems((prev) =>
-      prev.includes(cartItemId)
-        ? prev.filter((id) => id !== cartItemId)
-        : [...prev, cartItemId]
-    );
-  };
-
-  const selectedList = items.filter((it) => selectedItems.includes(it.cart_item_id));
-  const subtotal = selectedList.reduce(
-    (s, it) => s + (it.product?.price || 0) * it.quantity,
-    0
-  );
+  const subtotal = items.reduce((s, it) => s + it.price * it.qty, 0);
+  const preorder = promo === "SPRING20" ? subtotal * 0.3 : 0;
+  const total = subtotal * preorder;
 
   return (
-    <>
+    <div>
       <Navbar />
       <main className="px-4 md:px-20 py-10">
-        <h1 className="text-3xl font-bold mb-6">🛒 Keranjang Belanja</h1>
+        <h1 className="text-3xl font-extrabold mb-6">YOUR CART</h1>
+
+        {!isLoggedIn && (
+          <div className="mb-4 p-4 bg-yellow-100 border-l-4 border-yellow-400 text-yellow-700 rounded">
+            Anda belum login. Silakan login untuk melihat dan mengelola keranjang Anda.
+          </div>
+        )}
 
         {loading ? (
-          <p>Memuat...</p>
-        ) : items.length === 0 ? (
-          <p className="text-gray-500">Keranjang kosong.</p>
+          <p>Loading...</p>
         ) : (
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="md:col-span-2 space-y-4">
-              {items.map((item) => (
-                <div
-                  key={item.cart_item_id}
-                  className="flex items-center gap-4 border p-4 rounded-lg shadow"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedItems.includes(item.cart_item_id)}
-                    onChange={() => toggleSelect(item.cart_item_id)}
-                    className="accent-black w-5 h-5"
-                  />
-                  <img
-                    src={
-                      item.product?.image_url
-                        ? `http://localhost:8081${item.product.image_url}`
-                        : "https://via.placeholder.com/70x90"
-                    }
-                    alt={item.product?.name}
-                    className="w-20 h-24 object-cover rounded"
-                  />
-                  <div className="flex-1">
-                    <h4 className="font-semibold">{item.product?.name}</h4>
-                    <p className="text-sm text-gray-500">
-                      Size: {item.product?.size || "-"} | Color:{" "}
-                      {item.product?.color || "-"}
-                    </p>
-                    <p className="font-bold text-black">
-                      Rp {item.product?.price?.toLocaleString() || "0"}
-                    </p>
-                    <div className="flex gap-2 mt-2">
+          <div className="grid lg:grid-cols-[2fr_1fr] gap-6">
+            <div className="space-y-4">
+              {items.length === 0 ? (
+                <p className="text-gray-500">Keranjang Anda kosong.</p>
+              ) : (
+                items.map((it) => (
+                  <div
+                    key={it.id}
+                    className="flex items-center gap-4 border rounded-lg p-4 shadow-sm"
+                  >
+                    <img
+                      src={it.image_url ? `http://localhost:8081${it.image_url}` : "https://via.placeholder.com/70x90"}
+                      alt={it.name}
+                      className="w-20 h-24 object-cover rounded"
+                    />
+                    <div className="flex-1">
+                      <h4 className="font-semibold">{it.name}</h4>
+                      <p className="text-xs text-gray-500">
+                        Size: {it.size} &nbsp;|&nbsp; Color: {it.color}
+                      </p>
+                      <p className="mt-1 font-semibold">Rp {it.price.toLocaleString()}</p>
+                    </div>
+
+                    <div className="flex items-center gap-2 bg-gray-100 rounded-full px-3 py-1">
                       <button
-                        onClick={() => updateQty(item, item.quantity - 1)}
-                        className="px-2 bg-gray-200 rounded hover:bg-gray-300"
+                        onClick={() => updateQty(it.id, -1)}
+                        className="text-sm"
                       >
                         <FaMinus />
                       </button>
-                      <span>{item.quantity}</span>
+                      <span>{it.qty}</span>
                       <button
-                        onClick={() => updateQty(item, item.quantity + 1)}
-                        className="px-2 bg-gray-200 rounded hover:bg-gray-300"
+                        onClick={() => updateQty(it.id, 1)}
+                        className="text-sm"
                       >
                         <FaPlus />
                       </button>
                     </div>
+
+                    <button
+                      onClick={() => removeItem(it.id)}
+                      className="text-red-500 hover:text-red-600"
+                    >
+                      <FaTrashAlt />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => deleteItem(item.cart_item_id)}
-                    className="text-red-500 hover:text-red-600"
-                  >
-                    <FaTrashAlt />
-                  </button>
-                </div>
-              ))}
+                ))
+              )}
             </div>
 
-            <aside className="border rounded-lg p-6 shadow space-y-4 bg-white">
-              <h2 className="font-bold text-xl">Order Summary</h2>
+            <aside className="border rounded-lg p-6 space-y-4 h-fit shadow-md">
+              <h3 className="font-semibold text-lg">Order Summary</h3>
 
-              <div className="flex justify-between">
-                <span>Subtotal</span>
-                <span className="font-semibold">Rp {subtotal.toLocaleString()}</span>
-              </div>
-
-              <div className="flex justify-between">
-                <span className="text-gray-600">Preorder (30%)</span>
-                <span className="text-blue-500">Rp {(subtotal * 0.3).toLocaleString()}</span>
-              </div>
-
-              <hr />
-
-              <div className="flex justify-between text-lg font-bold">
-                <span>Total to Pay</span>
-                <span>Rp {(subtotal * 0.3).toLocaleString()}</span>
-              </div>
-
+              <dl className="text-sm space-y-1">
+                <div className="flex justify-between">
+                  <dt>Subtotal</dt>
+                  <dd className="font-medium">Rp {subtotal.toLocaleString()}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt>Preorder (30%)</dt>
+                  <dd className="font-medium text-red-500">
+                    Rp {preorder.toLocaleString()}
+                  </dd>
+                </div>
+                <hr />
+                <div className="flex justify-between text-base font-bold">
+                  <dt>Total</dt>
+                  <dd>Rp {total.toLocaleString()}</dd>
+                </div>
+              </dl>
               <button
-                disabled={selectedItems.length === 0}
-                className={`w-full py-3 rounded-full text-white font-semibold flex items-center justify-center gap-2 ${selectedItems.length ? "bg-black hover:bg-gray-900" : "bg-gray-300 cursor-not-allowed"
+                disabled={items.length === 0}
+                className={`w-full py-3 rounded-full flex items-center justify-center gap-2 transition ${items.length > 0
+                  ? "bg-black text-white hover:bg-gray-900"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
                   }`}
               >
-                Go to Checkout → <FaArrowRight />
+                Go to Checkout
+                <FaArrowRight />
               </button>
             </aside>
           </div>
         )}
       </main>
       <Footer />
-    </>
+    </div>
   );
 };
 
