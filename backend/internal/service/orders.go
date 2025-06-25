@@ -146,62 +146,6 @@ func (s *orderService) CreateOrderItem(ctx context.Context, orderItem entity.Ord
 	return nil
 }
 
-// func (s *orderService) GetCartByUserID(ctx context.Context, userID uuid.UUID) (result *dto.GetCartItemsResponse, err error) {
-// 	key := "carts:" + userID.String()
-// 	data := s.cacheable.Get(key)
-// 	if data != "" {
-// 		err = json.Unmarshal([]byte(data), &result)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		return result, nil
-// 	}
-// 	res, err := s.cartRepo.GetCartItemsByUserID(ctx, userID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	items := []dto.CartItems{}
-// 	var totalAmount float64
-
-// 	for _, dataItem := range res.CartItems {
-// 		item := dto.CartItems{
-// 			CartItemsID: dataItem.ID,
-// 			Quantity:    dataItem.Quantity,
-// 			Note:        &dataItem.Note,
-// 			Product: &dto.GetProductByID{
-// 				ID:           dataItem.Product.ID,
-// 				Name:         dataItem.Product.Name,
-// 				CategoryID:   dataItem.Product.CategoryID,
-// 				Description:  dataItem.Product.Description,
-// 				ImageURL:     dataItem.Product.ImageURL,
-// 				HasVariant:   dataItem.Product.HasVariant,
-// 				Price:        dataItem.Product.Price,
-// 				Stock:        dataItem.Product.Stock,
-// 				Weight:       dataItem.Product.Weight,
-// 				CategoryName: &dataItem.Product.Category.Name,
-// 				SizeName:     &dataItem.Product.Size.Name,
-// 				ColorName:    &dataItem.Product.Color.Name,
-// 			},
-// 			Subtotal: float64(dataItem.Quantity) * dataItem.Product.Price,
-// 		}
-// 		totalAmount += float64(dataItem.Quantity) * dataItem.Product.Price
-// 		items = append(items, item)
-// 	}
-
-// 	result = &dto.GetCartItemsResponse{
-// 		CartID:      res.ID,
-// 		TotalAmount: totalAmount,
-// 		CartItems:   items,
-// 	}
-// 	mashalledData, err := json.Marshal(result)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	_ = s.cacheable.Set(key, mashalledData)
-// 	return result, nil
-// }
-
 func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email string, name string) (*dto.SnapRsponse, error) {
 	tx := s.DB.WithContext(ctx).Begin()
 	defer func() {
@@ -229,16 +173,39 @@ func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email str
 
 	for i, item := range cartData.CartItems {
 		totalPrice := item.Product.Price * 0.3
+		productName := item.Product.Name
+
+		// Jika punya varian
+		if item.Product.HasVariant {
+			for _, value := range item.Product.Variants {
+				if value.Color != "" {
+					productName += " - " + value.Color
+				}
+				if value.Size != "" {
+					productName += " - " + value.Size + " | "
+				}
+			}
+		}
 		items = append(items, midtrans.ItemDetails{
 			ID:    item.Product.ID.String(),
-			Name:  item.Product.Name,
+			Name:  productName,
 			Price: int64(totalPrice),
 			Qty:   int32(item.Quantity),
 		})
-		err = s.productService.UpdateStockProductOnOrder(tx, cartData.CartItems[i].Product.ID, int64(cartData.CartItems[i].Quantity))
-		if err != nil {
-			tx.Error = err
-			return nil, err
+		if item.Product.HasVariant {
+			for _, value := range item.Product.Variants {
+				err = s.productService.UpdateStockProductVariantOnOrder(tx, value.ID, int64(item.Quantity))
+				if err != nil {
+					tx.Error = err
+					return nil, err
+				}
+			}
+		} else {
+			err = s.productService.UpdateStockProductOnOrder(tx, cartData.CartItems[i].Product.ID, int64(cartData.CartItems[i].Quantity))
+			if err != nil {
+				tx.Error = err
+				return nil, err
+			}
 		}
 	}
 
@@ -260,10 +227,14 @@ func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email str
 		orderItem := entity.OrderItem{
 			OrderID:   orderID,
 			ProductID: item.Product.ID,
-			Quantity:  item.Quantity,
-			Price:     item.Product.Price,
-			Subtotal:  item.Subtotal,
-			Note:      item.Note,
+			// ProductVariantID: item.Product.Variants[i].ID,
+			Quantity: item.Quantity,
+			Price:    item.Product.Price,
+			Subtotal: item.Subtotal,
+			Note:     item.Note,
+		}
+		for _, value := range item.Product.Variants {
+			orderItem.ProductVariantID = value.ID
 		}
 		if err := s.orderRepo.CreateOrderItem(tx, &orderItem); err != nil {
 			tx.Error = err
@@ -306,6 +277,7 @@ func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email str
 		tx.Error = err
 		return nil, err
 	}
+	_ = s.cacheable.Delete("carts:" + userID.String())
 	return &response, nil
 }
 
@@ -367,13 +339,12 @@ func (s *orderService) ShowOrder(ctx context.Context, userID uuid.UUID) ([]dto.S
 			if dataItem.Product.Category != nil {
 				categoryName = &dataItem.Product.Category.Name
 			}
-			// if dataItem.Product.Size != nil {
-			// 	sizeName = &dataItem.Product.Size.Name
-			// }
-			// if dataItem.Product.Color != nil {
-			// 	// colorName = &dataItem.Product.Color.Name
-			// }
-
+			if dataItem.ProductVariant.Size != nil {
+				sizeName = &dataItem.ProductVariant.Size.Name
+			}
+			if dataItem.ProductVariant.Color != nil {
+				colorName = &dataItem.ProductVariant.Color.Name
+			}
 			item := dto.OrderItems{
 				Quantity: dataItem.Quantity,
 				Note:     dataItem.Note,

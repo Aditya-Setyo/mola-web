@@ -30,7 +30,9 @@ type ProductService interface {
 	Create(ctx context.Context, request *dto.CreateProductRequest) error
 	Update(ctx context.Context, request *dto.UpdateProductRequest) error
 	CheckStockProduct(tx *gorm.DB, productID uuid.UUID) (int64, error)
+	CheckStockProductVariant(tx *gorm.DB, variantID uuid.UUID) (int64, error)
 	UpdateStockProductOnOrder(tx *gorm.DB, productID uuid.UUID, stock int64) error
+	UpdateStockProductVariantOnOrder(tx *gorm.DB, variantID uuid.UUID, stock int64) error
 	UpdateStockProduct(ctx context.Context, productID uuid.UUID, stock int64) error
 	Delete(ctx context.Context, id uuid.UUID) error
 }
@@ -338,6 +340,21 @@ func (s *productService) CheckStockProduct(tx *gorm.DB, productID uuid.UUID) (in
 	return stock, nil
 }
 
+func (s *productService) CheckStockProductVariant(tx *gorm.DB, variantID uuid.UUID) (int64, error) {
+	stock, err := s.repoVariant.GetStockProductVariant(tx, variantID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		err = errors.New("order not found")
+		return 0, err
+	} else if err != nil {
+		return 0, err
+	}
+	if stock <= 0 {
+		return 0, errors.New("stock is empty")
+	}
+
+	return stock, nil
+}
+
 func (s *productService) UpdateStockProductOnOrder(tx *gorm.DB, productID uuid.UUID, stock int64) error {
 	dataStock, err := s.CheckStockProduct(tx, productID)
 	if err != nil {
@@ -346,6 +363,23 @@ func (s *productService) UpdateStockProductOnOrder(tx *gorm.DB, productID uuid.U
 	stock = dataStock - stock
 
 	err = s.repo.UpdateStockProduct(tx, stock, productID)
+	if err != nil {
+		return err
+	}
+
+	_ = s.invalidateProductListCaches()
+
+	return nil
+}
+
+func (s *productService)  UpdateStockProductVariantOnOrder(tx *gorm.DB, variantID uuid.UUID, stock int64) error{
+	dataStock, err := s.CheckStockProductVariant(tx, variantID)
+	if err != nil {
+		return err
+	}
+	stock = dataStock - stock
+
+	err = s.repoVariant.UpdateStock(tx, variantID, int(stock))
 	if err != nil {
 		return err
 	}
