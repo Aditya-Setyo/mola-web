@@ -265,28 +265,42 @@ func (s *cartService) UpdateCartItem(ctx context.Context, userID uuid.UUID, req 
 			log.Printf("ERROR: Rolling back transaction due to service error: %v", tx.Error)
 		}
 	}()
-	cartItems := entity.CartItem{
+
+	cartItem := &entity.CartItem{
 		ID:        req.ID,
 		CartID:    req.CartID,
 		ProductID: req.ProductID,
 		Quantity:  req.Quantity,
-		Note:      *req.Note,
 	}
-	if err := s.cartRepo.UpdateCartItems(tx, &cartItems); err != nil {
+
+	if req.Note != nil {
+		cartItem.Note = *req.Note
+	}
+
+	// Jika menggunakan varian, set juga ProductVariantID
+	if req.ProductVariantID != nil {
+		cartItem.ProductVariantID = req.ProductVariantID
+	}
+
+	if err := s.cartRepo.UpdateCartItems(tx, cartItem); err != nil {
 		tx.Error = err
 		return err
 	}
+
 	if err := tx.Commit().Error; err != nil {
 		tx.Error = err
 		return err
 	}
+
+	// Hapus cache keranjang user
 	key := "carts:" + userID.String()
 	_ = s.cacheable.Delete(key)
 
 	return nil
 }
 
-func (s *cartService) RemoveCartItem(ctx context.Context, userID uuid.UUID, req uuid.UUID) error {
+
+func (s *cartService) RemoveCartItem(ctx context.Context, userID uuid.UUID, cartItemID uuid.UUID) error {
 	tx := s.DB.WithContext(ctx).Begin()
 	defer func() {
 		if p := recover(); p != nil {
@@ -298,18 +312,21 @@ func (s *cartService) RemoveCartItem(ctx context.Context, userID uuid.UUID, req 
 			log.Printf("ERROR: Rolling back transaction due to service error: %v", tx.Error)
 		}
 	}()
-	if err := s.cartRepo.RemoveCartItem(tx, &req); err != nil {
+
+	if err := s.cartRepo.RemoveCartItem(tx, &cartItemID); err != nil {
 		tx.Error = err
 		return err
 	}
+
 	if err := tx.Commit().Error; err != nil {
 		tx.Error = err
 		return err
 	}
+
+	// Invalidate cache
 	key := "carts:" + userID.String()
-	err := s.cacheable.Delete(key)
-	if err != nil {
-		return err
-	}
+	_ = s.cacheable.Delete(key)
+
 	return nil
 }
+

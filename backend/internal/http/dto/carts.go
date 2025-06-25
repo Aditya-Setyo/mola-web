@@ -37,6 +37,7 @@ type UpdateCartItemRequest struct {
 	ID        uuid.UUID `json:"cart_item_id" validate:"required"`
 	CartID    uuid.UUID `json:"cart_id" validate:"required"`
 	ProductID uuid.UUID `json:"product_id" validate:"required"`
+	ProductVariantID *uuid.UUID `json:"product_variant_id,omitempty"`
 	Quantity  int       `json:"quantity" validate:"required,min=1"`
 	Note      *string   `json:"note"`
 }
