@@ -24,6 +24,16 @@ type ShowOrderResponse struct {
 	PaymentStatus string       `json:"payment_status"`
 	OrderItems    []OrderItems `json:"order_items"`
 }
+type GetAllOrdersResponse struct {
+	ID            uuid.UUID    `json:"id"`
+	UserID        uuid.UUID    `json:"user_id"`
+	OrderCode     string       `json:"order_code"`
+	Status        string       `json:"status"`
+	TotalAmount   float64      `json:"total_amount"`
+	TotalWeight   float64      `json:"total_weight"`
+	PaymentStatus string       `json:"payment_status"`
+	OrderItems    []OrderItems `json:"order_items"`
+}
 
 type OrderItems struct {
 	Quantity  int                      `json:"quantity"`

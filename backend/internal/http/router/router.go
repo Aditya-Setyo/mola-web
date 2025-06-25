@@ -273,10 +273,15 @@ func PrivateRoutes(
 			Path:    "/admin/ads",
 			Handler: adsHandler.UploadAd,
 			Roles:   []string{"admin"},
+		},{
+			Method:  http.MethodGet,
+			Path:    "/admin/orders",
+			Handler: orderHandler.GetAdminOrders,
+			Roles:   []string{"admin"},
 		},
 		{
 			Method:  http.MethodGet,
-			Path:    "/orders/paid",
+			Path:    "/admin/orders/paid",
 			Handler: orderHandler.GetOrdersPaid,
 			Roles:   []string{"admin"},
 		},

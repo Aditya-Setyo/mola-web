@@ -80,3 +80,14 @@ func (h *OrderHandler) SetAdminOrderStatus(ctx echo.Context) error {
 
 	return ctx.JSON(http.StatusOK, response.SuccessResponse("success", map[string]interface{}{}))
 }
+
+func (h *OrderHandler) GetAdminOrders(ctx echo.Context) error {
+	orders, err := h.orderService.GetAllOrders(ctx.Request().Context())
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, response.ErrorResponse(http.StatusInternalServerError, err.Error()))
+	}
+
+	return ctx.JSON(http.StatusOK, response.SuccessResponse("success", map[string]interface{}{
+		"orders": orders,
+	}))
+}
