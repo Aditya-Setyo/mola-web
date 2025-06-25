@@ -85,10 +85,10 @@ func (s *orderService) GetAllOrdersPaid(ctx context.Context) ([]dto.GetOrdersPai
 			}
 		}
 		result := dto.GetOrdersPaidResponse{
-			ID:            order.ID,
-			UserName:      order.User.Name,
-			Resi:          resi,
-			ProductName:   productNames,
+			ID:          order.ID,
+			UserName:    order.User.Name,
+			Resi:        resi,
+			ProductName: productNames,
 		}
 
 		results = append(results, result)
@@ -228,11 +228,11 @@ func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email str
 	enabledPaymentsTypes = append(enabledPaymentsTypes, snap.AllSnapPaymentType...)
 
 	for i, item := range cartData.CartItems {
-
+		totalPrice := item.Product.Price * 0.3
 		items = append(items, midtrans.ItemDetails{
 			ID:    item.Product.ID.String(),
 			Name:  item.Product.Name,
-			Price: int64(item.Product.Price),
+			Price: int64(totalPrice),
 			Qty:   int32(item.Quantity),
 		})
 		err = s.productService.UpdateStockProductOnOrder(tx, cartData.CartItems[i].Product.ID, int64(cartData.CartItems[i].Quantity))
@@ -277,11 +277,12 @@ func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email str
 
 	m := snap.Client{}
 	m.New(s.config.ServerKey, midtrans.Sandbox)
-
+	totalPaid := float64(cartData.TotalAmount) * 0.3
+	log.Println("totalPaid: ", totalPaid)
 	req := &snap.Request{
 		TransactionDetails: midtrans.TransactionDetails{
 			OrderID:  orderID.String(),
-			GrossAmt: int64(order.TotalAmount),
+			GrossAmt: int64(totalPaid),
 		},
 		CustomerDetail: &midtrans.CustomerDetails{
 			FName: name,
@@ -366,16 +367,16 @@ func (s *orderService) ShowOrder(ctx context.Context, userID uuid.UUID) ([]dto.S
 			if dataItem.Product.Category != nil {
 				categoryName = &dataItem.Product.Category.Name
 			}
-			if dataItem.Product.Size != nil {
-				sizeName = &dataItem.Product.Size.Name
-			}
-			if dataItem.Product.Color != nil {
-				colorName = &dataItem.Product.Color.Name
-			}
+			// if dataItem.Product.Size != nil {
+			// 	sizeName = &dataItem.Product.Size.Name
+			// }
+			// if dataItem.Product.Color != nil {
+			// 	// colorName = &dataItem.Product.Color.Name
+			// }
 
 			item := dto.OrderItems{
-				Quantity:    dataItem.Quantity,
-				Note:        dataItem.Note,
+				Quantity: dataItem.Quantity,
+				Note:     dataItem.Note,
 				Product: &dto.GetProductByIDShowOrder{
 					ID:           dataItem.Product.ID,
 					Name:         dataItem.Product.Name,

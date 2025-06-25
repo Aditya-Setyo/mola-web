@@ -3,9 +3,10 @@ package dto
 import "github.com/google/uuid"
 
 type AddToCartRequest struct {
-	ProductID uuid.UUID `json:"product_id" validate:"required"`
-	Quantity  int       `json:"quantity" validate:"required,min=1"`
-	Note      string    `json:"note"`
+	ProductID        uuid.UUID  `json:"product_id" validate:"required"`
+	ProductVariantID *uuid.UUID `json:"product_variant_id,omitempty"`
+	Quantity         int        `json:"quantity" validate:"required,min=1"`
+	Note             string     `json:"note"`
 }
 
 type AddToCartItemsRequest struct {
@@ -17,7 +18,10 @@ type GetCartItemsResponse struct {
 	CartID        uuid.UUID   `json:"cart_id"`
 	CartItems     []CartItems `json:"cart_items"`
 	TotalAmount   float64     `json:"total_amount"`
+	TotalPaid     float64     `json:"total_paid"`
 	TotalWeight   float64     `json:"total_weight"`
+	ColorName     *string     `json:"color_name,omitempty"`
+	SizeName      *string     `json:"size_name,omitempty"`
 	PaymentUrl    string      `json:"payment_url"`
 	TokenMidtrans string      `json:"token_midtrans"`
 }

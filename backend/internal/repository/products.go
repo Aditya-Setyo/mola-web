@@ -3,20 +3,20 @@ package repository
 import (
 	"context"
 	"mola-web/internal/entity"
-	"mola-web/internal/http/dto"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type ProductRepository interface {
-	GetAll(ctx context.Context) ([]*dto.GetAllProducts, error)
-	GetByID(db *gorm.DB, id uuid.UUID) (*dto.GetProductByID, error)
-	GetByCategoryID(ctx context.Context, categoryID uint) ([]*dto.GetProductByCategoryID, error)
+	GetAll(ctx context.Context) ([]*entity.Product, error)
+	GetByID(db *gorm.DB, id uuid.UUID) (*entity.Product, error)
+	GetByCategoryID(ctx context.Context, categoryID uint) ([]entity.Product, error)
 	GetByName(ctx context.Context, name string) ([]*entity.Product, error)
 	GetStockProduct(db *gorm.DB, id uuid.UUID) (int64, error)
 	UpdateStockProduct(db *gorm.DB, stock int64, id uuid.UUID) error
 	InsertProductReview(db *gorm.DB, review *entity.ProductReview) error
+	GetProductReviews(ctx context.Context, productID uuid.UUID) ([]entity.ProductReview, error)
 	Create(db *gorm.DB, product *entity.Product) error
 	Update(db *gorm.DB, product *entity.Product) error
 	Delete(db *gorm.DB, id uuid.UUID) error
@@ -30,69 +30,30 @@ func NewProductRepository(db *gorm.DB) ProductRepository {
 	return &productRepository{db}
 }
 
-func (r *productRepository) GetAll(ctx context.Context) ([]*dto.GetAllProducts, error) {
-	products := make([]*dto.GetAllProducts, 0)
+func (r *productRepository) GetAll(ctx context.Context) ([]*entity.Product, error) {
+	products := make([]*entity.Product, 0)
 
-	err := r.db.WithContext(ctx).
-		Table("products").
-		Select(`
-			products.id,
-			products.name,
-			products.description,
-			products.image_url,
-			products.has_variant,
-			products.stock,
-			products.price,
-			products.weight,
-			products.category_id,
-			categories.name AS category_name,
-			products.color_id,
-			colors.name AS color_name,
-			products.size_id,
-			sizes.name AS size_name
-		`).
-		Joins("LEFT JOIN categories ON categories.id = products.category_id").
-		Joins("LEFT JOIN colors ON colors.id = products.color_id").
-		Joins("LEFT JOIN sizes ON sizes.id = products.size_id").
-		Where("products.deleted_at IS NULL").
-		Scan(&products).Error
-
-	if err != nil {
+	if err := r.db.WithContext(ctx).
+		Preload("Category").
+		Preload("Variants").
+		Preload("Variants.Color").
+		Preload("Variants.Size").
+		Find(&products).Error; err != nil {
 		return nil, err
 	}
-
 	return products, nil
 }
 
-func (r *productRepository) GetByCategoryID(ctx context.Context, categoryID uint) ([]*dto.GetProductByCategoryID, error) {
-	products := make([]*dto.GetProductByCategoryID, 0)
+func (r *productRepository) GetByCategoryID(ctx context.Context, categoryID uint) ([]entity.Product, error) {
+	products := make([]entity.Product, 0)
 
-	err := r.db.WithContext(ctx).
-		Table("products").
-		Select(`
-			products.id,
-			products.name,
-			products.description,
-			products.image_url,
-			products.has_variant,
-			products.stock,
-			products.price,
-			products.weight,
-			products.category_id,			
-			categories.name AS category_name,
-			products.color_id,
-			colors.name AS color_name,
-			products.size_id,
-			sizes.name AS size_name
-		`).
-		Joins("LEFT JOIN categories ON categories.id = products.category_id").
-		Joins("LEFT JOIN colors ON colors.id = products.color_id").
-		Joins("LEFT JOIN sizes ON sizes.id = products.size_id").
+	if err := r.db.WithContext(ctx).
+		Preload("Category").
+		Preload("Variants").
+		Preload("Variants.Color").
+		Preload("Variants.Size").
 		Where("products.category_id = ?", categoryID).
-		Where("products.deleted_at IS NULL").
-		Scan(&products).Error
-
-	if err != nil {
+		Find(&products).Error; err != nil {
 		return nil, err
 	}
 
@@ -104,8 +65,9 @@ func (r *productRepository) GetByName(ctx context.Context, name string) ([]*enti
 	products := make([]*entity.Product, 0)
 	if err := r.db.WithContext(ctx).
 		Preload("Category").
-		Preload("Color").
-		Preload("Size").
+		Preload("Variants").
+		Preload("Variants.Color").
+		Preload("Variants.Size").
 		Where("products.name ILIKE ?", "%"+name+"%").
 		Find(&products).Error; err != nil {
 		return nil, err
@@ -113,38 +75,20 @@ func (r *productRepository) GetByName(ctx context.Context, name string) ([]*enti
 	return products, nil
 }
 
-func (r *productRepository) GetByID(db *gorm.DB, id uuid.UUID) (*dto.GetProductByID, error) {
-	products := new(dto.GetProductByID)
+func (r *productRepository) GetByID(db *gorm.DB, id uuid.UUID) (*entity.Product, error) {
+	var product entity.Product
 
 	err := db.
-		Table("products").
-		Select(`
-			products.id,
-			products.name,
-			products.description,
-			products.image_url,
-			products.has_variant,
-			products.stock,
-			products.price,
-			products.weight,
-			products.category_id,			
-			categories.name AS category_name,
-			products.color_id,
-			colors.name AS color_name,
-			products.size_id,
-			sizes.name AS size_name
-		`).
-		Joins("LEFT JOIN categories ON categories.id = products.category_id").
-		Joins("LEFT JOIN colors ON colors.id = products.color_id").
-		Joins("LEFT JOIN sizes ON sizes.id = products.size_id").
-		Where("products.id = ?", id).
-		Where("products.deleted_at IS NULL").
-		Take(&products).Error
+		Preload("Category").
+		Preload("Variants").
+		Preload("Variants.Color").
+		Preload("Variants.Size").
+		First(&product, "id = ? AND deleted_at IS NULL", id).Error
 
 	if err != nil {
 		return nil, err
 	}
-	return products, nil
+	return &product, nil
 }
 
 func (r *productRepository) GetStockProduct(db *gorm.DB, id uuid.UUID) (int64, error) {
@@ -163,6 +107,16 @@ func (r *productRepository) GetStockProduct(db *gorm.DB, id uuid.UUID) (int64, e
 	return stock, nil
 }
 
+func (r *productRepository) GetProductReviews(ctx context.Context, productID uuid.UUID) ([]entity.ProductReview, error) {
+	reviews := make([]entity.ProductReview, 0)
+	if err := r.db.WithContext(ctx).
+		Where("product_id = ?", productID).
+		First(&reviews).Error; err != nil {
+		return nil, err
+	}
+	return reviews, nil
+}
+
 func (r *productRepository) UpdateStockProduct(db *gorm.DB, stock int64, id uuid.UUID) error {
 	if err := db.Table("products").Where("id = ?", id).Update("stock", stock).Error; err != nil {
 		return err
@@ -170,7 +124,7 @@ func (r *productRepository) UpdateStockProduct(db *gorm.DB, stock int64, id uuid
 	return nil
 }
 
-func (r *productRepository) InsertProductReview (db *gorm.DB, review *entity.ProductReview) error {
+func (r *productRepository) InsertProductReview(db *gorm.DB, review *entity.ProductReview) error {
 	if err := db.Create(review).Error; err != nil {
 		return err
 	}
