@@ -1,37 +1,63 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import ilustrasilogin from "../assets/loginlogo.png";
 import ilustrasibg from "../assets/bg.png";
-import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
-import { auth, googleProvider, facebookProvider, signInWithPopup } from "../firebase";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { auth, googleProvider, signInWithPopup } from "../firebase";
+import { apiPost } from "../api";
 
-const ResetPage = () => {
+const ForgetPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [token, setToken] = useState("");
+  const [error, setError] = useState("");
+
+  // Fungsi untuk menangani pengiriman form reset password
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!token) {
+      alert("Token tidak tersedia di URL.");
+      return;
+    }
+
+    if (!password || !confirmPassword) {
+      alert("Harap lengkapi semua isian!");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      alert("Password tidak cocok!");
+      return;
+    }
+
+    try {
+      await apiPost("/reset-password", {
+        token: token,
+        new_password: password,
+      }, false);
+
+      alert("Berhasil reset password!");
+      navigate("/loginpage");
+    } catch (err) {
+      console.error("Reset gagal:", err.message);
+      alert("Reset gagal: " + err.message);
+    }
+  };
+
+
+  // Fungsi untuk menangani login dengan Google
   const handleGoogleLogin = () => {
     signInWithPopup(auth, googleProvider)
       .then((result) => {
         const user = result.user;
-        console.log("Login Google berhasil:", user.displayName);
-        alert(`Selamat datang, ${user.displayName}`);
-        navigate("/"); // atau ke dashboard kamu
-      })
-      .catch((error) => {
-        console.error("Login Google gagal:", error.message);
-        alert("Login gagal: " + error.message);
-      });
-  };
-
-  const handleFacebookLogin = () => {
-    signInWithPopup(auth, facebookProvider)
-      .then((result) => {
-        const user = result.user;
-        console.log("Login Facebook berhasil:", user.displayName);
         alert(`Selamat datang, ${user.displayName}`);
         navigate("/");
       })
       .catch((error) => {
-        console.error("Login Facebook gagal:", error.message);
-        alert("Login gagal: " + error.message);
+        alert("Login Google gagal: " + error.message);
       });
   };
 
@@ -40,13 +66,14 @@ const ResetPage = () => {
       {/* Kiri - gambar dan teks */}
       <div className="w-full lg:w-1/2 flex flex-col lg:flex-row items-center justify-between px-4 lg:px-10 text-center lg:text-left">
         <div className="mb-6 lg:mb-0">
-          <h1 className="text-2xl sm:text-3xl lg:text-7xl font-semibold text-gray-800 mb-2">Login</h1>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-6">Untuk Kemudahan Belanja!</h2>
+          <h1 className="text-2xl sm:text-3xl lg:text-7xl font-semibold text-gray-800 mb-2">Reset Password</h1>
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-6">Masukkan Password Baru</h2>
           <p className="text-sm text-gray-600">
-            Jika belum memiliki akun <br />
-            Anda bisa{" "}
-            <Link to="/registerpage" className="text-blue-600 font-medium">
-              Daftar di sini!</Link>
+            Jika sudah reset token, silakan isi form ini <br />
+            atau kembali ke{" "}
+            <Link to="/loginpage" className="text-blue-600 font-medium">
+              halaman login
+            </Link>
           </p>
         </div>
         <img
@@ -56,25 +83,40 @@ const ResetPage = () => {
         />
       </div>
 
-      {/* Kanan - Form login */}
+      {/* Kanan - Form reset */}
       <div className="w-full max-w-md mx-auto flex flex-col justify-center px-4 sm:px-8">
         <div className="flex justify-center gap-4 text-sm mb-8">
-          <button onClick={() => navigate("/loginpage")} className="text-blue-600 border-b-2 border-blue-600 font-bold">Masuk</button>
+          <button onClick={() => navigate("/loginpage")} className="text-gray-500 hover:text-blue-600 font-bold">Masuk</button>
           <button onClick={() => navigate("/registerpage")} className="text-gray-500 hover:text-blue-600 font-bold">Daftar</button>
         </div>
-
-        <form className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <input
-            type="passwordBaru"
+            type="text"
+            value={token}
+            onChange={(e) => setToken(e.target.value)} // <- ini penting!
+            placeholder="Masukan Token Reset"
+            className="w-full px-4 py-3 rounded-lg bg-gray-100 text-sm outline-none"
+            required
+          />
+          {/* Pesan error */}
+          {error && <p className="text-red-500 text-sm items-center">{error}</p>}
+          <input
+            type="password"
             placeholder="Masukkan Password Baru"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="w-full px-4 py-3 rounded-lg bg-gray-100 text-sm outline-none"
+            required
           />
           <input
-            type="konfirmasipassword"
-            placeholder="••••••••"
+            type="password"
+            placeholder="Konfirmasi Password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
             className="w-full px-4 py-3 rounded-lg bg-gray-100 text-sm outline-none"
+            required
           />
-          <div className="text-right text-xs text-gray-500">
+          <div className="text-right text-xs text-gray-500 mb-4">
             <Link to="/resetpage" className="hover:underline">
               Lupa Password?
             </Link>
@@ -83,7 +125,7 @@ const ResetPage = () => {
             type="submit"
             className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 transition"
           >
-            Kirim
+            Simpan
           </button>
         </form>
 
@@ -94,17 +136,13 @@ const ResetPage = () => {
         </div>
 
         <div className="flex justify-center gap-4">
-          <button onClick={handleGoogleLogin} className="flex items-center justify-center w-1/3 py-3 bg-white rounded-lg shadow-sm hover:shadow-md">
+          <button onClick={handleGoogleLogin} className="flex items-center justify-center w-100 py-3 bg-white rounded-lg shadow-md hover:shadow-md">
             <img src="https://cdn-icons-png.flaticon.com/512/281/281764.png" alt="Google" className="w-5 h-5" />
-          </button>
-          <button onClick={handleFacebookLogin} className="flex items-center justify-center w-1/3 py-3 bg-white rounded-lg shadow-sm hover:shadow-md">
-            <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" className="w-5 h-5" />
           </button>
         </div>
       </div>
     </div>
   );
-
 };
 
-export default ResetPage;
+export default ForgetPage;

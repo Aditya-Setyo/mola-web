@@ -46,4 +46,29 @@ export const apiGet = async (endpoint, withAuth = true) => {
     return await response.json();
   };
 
+// PUT request
+export const apiPut = async (endpoint, body, withAuth = true) => {
+  const response = await fetch(`${baseURL}${endpoint}`, {
+    method: "PUT",
+    headers: getHeaders(withAuth),
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw new Error("Gagal update data");
+  }
+  return await response.json();
+};
+
+// DELETE request
+export const apiDelete = async (endpoint, withAuth = true) => {
+  const response = await fetch(`${baseURL}${endpoint}`, {
+    method: "DELETE",
+    headers: getHeaders(withAuth),
+  });
+  if (!response.ok) {
+    throw new Error("Gagal hapus data");
+  }
+  return await response.json();
+};
+
   export const backendURL = import.meta.env.VITE_BACKEND_URL;

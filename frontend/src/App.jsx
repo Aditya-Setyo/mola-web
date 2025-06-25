@@ -31,6 +31,7 @@ const App = () => {
 
   return (
     <Routes>
+      {/* Users Routes */}
       <Route path="/" element={<Dashboard />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/loginpage" element={<LoginPage />} />
@@ -44,6 +45,8 @@ const App = () => {
       <Route path="/userprofile" element={<UserProfile />} />
       <Route path="/resetpage" element={<ResetPage />} />
       <Route path="/forgetpage" element={<ForgetPage />} />
+      
+      {/* Admin Routes */}
       <Route path="/adminpage" element={<AdminPage />} />
       <Route path="/admin/masterdata" element={<MasterData />} />
       <Route path="/admin/products" element={<Products />} />

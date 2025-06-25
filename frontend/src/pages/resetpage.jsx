@@ -3,10 +3,15 @@ import ilustrasilogin from "../assets/loginlogo.png";
 import ilustrasibg from "../assets/bg.png";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import { auth, googleProvider, facebookProvider, signInWithPopup } from "../firebase";
+import { useState } from "react";
+import { auth, googleProvider, signInWithPopup } from "../firebase";
+import { apiPost } from "../api";
 
 const ResetPage = () => {
   const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+
+  // Fungsi untuk menangani login dengan Google
   const handleGoogleLogin = () => {
     signInWithPopup(auth, googleProvider)
       .then((result) => {
@@ -21,6 +26,21 @@ const ResetPage = () => {
       });
   };
 
+  // untuk mengirim email reset password
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      console.log("Mengirim email:", email);
+      await apiPost("/forgot-password", { email}, false); // gunakan field `email`
+      alert("Token reset password telah dikirim ke email kamu.");
+      navigate("/forgetpage");
+    } catch (err) {
+      console.error("Gagal kirim token:", err.message);
+      alert("Terjadi kesalahan: " + err.message);
+    }
+  };
 
   return (
     <div style={{ backgroundImage: `url(${ilustrasibg})` }} className="flex flex-col lg:flex-row min-h-screen bg-gradient-to-r from-white to-slate-100 font-sans px-4 py-8 gap-8 justify-between items-center">
@@ -46,27 +66,24 @@ const ResetPage = () => {
       {/* Kanan - Form login */}
       <div className="w-full max-w-md mx-auto flex flex-col justify-center px-4 sm:px-8">
         <div className="flex justify-center gap-4 text-sm mb-8">
-          <button onClick={() => navigate("/loginpage")} className="text-blue-600 border-b-2 border-blue-600 font-bold">Masuk</button>
+          <button onClick={() => navigate("/loginpage")} className="text-gray-500 hover:text-blue-600 font-bold">Masuk</button>
           <button onClick={() => navigate("/registerpage")} className="text-gray-500 hover:text-blue-600 font-bold">Daftar</button>
         </div>
 
-        <form className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <input
-            type="emailkonfirmasi"
-            placeholder="Masukkan Email/No HP"
+            type="email"
+            value={email}
+            required
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Masukkan Email"
             className="w-full px-4 py-3 rounded-lg bg-gray-100 text-sm outline-none"
           />
-
-          <div className="text-right text-xs text-gray-500">
-            <Link to="/resetpage" className="hover:underline">
-              Lupa Password?
-            </Link>
-          </div>
-          <button onClick={() => navigate("/forgetpage")}
+          <button
             type="submit"
             className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 transition"
           >
-            Kirim
+            Kirim Token
           </button>
         </form>
 
