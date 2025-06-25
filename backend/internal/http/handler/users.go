@@ -166,7 +166,7 @@ func (h *UserHandler) ForgotPassword(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, response.ErrorResponse(http.StatusInternalServerError, err.Error()))
 	}
 
-    return ctx.JSON(http.StatusOK, response.SuccessResponse("link reset telah dikirim ke email", map[string]interface{}{}))
+    return ctx.JSON(http.StatusOK, response.SuccessResponse("token telah dikirim ke email", map[string]interface{}{}))
 }
 
 

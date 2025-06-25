@@ -107,6 +107,8 @@ func (r *productRepository) GetStockProduct(db *gorm.DB, id uuid.UUID) (int64, e
 	return stock, nil
 }
 
+
+
 func (r *productRepository) GetProductReviews(ctx context.Context, productID uuid.UUID) ([]entity.ProductReview, error) {
 	reviews := make([]entity.ProductReview, 0)
 	if err := r.db.WithContext(ctx).

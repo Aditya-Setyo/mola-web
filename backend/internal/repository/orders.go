@@ -16,10 +16,12 @@ type OrderRepository interface {
 	CreateOrderItem(db *gorm.DB, orderItem *entity.OrderItem) error
 	ShowOrder(ctx context.Context, userID uuid.UUID) ([]entity.Order, error)
 	GetOrderByID(ctx context.Context, id uuid.UUID) (*entity.Order, error)
+	GetOrderByIDAndProductID(ctx context.Context, idOrder uuid.UUID, idProduct uuid.UUID) (*entity.Order, error)
 	GetOrderItemsByOrderID(ctx context.Context, id uuid.UUID) ([]entity.OrderItem, error)
 	GetPendingPaymentStatusByUserID(db *gorm.DB, id uuid.UUID) (*dto.GetPaymentStatusResponse, error)
 	SetAdminOrderStatus(db *gorm.DB, id uuid.UUID, status string) error
 	Update(db *gorm.DB, order *entity.Order) error
+	UpdateOrderItem(db *gorm.DB, orderItem *entity.OrderItem) error
 	UpdatePaymentUrl(db *gorm.DB, id uuid.UUID, token string, paymentUrl string) error
 	Delete(db *gorm.DB, id uuid.UUID) error
 }
@@ -57,8 +59,10 @@ func (r *orderRepository) ShowOrder(ctx context.Context, userID uuid.UUID) ([]en
 	if err := r.db.WithContext(ctx).
 		Preload("OrderItems.Product").
 		Preload("OrderItems.Product.Category").
-		Preload("OrderItems.Product.Color").
-		Preload("OrderItems.Product.Size").Where("user_id = ?", userID).Find(&orders).Error; err != nil {
+		Preload("OrderItems.ProductVariant").
+		Preload("OrderItems.ProductVariant.Color").
+		Preload("OrderItems.ProductVariant.Size").
+		Where("user_id = ?", userID).Find(&orders).Error; err != nil {
 		return nil, err
 	}
 	return orders, nil
@@ -67,6 +71,14 @@ func (r *orderRepository) ShowOrder(ctx context.Context, userID uuid.UUID) ([]en
 func (r *orderRepository) GetOrderByID(ctx context.Context, id uuid.UUID) (*entity.Order, error) {
 	var order entity.Order
 	if err := r.db.WithContext(ctx).Preload("OrderItems.Product").First(&order, id).Error; err != nil {
+		return nil, err
+	}
+	return &order, nil
+}
+
+func (r *orderRepository) GetOrderByIDAndProductID(ctx context.Context, idOrder uuid.UUID, idProduct uuid.UUID) (*entity.Order, error) {
+	var order entity.Order
+	if err := r.db.WithContext(ctx).Preload("OrderItems.Product").First(&order, "id = ? AND order_items.product_id = ?", idOrder, idProduct).Error; err != nil {
 		return nil, err
 	}
 	return &order, nil
@@ -107,6 +119,18 @@ func (r *orderRepository) CreateOrder(db *gorm.DB, order *entity.Order) (uuid.UU
 		return uuid.Nil, err
 	}
 	return order.ID, nil
+}
+func (r *orderRepository) UpdateOrderItem(db *gorm.DB, orderItem *entity.OrderItem) error {
+	if err := db.Model(&entity.OrderItem{}).
+		Where("id = ?", orderItem.ID).
+		Select("quantity", "subtotal").
+		Updates(map[string]interface{}{
+			"quantity": orderItem.Quantity,
+			"subtotal": orderItem.Subtotal,
+		}).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *orderRepository) Update(db *gorm.DB, order *entity.Order) error {
