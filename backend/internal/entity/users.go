@@ -12,7 +12,7 @@ type User struct {
 	Name          string         `gorm:"type:varchar(100);not null" json:"name"`
 	Email         string         `gorm:"type:varchar(100);not null;unique" json:"email"`
 	Password      string         `gorm:"type:text;not null" json:"-"`
-	ResetToken    string         `gorm:"type:text;unique" json:"-"`
+	ResetToken    string         `gorm:"type:text" json:"-"`
 	ResetTokenExp time.Time      `json:"-"`
 	Role          string         `gorm:"type:varchar(20);not null;default:admin" json:"role"`
 	CreatedAt     time.Time      `json:"created_at"`
@@ -23,7 +23,6 @@ type User struct {
 	Orders         []Order         `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"orders,omitempty"`
 	UserProfile    *UserProfile    `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"user_profile,omitempty"`
 	UserAddresses  *UserAddress    `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"user_addresses,omitempty"`
-	ProductReviews []ProductReview `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"product_reviews,omitempty"`
 	Carts          []Cart          `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"carts,omitempty"`
 }
 

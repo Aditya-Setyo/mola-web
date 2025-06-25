@@ -13,6 +13,7 @@ type CartRepository interface {
 	GetCartItemsByUserID(db *gorm.DB, userID uuid.UUID) (*entity.Cart, error)
 	AddToCartItems(db *gorm.DB, req *entity.CartItem) error
 	GetCartItemByCartID(db *gorm.DB, cartID uuid.UUID, productID uuid.UUID) (*entity.CartItem, error)
+	GetCartItemByCartIDAndProductIDAndVariantID(db *gorm.DB, cartID uuid.UUID, productID uuid.UUID, variantID uuid.UUID) (*entity.CartItem, error)
 	UpdateCartItems(db *gorm.DB, req *entity.CartItem) error
 	UpdateCart(db *gorm.DB, req *entity.Cart) error
 	ClearCart(db *gorm.DB, cartID uuid.UUID) error
@@ -46,8 +47,9 @@ func (r *cartRepository) GetCartItemsByUserID(db *gorm.DB, userID uuid.UUID) (*e
 		Preload("CartItems").
 		Preload("CartItems.Product").
 		Preload("CartItems.Product.Category").
-		Preload("CartItems.Product.Color").
-		Preload("CartItems.Product.Size").
+		Preload("CartItems.ProductVariant").
+		Preload("CartItems.ProductVariant.Color").
+		Preload("CartItems.ProductVariant.Size").
 		Where("user_id = ?", userID).
 		Take(&req).Error; err != nil {
 		return nil, err
@@ -65,6 +67,14 @@ func (r *cartRepository) AddToCartItems(db *gorm.DB, req *entity.CartItem) error
 func (r *cartRepository) GetCartItemByCartID(db *gorm.DB, cartID uuid.UUID, productID uuid.UUID) (*entity.CartItem, error) {
 	var req *entity.CartItem
 	if err := db.Where("cart_id = ? AND product_id = ?", cartID, productID).First(&req).Error; err != nil {
+		return nil, err
+	}
+	return req, nil
+}
+
+func (r *cartRepository) GetCartItemByCartIDAndProductIDAndVariantID(db *gorm.DB, cartID uuid.UUID, productID uuid.UUID, variantID uuid.UUID) (*entity.CartItem, error) {
+	var req *entity.CartItem
+	if err := db.Where("cart_id = ? AND product_id = ? AND product_variant_id = ?", cartID, productID, variantID).First(&req).Error; err != nil {
 		return nil, err
 	}
 	return req, nil

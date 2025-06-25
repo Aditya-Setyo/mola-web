@@ -27,12 +27,13 @@ type cartService struct {
 	cartRepo    repository.CartRepository
 	orderRepo   repository.OrderRepository
 	productRepo repository.ProductRepository
+	variantRepo repository.ProductVariantRepository
 	cacheable   cache.Cacheable
 	token       token.TokenUseCase
 	config      configs.MidtransConfig
 }
 
-func NewCartService(db *gorm.DB, cartRepo repository.CartRepository, orderRepo repository.OrderRepository, productRepo repository.ProductRepository, tokenUseCase token.TokenUseCase, cacheable cache.Cacheable, config configs.MidtransConfig) CartService {
+func NewCartService(db *gorm.DB, cartRepo repository.CartRepository, orderRepo repository.OrderRepository, productRepo repository.ProductRepository, variantRepo repository.ProductVariantRepository, tokenUseCase token.TokenUseCase, cacheable cache.Cacheable, config configs.MidtransConfig) CartService {
 	return &cartService{
 		DB:          db,
 		cartRepo:    cartRepo,
@@ -41,6 +42,7 @@ func NewCartService(db *gorm.DB, cartRepo repository.CartRepository, orderRepo r
 		cacheable:   cacheable,
 		token:       tokenUseCase,
 		config:      config,
+		variantRepo: variantRepo,
 	}
 }
 
@@ -56,50 +58,81 @@ func (s *cartService) AddToCart(ctx context.Context, userID uuid.UUID, req *dto.
 			log.Printf("ERROR: Rolling back transaction due to service error: %v", tx.Error)
 		}
 	}()
-	var cart *entity.Cart
-	cart, err = s.cartRepo.GetCartByUserID(tx, userID)
+
+	// Ambil atau buat keranjang
+	cart, err := s.cartRepo.GetCartByUserID(tx, userID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		cart = &entity.Cart{
 			UserID: userID,
 			Status: "active",
 		}
-		err = s.cartRepo.AddToCart(tx, userID, cart)
-		if err != nil {
+		if err := s.cartRepo.AddToCart(tx, userID, cart); err != nil {
 			tx.Error = err
 			return err
 		}
-
 	} else if err != nil {
 		return err
 	}
 
+	// Validasi produk
 	product, err := s.productRepo.GetByID(tx, req.ProductID)
 	if err != nil {
 		return err
 	}
-	if req.Quantity > product.Stock {
-		err = errors.New("stock not enough")
-		tx.Error = err
-		return err
-	}
-	cartItemsData, err := s.cartRepo.GetCartItemByCartID(tx, cart.ID, req.ProductID)
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		log.Println("==nil==")
-		cartItems := &entity.CartItem{
-			CartID:    cart.ID,
-			ProductID: req.ProductID,
-			Quantity:  req.Quantity,
-			Note:      req.Note,
-		}
-		if err := s.cartRepo.AddToCartItems(tx, cartItems); err != nil {
+
+	var stockAvailable int
+	var variantID *uuid.UUID
+
+	if product.HasVariant {
+		// Produk memiliki varian, pastikan variant ID tersedia
+		if req.ProductVariantID == nil {
+			err = errors.New("product variant ID required")
 			tx.Error = err
 			return err
 		}
 
+		variant, err := s.variantRepo.GetByID(tx, *req.ProductVariantID)
+		if err != nil {
+			tx.Error = err
+			return err
+		}
+		if variant.ProductID != req.ProductID {
+			err = errors.New("variant does not belong to this product")
+			tx.Error = err
+			return err
+		}
+
+		stockAvailable = variant.Stock
+		variantID = &variant.ID
+
+	} else {
+		// Produk tanpa varian
+		stockAvailable = product.Stock
+	}
+
+	if req.Quantity > stockAvailable {
+		err = errors.New("stock not enough")
+		tx.Error = err
+		return err
+	}
+
+	// Cek apakah item sudah ada di cart (pakai ProductID + VariantID)
+	cartItemsData, err := s.cartRepo.GetCartItemByCartIDAndProductIDAndVariantID(tx, cart.ID, req.ProductID, *variantID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		cartItem := &entity.CartItem{
+			CartID:           cart.ID,
+			ProductID:        req.ProductID,
+			ProductVariantID: variantID,
+			Quantity:         req.Quantity,
+			Note:             req.Note,
+		}
+		if err := s.cartRepo.AddToCartItems(tx, cartItem); err != nil {
+			tx.Error = err
+			return err
+		}
 	} else if err != nil {
 		return err
 	} else {
-		log.Println("==cartItemsData==")
 		cartItemsData.Quantity += req.Quantity
 		if err := s.cartRepo.UpdateCartItems(tx, cartItemsData); err != nil {
 			tx.Error = err
@@ -112,18 +145,17 @@ func (s *cartService) AddToCart(ctx context.Context, userID uuid.UUID, req *dto.
 		return err
 	}
 
-	key := "carts:" + userID.String()
-	_ = s.cacheable.Delete(key)
+	_ = s.cacheable.Delete("carts:" + userID.String())
 
 	return nil
 }
 
 func (s *cartService) GetCartByUserID(db *gorm.DB, userID uuid.UUID) (*dto.GetCartItemsResponse, error) {
+	// Cek apakah user memiliki transaksi pending
 	dataPayment, err := s.orderRepo.GetPendingPaymentStatusByUserID(db, userID)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err 
+		return nil, err
 	}
-
 	if err == nil && dataPayment.PaymentStatus == "pending" {
 		return &dto.GetCartItemsResponse{
 			PaymentUrl:    dataPayment.PaymentUrl,
@@ -131,6 +163,7 @@ func (s *cartService) GetCartByUserID(db *gorm.DB, userID uuid.UUID) (*dto.GetCa
 		}, nil
 	}
 
+	// Cek cache
 	key := "carts:" + userID.String()
 	data := s.cacheable.Get(key)
 	if data != "" {
@@ -141,6 +174,7 @@ func (s *cartService) GetCartByUserID(db *gorm.DB, userID uuid.UUID) (*dto.GetCa
 		return result, nil
 	}
 
+	// Ambil data dari database
 	res, err := s.cartRepo.GetCartItemsByUserID(db, userID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, errors.New("cart not found")
@@ -148,8 +182,10 @@ func (s *cartService) GetCartByUserID(db *gorm.DB, userID uuid.UUID) (*dto.GetCa
 		return nil, err
 	}
 
+	// Bangun response
 	items := []dto.CartItems{}
 	var totalAmount, totalWeight float64
+
 	for _, dataItem := range res.CartItems {
 		item := dto.CartItems{
 			CartItemsID: dataItem.ID,
@@ -166,28 +202,56 @@ func (s *cartService) GetCartByUserID(db *gorm.DB, userID uuid.UUID) (*dto.GetCa
 				Stock:        dataItem.Product.Stock,
 				Weight:       dataItem.Product.Weight,
 				CategoryName: &dataItem.Product.Category.Name,
-				SizeName:     &dataItem.Product.Size.Name,
-				ColorName:    &dataItem.Product.Color.Name,
 			},
 			Subtotal: float64(dataItem.Quantity) * dataItem.Product.Price,
 		}
+
+		// Tambahkan info varian jika produk punya varian
+		if dataItem.Product.HasVariant {
+
+			log.Println("item.Product.Variants", dataItem.ProductVariant)
+			var variantDTO dto.ProductVariantInfo
+			variantDTO.ID = dataItem.ProductVariant.ID
+			variantDTO.Stock = dataItem.ProductVariant.Stock
+
+			if dataItem.ProductVariant.ColorID != nil {
+				variantDTO.ColorID = dataItem.ProductVariant.ColorID
+			}
+			if dataItem.ProductVariant.SizeID != nil {
+				variantDTO.SizeID = dataItem.ProductVariant.SizeID
+			}
+			if dataItem.ProductVariant.Color.Name != "" {
+				variantDTO.Color = dataItem.ProductVariant.Color.Name
+			}
+			if dataItem.ProductVariant.Size.Name != "" {
+				variantDTO.Size = dataItem.ProductVariant.Size.Name
+			}
+
+			item.Product.Variants = append(item.Product.Variants, variantDTO)
+			
+		}
+
 		totalAmount += item.Subtotal
 		totalWeight += float64(dataItem.Quantity) * dataItem.Product.Weight
 		items = append(items, item)
 	}
 
+	totalPaid := totalAmount * 30 / 100
 	result := &dto.GetCartItemsResponse{
 		CartID:      res.ID,
 		TotalWeight: totalWeight,
 		TotalAmount: totalAmount,
+		TotalPaid:   totalPaid,
 		CartItems:   items,
 	}
+
+	// Simpan ke cache
 	if cached, err := json.Marshal(result); err == nil {
 		_ = s.cacheable.Set(key, cached)
 	}
+
 	return result, nil
 }
-
 
 func (s *cartService) UpdateCartItem(ctx context.Context, userID uuid.UUID, req *dto.UpdateCartItemRequest) error {
 	tx := s.DB.WithContext(ctx).Begin()

@@ -17,10 +17,7 @@ type GetAllProducts struct {
 	CategoryID   *uint     `json:"category_id"`
 	CategoryName *string   `json:"category_name"`
 	HasVariant   bool      `json:"has_variant"`
-	ColorID      *uint     `json:"color_id"`
-	ColorName    *string   `json:"color"`
-	SizeID       *uint     `json:"size_id"`
-	SizeName     *string   `json:"size"`
+	Variants     []ProductVariantInfo  `json:"variants,omitempty"`
 }
 
 type GetProductByCategoryID struct {
@@ -34,26 +31,33 @@ type GetProductByCategoryID struct {
 	CategoryID   *uint     `json:"category_id"`
 	CategoryName *string   `json:"category_name"`
 	HasVariant   bool      `json:"has_variant"`
-	ColorID      *uint     `json:"color_id"`
-	ColorName    *string   `json:"color"`
-	SizeID       *uint     `json:"size_id"`
-	SizeName     *string   `json:"size"`
+	Variants     []ProductVariantInfo  `json:"variants,omitempty"`
 }
 
 type GetProductByName struct {
-	ID           uuid.UUID `json:"id"`
-	Name         string    `json:"name"`
-	Stock        int       `json:"stock"`
-	Weight       float64   `json:"weight"`
-	Price        float64   `json:"price"`
-	Description  *string   `json:"description"`
-	ImageURL     *string   `json:"image_url"`
-	CategoryID   *uint     `json:"category_id"`
-	CategoryName *string   `json:"category_name"`
-	HasVariant   bool      `json:"has_variant"`
-	ColorName    *string   `json:"color"`
-	SizeName     *string   `json:"size"`
+	ID           uuid.UUID             `json:"id"`
+	Name         string                `json:"name"`
+	Weight       float64               `json:"weight"`
+	Price        float64               `json:"price"`
+	Stock        int                   `json:"stock"`
+	Description  *string               `json:"description"`
+	ImageURL     *string               `json:"image_url"`
+	CategoryID   *uint                 `json:"category_id"`
+	CategoryName *string               `json:"category_name"`
+	HasVariant   bool                  `json:"has_variant"`
+	Variants     []ProductVariantInfo  `json:"variants,omitempty"` // hanya muncul jika ada variasi
 }
+
+
+type ProductVariantInfo struct {
+	ID      uuid.UUID `json:"id"`
+	ColorID *uint      `json:"color_id"`
+	SizeID  *uint      `json:"size_id"`
+	Color   string   `json:"color"`
+	Size    string   `json:"size"`
+	Stock   int       `json:"stock"`
+}
+
 
 type GetProductByID struct {
 	ID           uuid.UUID `json:"id"`
@@ -66,8 +70,7 @@ type GetProductByID struct {
 	CategoryID   *uint     `json:"category_id"`
 	CategoryName *string   `json:"category_name"`
 	HasVariant   bool      `json:"has_variant"`
-	ColorName    *string   `json:"color"`
-	SizeName     *string   `json:"size"`
+	Variants     []ProductVariantInfo  `json:"variants,omitempty"`
 }
 
 type GetProductByIDShowOrder struct {
@@ -84,6 +87,15 @@ type GetProductByIDShowOrder struct {
 	SizeName     *string   `json:"size"`
 }
 
+type GetProductReviewResponse struct {
+	ID          uuid.UUID `json:"id"`
+	UserName    string    `json:"user_name"`
+	ProductID   uuid.UUID `json:"product_id"`
+	Rating      float64   `json:"rating"`
+	Review      string    `json:"review"`
+}
+
+
 type CreateProductRequest struct {
 	Name        string     `json:"name" validate:"required"`
 	CategoryID  *uint      `json:"category_id"`
@@ -93,33 +105,46 @@ type CreateProductRequest struct {
 	HasVariant  bool       `json:"has_variant"`
 	Price       float64    `json:"price" validate:"required,min=0"`
 	Weight      float64    `json:"weight"`
-	ColorID     *uint `json:"color_id"`
-	SizeID      *uint `json:"size_id"`
-	Stock       int        `json:"stock" validate:"min=0"`
+	Stock   int   `json:"stock" validate:"min=0"`
+
+	// digunakan jika HasVariant == true
+	Variants []CreateProductVariantRequest `json:"variants,omitempty" validate:"omitempty,dive"`
+}
+
+type CreateProductVariantRequest struct {
+	ColorID *uint    `json:"color_id" validate:"required"`
+	SizeID  *uint    `json:"size_id" validate:"required"`
+	Stock   int      `json:"stock" validate:"required,min=0"`
 }
 
 type UpdateProductRequest struct {
 	ID          uuid.UUID `json:"id" validate:"required"`
-	Name        string    `json:"name" validate:"required"`
-	CategoryID  *uint     `json:"category_id"`
-	Description *string   `json:"description"`
-	ImageURL    *string   `json:"image_url"`
+	Name        string     `json:"name" validate:"required"`
+	CategoryID  *uint      `json:"category_id"`
+	Description *string    `json:"description"`
+	ImageURL    *string    `json:"image_url"`
 	Image       *multipart.FileHeader
-	HasVariant  bool      `json:"has_variant"`
-	Price       float64   `json:"price" validate:"required,min=0"`
-	Weight      float64   `json:"weight"`
-	ColorID     *uint     `json:"color_id"`
-	SizeID      *uint     `json:"size_id"`
-	Stock       int       `json:"stock" validate:"min=0"`
-}
+	HasVariant  bool       `json:"has_variant"`
+	Price       float64    `json:"price" validate:"required,min=0"`
+	Weight      float64    `json:"weight"`
+	Stock   int   `json:"stock" validate:"min=0"`
 
+	// digunakan jika HasVariant == true
+	Variants []UpdateProductVariantRequest `json:"variants,omitempty" validate:"omitempty,dive"`
+}
+type UpdateProductVariantRequest struct {
+	ID      *uuid.UUID // NULL jika varian baru
+	ColorID *uint
+	SizeID  *uint
+	Stock   int
+}
 type DeleteProductRequest struct {
 	ID uuid.UUID `json:"id" validate:"required"`
 }
 
 type ProductReviewRequest struct {
 	ProductID uuid.UUID `json:"product_id" validate:"required"`
-	UserID    uuid.UUID `json:"user_id" validate:"required"`
-	Rating    int       `json:"rating" validate:"required"`
+	UserName  string    `json:"user_name" validate:"required"`
+	Rating    float64       `json:"rating" validate:"required"`
 	Review    string    `json:"review" validate:"required"`
 }

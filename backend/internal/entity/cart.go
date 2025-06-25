@@ -28,6 +28,7 @@ type CartItem struct {
 	ID        uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	CartID    uuid.UUID      `gorm:"type:uuid;not null;index" json:"cart_id"`
 	ProductID uuid.UUID      `gorm:"type:uuid;not null;index" json:"product_id"`
+	ProductVariantID *uuid.UUID `gorm:"type:uuid" json:"product_variant_id,omitempty"`
 	Quantity  int            `gorm:"not null;default:1;check:quantity > 0" json:"quantity"`
 	Note      string         `gorm:"type:text" json:"note,omitempty"`
 	CreatedAt time.Time      `json:"created_at"`
@@ -37,6 +38,7 @@ type CartItem struct {
 	// Relationships
 	Cart    *Cart    `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"cart,omitempty"`
 	Product *Product `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"product,omitempty"`
+	ProductVariant *ProductVariant `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:NO ACTION;" json:"product_variant,omitempty"`
 }
 
 func (CartItem) TableName() string {

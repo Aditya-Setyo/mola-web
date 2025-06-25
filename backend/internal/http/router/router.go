@@ -72,6 +72,11 @@ func PublicRoutes(
 			Path:    "/ads/:category",
 			Handler: adsHandler.GetAds,
 		},
+		{
+			Method:  http.MethodGet,
+			Path:    "/products/review/:productID",
+			Handler: productHandler.GetReviews,
+		},
 	}
 }
 
@@ -273,6 +278,12 @@ func PrivateRoutes(
 			Method:  http.MethodGet,
 			Path:    "/orders/paid",
 			Handler: orderHandler.GetOrdersPaid,
+			Roles:   []string{"admin"},
+		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/review/:productID",
+			Handler: productHandler.AddReview,
 			Roles:   []string{"admin"},
 		},
 	}
