@@ -14,7 +14,7 @@ type Color struct {
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 
 	// Relationships
-	Products []Product `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:NO ACTION;" json:"products,omitempty"`
+	ProductVariant []ProductVariant `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:NO ACTION;" json:"products_variants,omitempty"`
 }
 
 func (Color) TableName() string {
