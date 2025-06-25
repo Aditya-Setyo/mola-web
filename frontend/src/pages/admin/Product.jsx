@@ -1,5 +1,3 @@
-// ✅ FINAL FIXED Products.jsx — Filter, Edit, Tambah ✅
-
 import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/sidebar";
 
@@ -182,7 +180,14 @@ const Products = () => {
       if (filter === "Semua") return true;
       return p.category_id === Number(filter);
     })
-    .filter(p => p.name?.toLowerCase().includes(search.toLowerCase()));
+    .filter(p => p.name?.toLowerCase().includes(search.toLowerCase())
+      || p.name?.toLowerCase().includes(search.toLowerCase())
+      || p.category?.name?.toLowerCase().includes(search.toLowerCase())
+      || p.price?.toString().includes(search)
+      || p.stock?.toString().includes(search)
+      || p.color?.toLowerCase().includes(search.toLowerCase())
+      || p.size?.toLowerCase().includes(search.toLowerCase())
+      || p.description?.toLowerCase().includes(search.toLowerCase()));
 
   const toggleDescription = (id) => {
     setExpandedDesc(prev => ({ ...prev, [id]: !prev[id] }));
@@ -308,7 +313,48 @@ const Products = () => {
                     onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
                   />
                   <select
+                    className="w-full border px-3.5 py-2 rounded pr-10 appearance-none"
+                    value={formData.size}
+                    onChange={(e) => setFormData({ ...formData, size: e.target.value })}
+                  >
+                    <option value="">Pilih Ukuran</option>
+                    {sizes.map((size) => (
+                      <option key={size.id} value={size.name}>
+                        {size.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <div className="w-full flex items-center gap-3 mt-2">
+                    <div
+                      className="w-10 h-10 rounded border"
+                      style={{ backgroundColor: formData.color }}
+                      title={
+                        colors.find((c) => c.name === formData.color)?.code || "Warna tidak ditemukan"
+                      }
+                    />
+                    <select
+                      className="flex-1 border px-3 py-2 rounded pr-10 appearance-none"
+                      value={formData.color}
+                      onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                    >
+                      <option value="">Pilih Warna</option>
+                      {colors.map((color) => (
+                        <option key={color.id} value={color.name}>
+                          {color.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Deskripsi"
                     className="w-full border px-3 py-2 rounded"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  />
+                  <select
+                    className="w-full border px-3 py-2 rounded pr-10 appearance-none"
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   >

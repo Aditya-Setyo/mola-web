@@ -27,15 +27,13 @@ const ShopSkincare = () => {
           ? json.data.products
           : [];
 
-        console.log("🔥 Semua Produk:", allProducts);
-
-        const skincareOnly = allProducts.filter(
-          (product) =>
-            product.category_name &&
-            product.category_name.toLowerCase().includes("skincare")
-        );
-
-        console.log("✅ Produk Skincare:", skincareOnly);
+        const skincareOnly = allProducts.filter((product) => {
+          const categoryName =
+            product.category_name ||
+            product.category?.name ||
+            (typeof product.category === "string" ? product.category : "");
+          return categoryName?.toLowerCase().includes("skincare");
+        });
 
         const total = skincareOnly.length;
         setTotalPages(Math.ceil(total / itemsPerPage));
@@ -52,21 +50,17 @@ const ShopSkincare = () => {
     fetchProducts();
   }, [currentPage]);
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
   return (
     <div>
       <Navbar />
 
-      {/* Hero */}
+      {/* Hero Section */}
       <section
         className="bg-cover bg-center flex flex-col md:flex-row items-center justify-between px-4 sm:px-8 md:px-16 py-12 min-h-[665px]"
         style={{ backgroundImage: `url(${IlustrasiSkincare})` }}
       >
         <div className="backdrop-blur-sm p-6 sm:p-10 w-full md:w-1/2 max-w-xl rounded-lg">
-          <h1 className="text-5xl md:text-7xl font-bold leading-snug text-gray-900">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-snug text-gray-900">
             Enhance <br /> your Natural Radiance
           </h1>
           <button
@@ -79,29 +73,23 @@ const ShopSkincare = () => {
       </section>
 
       {/* Produk Skincare */}
-      <section
-        ref={productRef}
-        className="px-4 py-12 md:px-20 md:py-10 mb-10"
-      >
-        <h2 className="md:text-3xl font-bold mb-8 text-center text-gray-800 mt-10">
+      <section ref={productRef} className="px-4 py-12 md:px-20 md:py-10 mb-10">
+        <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center text-gray-800">
           Produk Skincare Unggulan
         </h2>
 
-        <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-6 justify-items-center">
+        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-2 gap-6 justify-items-center">
           {products.length > 0 ? (
             products.map((product) => (
-              <Link to={`/productdetails/${product.id}`}>
-                <div
-                  key={product.id}
-                  className="w-full max-w-sm bg-white rounded-lg shadow-md overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-lg"
-                >
+              <Link key={product.id} to={`/productdetails/${product.id}`} className="w-full max-w-xs">
+                <div className="bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden h-full flex flex-col hover:scale-105 hover:shadow-lg transition-transform">
                   <img
                     src={`http://localhost:8081${product.image_url}`}
                     alt={product.name}
-                    className="w-full h-48 object-contain bg-white"
+                    className="w-full h-64 object-contain bg-white"
                   />
                   <div className="p-4 text-center">
-                    <h3 className="text-lg font-semibold text-gray-800">
+                    <h3 className="text-base font-semibold text-gray-800 truncate">
                       {product.name}
                     </h3>
                     <p className="text-sm text-gray-600 mt-1">
@@ -112,17 +100,17 @@ const ShopSkincare = () => {
               </Link>
             ))
           ) : (
-            <p className="text-center col-span-3 text-gray-500">
+            <p className="text-center col-span-2 text-gray-500">
               Produk tidak ditemukan.
             </p>
           )}
         </div>
 
-        <div className="flex justify-center mt-20">
+        <div className="flex justify-center mt-12">
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            onPageChange={handlePageChange}
+            onPageChange={setCurrentPage}
           />
         </div>
       </section>
@@ -133,7 +121,7 @@ const ShopSkincare = () => {
         style={{ backgroundImage: `url(${IlustrasiSkincare1})` }}
       >
         <div className="backdrop-blur-sm p-6 sm:p-10 w-full md:w-1/2 max-w-xl rounded-lg">
-          <h1 className="text-5xl md:text-7xl font-bold leading-snug text-gray-900">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-snug text-gray-900">
             Penawaran Khusus <br /> Diskon 30%
           </h1>
           <button
@@ -145,10 +133,10 @@ const ShopSkincare = () => {
         </div>
       </section>
 
-      {/* Detail Section */}
+      {/* Detail Produk Section */}
       <section className="px-4 py-12 md:px-20 md:py-16 bg-white">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 items-center gap-10">
-          <div className="p-4 rounded-md flex justify-center">
+          <div className="flex justify-center">
             <img
               src={IlustrasiSkincare2}
               alt="Anti-Aging Cream"
@@ -161,16 +149,15 @@ const ShopSkincare = () => {
               Anti-Aging Cream
             </h2>
             <p className="text-gray-700 mb-4 leading-relaxed">
-              It is a long established fact that a reader will be distracted by
-              the readable content...
+              Produk perawatan wajah untuk mengurangi tanda-tanda penuaan dan
+              membuat kulit terasa lebih lembut, halus, dan bercahaya.
             </p>
             <p className="text-gray-700 mb-6 leading-relaxed">
-              It is a long established fact that a reader will be distracted by
-              the readable content...
+              Diperkaya dengan bahan aktif alami yang aman digunakan sehari-hari.
+              Cocok untuk semua jenis kulit.
             </p>
-            <button className="bg-gray-900 text-white px-6 py-2 rounded hover:bg-gray-800 transition flex items-center space-x-2">
-              <span>Read more</span>
-              <span className="ml-2">→</span>
+            <button className="bg-gray-900 text-white px-6 py-2 rounded hover:bg-gray-800 transition">
+              Read more →
             </button>
           </div>
         </div>

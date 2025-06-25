@@ -24,7 +24,6 @@ const sidebarItems = [
     { label: "Payments", icon: <FaCreditCard />, path: "/admin/payments" },
     { label: "Advertisement", icon: <FaMegaport />, path: "/admin/advertisement" },
     { label: "Reviews", icon: <FaStar />, path: "/admin/reviews" },
-    { label: "Shipment", icon: <FaTruck />, path: "/admin/shipment" },
     { label: "Sales Report", icon: <FaChartLine  />, path: "/admin/report" },
     { label: "Settings", icon: <FaCog />, path: "/admin/settings" },
 ];

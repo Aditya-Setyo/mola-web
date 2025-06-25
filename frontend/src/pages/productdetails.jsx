@@ -1,20 +1,112 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { FaStar, FaStarHalfAlt } from "react-icons/fa";
 import { FaMinus, FaPlus } from "react-icons/fa6";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
-import { HashLink } from "react-router-hash-link";
 
 const ProductDetailPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedSize, setSelectedSize] = useState("");
+  const [selectedColor, setSelectedColor] = useState("");
+
 
   const increment = () => setQuantity((q) => q + 1);
   const decrement = () => setQuantity((q) => (q > 1 ? q - 1 : 1));
+
+  const handleAddToCart = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Silakan login terlebih dahulu untuk menambahkan ke keranjang.");
+      navigate("/loginpage");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:8081/api/v1/carts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          product_id: product.id,
+          quantity,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Gagal menambahkan ke keranjang");
+      }
+
+      alert("Produk berhasil ditambahkan ke keranjang!");
+      navigate("/chartpage");
+    } catch (error) {
+      console.error(error);
+      alert("Terjadi kesalahan saat menambahkan ke keranjang.");
+    }
+  };
+
+  const handleBuyNow = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Silakan login terlebih dahulu untuk melakukan pembelian.");
+      navigate("/loginpage");
+      return;
+    }
+
+    try {
+      const orderId = `ORDER-${Date.now()}`;
+      const grossAmount = product.price * quantity;
+
+      const payload = {
+        transaction_details: {
+          order_id: orderId,
+          gross_amount: grossAmount,
+        },
+        item_details: [
+          {
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            quantity: quantity,
+          },
+        ],
+      };
+
+      console.log("📦 Payload dikirim ke backend:", payload);
+
+      const res = await fetch("http://localhost:8081/api/v1/payments/midtrans", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json();
+      console.log("✅ Respon Midtrans:", json);
+
+      const redirectUrl = json.redirect_url || json.data?.redirect_url?.redirect_url;
+
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+      } else {
+        alert("URL pembayaran tidak ditemukan.");
+        console.error("❌ redirect_url tidak ada:", json);
+      }
+    } catch (error) {
+      console.error("❌ Gagal proses pembayaran:", error);
+      alert("Terjadi kesalahan saat memproses pembayaran.");
+    }
+  };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -25,7 +117,6 @@ const ProductDetailPage = () => {
       try {
         const res = await fetch(`http://localhost:8081/api/v1/products/${id}`, { signal });
         const json = await res.json();
-        console.log("📦 Data dari server:", json);
         setProduct(json?.data?.product || null);
       } catch (err) {
         if (err.name !== "AbortError") {
@@ -40,6 +131,23 @@ const ProductDetailPage = () => {
     fetchProduct();
     return () => controller.abort();
   }, [id]);
+
+  const [reviews, setReviews] = useState([]);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const res = await fetch(`http://localhost:8081/api/v1/reviews`);
+        const json = await res.json();
+        const productReviews = json.filter(r => r.product_id === Number(id));
+        setReviews(productReviews);
+      } catch (err) {
+        console.error("Gagal ambil ulasan:", err);
+      }
+    };
+    fetchReviews();
+  }, [id]);
+
 
   if (loading) {
     return (
@@ -57,9 +165,7 @@ const ProductDetailPage = () => {
     return (
       <>
         <Navbar />
-        <div className="text-center py-20 text-red-500">
-          Produk tidak ditemukan.
-        </div>
+        <div className="text-center py-20 text-red-500">Produk tidak ditemukan.</div>
         <Footer />
       </>
     );
@@ -100,17 +206,14 @@ const ProductDetailPage = () => {
           {/* Informasi Produk */}
           <div>
             <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-
             <div className="flex items-center text-yellow-500 space-x-1 mb-4">
               {[...Array(4)].map((_, i) => <FaStar key={i} />)}
               <FaStarHalfAlt />
               <span className="text-sm text-gray-600 ml-2">4.5/5 (1.2k)</span>
             </div>
 
-            <div className="flex items-center space-x-3 mb-6">
-              <span className="text-2xl font-semibold text-gray-900">
-                Rp {product.price?.toLocaleString()}
-              </span>
+            <div className="text-2xl font-semibold text-gray-900 mb-6">
+              Rp {product.price?.toLocaleString()}
             </div>
 
             {product.size && (
@@ -140,70 +243,140 @@ const ProductDetailPage = () => {
                   <FaPlus />
                 </button>
               </div>
-              <HashLink to="/chartpage" smooth>
-                <button className="bg-black text-white px-6 py-2 rounded hover:bg-gray-800">
-                  Keranjang
-                </button>
-              </HashLink>
-              <button className="bg-black text-white px-6 py-2 rounded hover:bg-gray-800">
+              <button
+                onClick={() => {
+                  if (product.category?.toLowerCase() === "pakaian") {
+                    setShowModal(true);
+                  } else {
+                    handleAddToCart();
+                  }
+                }}
+                className="bg-black text-white px-6 py-2 rounded hover:bg-gray-800"
+              >
+                Keranjang
+              </button>
+
+              <button
+                onClick={handleBuyNow}
+                className="bg-black text-white px-6 py-2 rounded hover:bg-gray-800"
+              >
                 Beli Sekarang
               </button>
             </div>
           </div>
         </div>
 
-        {/* Tab Deskripsi & Ulasan */}
+        {/* Deskripsi dan Ulasan */}
         <div className="border-t pt-6 mt-10">
           <div className="flex justify-center space-x-6 text-sm font-semibold text-gray-600 mb-4">
             <button
               onClick={() => setActiveTab("description")}
-              className={`pb-2 border-b-2 ${
-                activeTab === "description"
-                  ? "border-black text-black"
-                  : "border-transparent"
-              }`}
+              className={`pb-2 border-b-2 ${activeTab === "description" ? "border-black text-black" : "border-transparent"}`}
             >
               Deskripsi Produk
             </button>
             <button
               onClick={() => setActiveTab("reviews")}
-              className={`pb-2 border-b-2 ${
-                activeTab === "reviews"
-                  ? "border-black text-black"
-                  : "border-transparent"
-              }`}
+              className={`pb-2 border-b-2 ${activeTab === "reviews" ? "border-black text-black" : "border-transparent"}`}
             >
               Ulasan
             </button>
           </div>
 
           {activeTab === "description" ? (
-            <div className="text-gray-700 max-w-3xl mx-auto px-4">
+            <div className="text-gray-700 max-w-3xl mx-auto px-4 ml-4">
               <h4 className="text-xl font-semibold mb-2">Detail Produk</h4>
-              <p>{product.description || "Tidak ada deskripsi."}</p>
+              <p className="text-justify">{product.description || "Tidak ada deskripsi."}</p>
             </div>
           ) : (
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-2">
-              {[1, 2].map((i) => (
-                <div key={i} className="border p-4 rounded-lg">
-                  <div className="flex justify-between mb-2">
-                    <h4 className="font-bold text-gray-800">User {i}</h4>
-                    <div className="flex text-yellow-400">
-                      {[...Array(5)].map((_, j) => (
-                        <FaStar key={j} className="text-sm" />
-                      ))}
+              {reviews.length > 0 ? (
+                reviews.map((review, i) => (
+                  <div key={review.id || i} className="border p-4 rounded-lg bg-white shadow-sm">
+                    <div className="flex justify-between mb-2">
+                      <h4 className="font-bold text-gray-800">{review.user_name || `User ${i + 1}`}</h4>
+                      <div className="flex text-yellow-400">
+                        {[...Array(5)].map((_, j) => (
+                          <FaStar
+                            key={j}
+                            className={`text-sm ${j < review.rating ? "text-yellow-400" : "text-gray-300"}`}
+                          />
+                        ))}
+                      </div>
                     </div>
+                    <p className="text-gray-700 text-sm mb-1">
+                      <span className="font-medium text-gray-900">{review.product_name || "-"}</span>
+                    </p>
+                    <p className="text-gray-600 text-sm">{review.comment}</p>
                   </div>
-                  <p className="text-gray-700 text-sm">
-                    Produk bagus dan sesuai deskripsi. Recommended!
-                  </p>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-center text-sm text-gray-500 col-span-full">Belum ada ulasan.</p>
+              )}
+
             </div>
           )}
         </div>
       </section>
       <Footer />
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-80 space-y-4">
+            <h3 className="text-lg font-semibold">Pilih Ukuran & Warna</h3>
+
+            <div>
+              <label className="block text-sm font-medium">Ukuran</label>
+              <select
+                className="border w-full px-3 py-2 rounded"
+                value={selectedSize}
+                onChange={(e) => setSelectedSize(e.target.value)}
+              >
+                <option value="">Pilih Ukuran</option>
+                <option value="S">S</option>
+                <option value="M">M</option>
+                <option value="L">L</option>
+                <option value="XL">XL</option>
+                <option value="XXL">XXL</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium">Warna</label>
+              <select
+                className="border w-full px-3 py-2 rounded"
+                value={selectedColor}
+                onChange={(e) => setSelectedColor(e.target.value)}
+              >
+                <option value="">Pilih Warna</option>
+                <option value="red">Merah</option>
+                <option value="blue">Biru</option>
+                <option value="green">Hijau</option>
+                <option value="black">Hitam</option>
+                <option value="white">Putih</option>
+              </select>
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-2">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 text-sm bg-gray-300 rounded hover:bg-gray-400"
+              >
+                Batal
+              </button>
+              <button
+                onClick={() => {
+                  handleAddToCart();
+                  setShowModal(false);
+                }}
+                className="px-4 py-2 text-sm bg-black text-white rounded hover:bg-gray-800"
+              >
+                Tambah
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </>
   );
 };

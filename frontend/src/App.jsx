@@ -12,6 +12,7 @@ import ChartPage from "./pages/chartpage";
 import UserProfile from "./pages/userprofile";
 import ResetPage from "./pages/resetpage";
 import ForgetPage from "./pages/forgetpage";
+import ProductDetailPage from "./pages/productdetails";
 import AdminPage from "./pages/admin/adminpage";
 import MasterData from "./pages/admin/MasterData";
 import Products from "./pages/admin/Product";
@@ -19,9 +20,9 @@ import Orders from "./pages/admin/Order";
 import Users from "./pages/admin/Users";
 import Payments from "./pages/admin/Payments";
 import Reviews from "./pages/admin/Review";
-import Shipment from "./pages/admin/Shipment";
 import Settings from "./pages/admin/Setting";
-import ProductDetailPage from "./pages/productdetails";
+import Advertisment from "./pages/admin/Advertisment";
+
 
 
 const App = () => {
@@ -50,8 +51,8 @@ const App = () => {
       <Route path="/admin/users" element={<Users />} />
       <Route path="/admin/payments" element={<Payments />} />
       <Route path="/admin/reviews" element={<Reviews />} />
-      <Route path="/admin/shipment" element={<Shipment />} />
       <Route path="/admin/settings" element={<Settings />} />
+      <Route path="/admin/advertisement" element={<Advertisment />} />
     </Routes>
   );
 };

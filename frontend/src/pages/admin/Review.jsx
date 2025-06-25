@@ -3,12 +3,18 @@ import Sidebar from "../../components/sidebar";
 
 const Reviews = () => {
   const [reviews, setReviews] = useState([]);
+  const [products, setProducts] = useState([]);
   const [filteredReviews, setFilteredReviews] = useState([]);
   const [filter, setFilter] = useState("Semua");
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editId, setEditId] = useState(null);
-  const [formData, setFormData] = useState({ product_id: "", user_id: "", rating: 0, comment: "" });
+  const [formData, setFormData] = useState({
+    product_id: "",
+    user_id: "",
+    rating: 0,
+    comment: "",
+  });
   const token = localStorage.getItem("token");
 
   const fetchReviews = async () => {
@@ -24,8 +30,21 @@ const Reviews = () => {
     }
   };
 
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch("http://localhost:8081/api/v1/products", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setProducts(Array.isArray(data.data) ? data.data : []);
+    } catch (err) {
+      console.error("Gagal ambil produk:", err);
+    }
+  };
+
   useEffect(() => {
     fetchReviews();
+    fetchProducts();
   }, []);
 
   useEffect(() => {
@@ -48,7 +67,9 @@ const Reviews = () => {
 
   const handleAddOrEdit = async () => {
     const method = editMode ? "PUT" : "POST";
-    const url = editMode ? `http://localhost:8081/api/v1/reviews/${editId}` : "http://localhost:8081/api/v1/reviews";
+    const url = editMode
+      ? `http://localhost:8081/api/v1/reviews/${editId}`
+      : "http://localhost:8081/api/v1/reviews";
     try {
       await fetch(url, {
         method,
@@ -94,7 +115,9 @@ const Reviews = () => {
             >
               <option value="Semua">Semua Rating</option>
               {[1, 2, 3, 4, 5].map((r) => (
-                <option key={r} value={r}>{r} ⭐</option>
+                <option key={r} value={r}>
+                  {r} ⭐
+                </option>
               ))}
             </select>
             <button
@@ -130,13 +153,27 @@ const Reviews = () => {
                     <td className="px-4 py-2">{r.rating} ⭐</td>
                     <td className="px-4 py-2">{r.comment}</td>
                     <td className="px-4 py-2 space-x-2">
-                      <button onClick={() => handleEdit(r)} className="text-blue-600 hover:underline text-sm">Edit</button>
-                      <button onClick={() => handleDelete(r.id)} className="text-red-600 hover:underline text-sm">Hapus</button>
+                      <button
+                        onClick={() => handleEdit(r)}
+                        className="text-blue-600 hover:underline text-sm"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(r.id)}
+                        className="text-red-600 hover:underline text-sm"
+                      >
+                        Hapus
+                      </button>
                     </td>
                   </tr>
                 ))
               ) : (
-                <tr><td colSpan={5} className="text-center py-6 text-gray-500">Tidak ada ulasan ditemukan.</td></tr>
+                <tr>
+                  <td colSpan={5} className="text-center py-6 text-gray-500">
+                    Tidak ada ulasan ditemukan.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -149,22 +186,64 @@ const Reviews = () => {
                 {editMode ? "Edit Ulasan" : "Tambah Ulasan"}
               </h2>
               <div className="space-y-3">
-                <input type="text" placeholder="ID Produk" className="w-full border px-3 py-2 rounded"
+                <select
+                  className="w-full border px-3 py-2 rounded"
                   value={formData.product_id}
-                  onChange={(e) => setFormData({ ...formData, product_id: e.target.value })} />
-                <input type="text" placeholder="ID Pengguna" className="w-full border px-3 py-2 rounded"
+                  onChange={(e) =>
+                    setFormData({ ...formData, product_id: e.target.value })
+                  }
+                >
+                  <option value="">-- Pilih Produk --</option>
+                  {products.map((product) => (
+                    <option key={product.id} value={product.id}>
+                      {product.name || product.product_name || "Produk Tanpa Nama"}
+                    </option>
+                  ))}
+                </select>
+
+                <input
+                  type="text"
+                  placeholder="ID Pengguna"
+                  className="w-full border px-3 py-2 rounded"
                   value={formData.user_id}
-                  onChange={(e) => setFormData({ ...formData, user_id: e.target.value })} />
-                <input type="number" placeholder="Rating (1-5)" min={1} max={5} className="w-full border px-3 py-2 rounded"
+                  onChange={(e) =>
+                    setFormData({ ...formData, user_id: e.target.value })
+                  }
+                />
+                <input
+                  type="number"
+                  placeholder="Rating (1-5)"
+                  min={1}
+                  max={5}
+                  className="w-full border px-3 py-2 rounded"
                   value={formData.rating}
-                  onChange={(e) => setFormData({ ...formData, rating: parseInt(e.target.value) })} />
-                <textarea placeholder="Komentar" className="w-full border px-3 py-2 rounded"
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      rating: parseInt(e.target.value),
+                    })
+                  }
+                />
+                <textarea
+                  placeholder="Komentar"
+                  className="w-full border px-3 py-2 rounded"
                   value={formData.comment}
-                  onChange={(e) => setFormData({ ...formData, comment: e.target.value })} />
+                  onChange={(e) =>
+                    setFormData({ ...formData, comment: e.target.value })
+                  }
+                />
               </div>
               <div className="mt-6 flex justify-end gap-2">
-                <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded border border-gray-300">Batal</button>
-                <button onClick={handleAddOrEdit} className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 rounded border border-gray-300"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={handleAddOrEdit}
+                  className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
+                >
                   {editMode ? "Simpan Perubahan" : "Tambah"}
                 </button>
               </div>
