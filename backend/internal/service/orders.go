@@ -24,6 +24,7 @@ import (
 type OrderService interface {
 	CreateOrder(ctx context.Context, order entity.Order) (uuid.UUID, error)
 	CreateOrderItem(ctx context.Context, orderItem entity.OrderItem) error
+	GetAllOrders(ctx context.Context) ([]dto.GetAllOrdersResponse, error)
 	GetAllOrdersPaid(ctx context.Context) ([]dto.GetOrdersPaidResponse, error)
 	// GetCartByUserID(ctx context.Context, userID uuid.UUID) (result *dto.GetCartItemsResponse, err error)
 	Checkout(ctx context.Context, userID uuid.UUID, email string, name string) (*dto.SnapRsponse, error)
@@ -278,6 +279,8 @@ func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email str
 		return nil, err
 	}
 	_ = s.cacheable.Delete("carts:" + userID.String())
+	_ = s.cacheable.Delete("orders:show-order:" + userID.String())
+	_ = s.cacheable.Delete("orders:all-orders")
 	return &response, nil
 }
 
@@ -367,6 +370,82 @@ func (s *orderService) ShowOrder(ctx context.Context, userID uuid.UUID) ([]dto.S
 		}
 
 		results = append(results, dto.ShowOrderResponse{
+			ID:            order.ID,
+			UserID:        order.UserID,
+			OrderCode:     order.OrderCode,
+			Status:        order.Status,
+			TotalAmount:   order.TotalAmount,
+			TotalWeight:   order.TotalWeight,
+			PaymentStatus: order.PaymentStatus,
+			OrderItems:    items,
+		})
+	}
+
+	marshaled, err := json.Marshal(results)
+	if err != nil {
+		return nil, err
+	}
+
+	_ = s.cacheable.Set(key, marshaled)
+
+	return results, nil
+}
+
+func (s *orderService) GetAllOrders(ctx context.Context) ([]dto.GetAllOrdersResponse, error){
+	key := "orders:all-orders"
+	var results []dto.GetAllOrdersResponse
+
+	data := s.cacheable.Get(key)
+	if data != "" {
+		if err := json.Unmarshal([]byte(data), &results); err != nil {
+			return nil, err
+		}
+		return results, nil
+	}
+
+	orders, err := s.orderRepo.GetAll(ctx)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, errors.New("orders not found")
+	} else if err != nil {
+		return nil, err
+	}
+
+	for _, order := range orders {
+		items := []dto.OrderItems{}
+
+		for _, dataItem := range order.OrderItems {
+			var categoryName, sizeName, colorName *string
+			if dataItem.Product.Category != nil {
+				categoryName = &dataItem.Product.Category.Name
+			}
+			if dataItem.ProductVariant.Size != nil {
+				sizeName = &dataItem.ProductVariant.Size.Name
+			}
+			if dataItem.ProductVariant.Color != nil {
+				colorName = &dataItem.ProductVariant.Color.Name
+			}
+			item := dto.OrderItems{
+				Quantity: dataItem.Quantity,
+				Note:     dataItem.Note,
+				Product: &dto.GetProductByIDShowOrder{
+					ID:           dataItem.Product.ID,
+					Name:         dataItem.Product.Name,
+					CategoryID:   dataItem.Product.CategoryID,
+					Description:  dataItem.Product.Description,
+					ImageURL:     dataItem.Product.ImageURL,
+					HasVariant:   dataItem.Product.HasVariant,
+					Price:        dataItem.Product.Price,
+					Weight:       dataItem.Product.Weight,
+					CategoryName: categoryName,
+					SizeName:     sizeName,
+					ColorName:    colorName,
+				},
+				Subtotal: float64(dataItem.Quantity) * dataItem.Product.Price,
+			}
+			items = append(items, item)
+		}
+
+		results = append(results, dto.GetAllOrdersResponse{
 			ID:            order.ID,
 			UserID:        order.UserID,
 			OrderCode:     order.OrderCode,

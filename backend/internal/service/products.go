@@ -447,7 +447,7 @@ func (s *productService) InsertProductReview(ctx context.Context, request *dto.P
 
 func (s *productService) GetProductReviews(ctx context.Context, productID uuid.UUID) ([]dto.GetProductReviewResponse, error) {
 	results := []dto.GetProductReviewResponse{}
-	key := "product-reviews:" + productID.String()
+	key := cache.CacheKeyProductsReviews + productID.String()
 	data := s.cacheable.Get(key)
 	if data != "" {
 		err := json.Unmarshal([]byte(data), &results)
