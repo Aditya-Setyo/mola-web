@@ -4,6 +4,7 @@ import { FaStar, FaStarHalfAlt } from "react-icons/fa";
 import { FaMinus, FaPlus } from "react-icons/fa6";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
+import { apiGet, apiPost, backendURL } from "../api";
 
 const ProductDetailPage = () => {
   const { id } = useParams();
@@ -15,11 +16,12 @@ const ProductDetailPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
-
+  
 
   const increment = () => setQuantity((q) => q + 1);
   const decrement = () => setQuantity((q) => (q > 1 ? q - 1 : 1));
 
+  // Handle tambah ke keranjang
   const handleAddToCart = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -29,21 +31,10 @@ const ProductDetailPage = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:8081/api/v1/carts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          product_id: product.id,
-          quantity,
-        }),
+      await apiPost("/carts", {
+        product_id: product.id,
+        quantity,
       });
-
-      if (!response.ok) {
-        throw new Error("Gagal menambahkan ke keranjang");
-      }
 
       alert("Produk berhasil ditambahkan ke keranjang!");
       navigate("/chartpage");
@@ -53,6 +44,7 @@ const ProductDetailPage = () => {
     }
   };
 
+  // Handle tombol Beli Sekarang
   const handleBuyNow = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -80,34 +72,40 @@ const ProductDetailPage = () => {
         ],
       };
 
-      console.log("📦 Payload dikirim ke backend:", payload);
-
-      const res = await fetch("http://localhost:8081/api/v1/payments/midtrans", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const json = await res.json();
-      console.log("✅ Respon Midtrans:", json);
-
-      const redirectUrl = json.redirect_url || json.data?.redirect_url?.redirect_url;
+      const res = await apiPost("/payments/midtrans", payload);
+      const redirectUrl = res.redirect_url || res.data?.redirect_url?.redirect_url;
 
       if (redirectUrl) {
         window.location.href = redirectUrl;
       } else {
         alert("URL pembayaran tidak ditemukan.");
-        console.error("❌ redirect_url tidak ada:", json);
+        console.error("redirect_url tidak ada:", res);
       }
     } catch (error) {
-      console.error("❌ Gagal proses pembayaran:", error);
+      console.error("Gagal proses pembayaran:", error);
       alert("Terjadi kesalahan saat memproses pembayaran.");
     }
   };
 
+  // Ambil kategori untuk kebutuhan modal jika ingin
+  const [categories, setCategories] = useState([]);
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const token = localStorage.getItem("token");
+      const withAuth = !!token && token !== "null" && token !== "undefined";
+
+      try {
+        const res = await apiGet("/categories", withAuth);
+        setCategories(res?.data?.categories || []);
+      } catch (err) {
+        console.error("Gagal ambil kategori:", err);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+
+  // Ambil data produk berdasarkan ID
   useEffect(() => {
     const controller = new AbortController();
     const { signal } = controller;
@@ -115,12 +113,11 @@ const ProductDetailPage = () => {
     const fetchProduct = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://localhost:8081/api/v1/products/${id}`, { signal });
-        const json = await res.json();
-        setProduct(json?.data?.product || null);
+        const res = await apiGet(`/products/${id}`, { signal });
+        setProduct(res?.data?.product || null);
       } catch (err) {
         if (err.name !== "AbortError") {
-          console.error("❌ Gagal ambil produk:", err);
+          console.error("Gagal ambil produk:", err);
           setProduct(null);
         }
       } finally {
@@ -132,14 +129,13 @@ const ProductDetailPage = () => {
     return () => controller.abort();
   }, [id]);
 
+  // Ambil ulasan dari semua produk, lalu filter sesuai ID produk saat ini
   const [reviews, setReviews] = useState([]);
-
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        const res = await fetch(`http://localhost:8081/api/v1/reviews`);
-        const json = await res.json();
-        const productReviews = json.filter(r => r.product_id === Number(id));
+        const res = await apiGet("/reviews");
+        const productReviews = res.filter((r) => r.product_id === Number(id));
         setReviews(productReviews);
       } catch (err) {
         console.error("Gagal ambil ulasan:", err);
@@ -147,7 +143,6 @@ const ProductDetailPage = () => {
     };
     fetchReviews();
   }, [id]);
-
 
   if (loading) {
     return (
@@ -176,7 +171,7 @@ const ProductDetailPage = () => {
       <Navbar />
       <section className="px-4 py-8 md:px-20 md:py-10">
         <div className="grid md:grid-cols-2 gap-10">
-          {/* Gambar */}
+          {/* Gambar produk */}
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex flex-row md:flex-col gap-2">
               {[1, 2, 3].map((n) => (
@@ -184,7 +179,7 @@ const ProductDetailPage = () => {
                   key={n}
                   src={
                     product.image_url
-                      ? `http://localhost:8081${product.image_url}`
+                      ? `${backendURL}${product.image_url}`
                       : "https://via.placeholder.com/80?text=No+Img"
                   }
                   alt={`thumb-${n}`}
@@ -195,7 +190,7 @@ const ProductDetailPage = () => {
             <img
               src={
                 product.image_url
-                  ? `http://localhost:8081${product.image_url}`
+                  ? `${backendURL}${product.image_url}`
                   : "https://via.placeholder.com/400x500?text=No+Image"
               }
               alt={product.name}
@@ -203,7 +198,7 @@ const ProductDetailPage = () => {
             />
           </div>
 
-          {/* Informasi Produk */}
+          {/* Detail informasi produk */}
           <div>
             <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
             <div className="flex items-center text-yellow-500 space-x-1 mb-4">
@@ -234,6 +229,7 @@ const ProductDetailPage = () => {
             )}
 
             <div className="flex items-center space-x-4 mb-6">
+              {/* Counter jumlah */}
               <div className="flex items-center border rounded">
                 <button onClick={decrement} className="px-3 py-1 hover:bg-gray-100">
                   <FaMinus />
@@ -243,9 +239,11 @@ const ProductDetailPage = () => {
                   <FaPlus />
                 </button>
               </div>
+
+              {/* Tombol Keranjang dan Beli Sekarang */}
               <button
                 onClick={() => {
-                  if (product.category?.toLowerCase() === "pakaian") {
+                  if (product.category?.name?.toLowerCase() === "pakaian") {
                     setShowModal(true);
                   } else {
                     handleAddToCart();
@@ -266,7 +264,7 @@ const ProductDetailPage = () => {
           </div>
         </div>
 
-        {/* Deskripsi dan Ulasan */}
+        {/* Tab Deskripsi / Ulasan */}
         <div className="border-t pt-6 mt-10">
           <div className="flex justify-center space-x-6 text-sm font-semibold text-gray-600 mb-4">
             <button
@@ -283,6 +281,7 @@ const ProductDetailPage = () => {
             </button>
           </div>
 
+          {/* Konten tab */}
           {activeTab === "description" ? (
             <div className="text-gray-700 max-w-3xl mx-auto px-4 ml-4">
               <h4 className="text-xl font-semibold mb-2">Detail Produk</h4>
@@ -313,12 +312,14 @@ const ProductDetailPage = () => {
               ) : (
                 <p className="text-center text-sm text-gray-500 col-span-full">Belum ada ulasan.</p>
               )}
-
             </div>
           )}
         </div>
       </section>
+
       <Footer />
+
+      {/* Modal pilih ukuran & warna */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-80 space-y-4">
@@ -332,11 +333,11 @@ const ProductDetailPage = () => {
                 onChange={(e) => setSelectedSize(e.target.value)}
               >
                 <option value="">Pilih Ukuran</option>
-                <option value="S">S</option>
-                <option value="M">M</option>
-                <option value="L">L</option>
-                <option value="XL">XL</option>
-                <option value="XXL">XXL</option>
+                {sizes.map((size) => (
+                  <option key={size.id} value={size.name}>
+                    {size.name}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -348,11 +349,11 @@ const ProductDetailPage = () => {
                 onChange={(e) => setSelectedColor(e.target.value)}
               >
                 <option value="">Pilih Warna</option>
-                <option value="red">Merah</option>
-                <option value="blue">Biru</option>
-                <option value="green">Hijau</option>
-                <option value="black">Hitam</option>
-                <option value="white">Putih</option>
+                {colors.map((color) => (
+                  <option key={color.id} value={color.name}>
+                    {color.name}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -376,7 +377,6 @@ const ProductDetailPage = () => {
           </div>
         </div>
       )}
-
     </>
   );
 };

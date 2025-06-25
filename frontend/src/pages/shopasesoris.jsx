@@ -3,6 +3,7 @@ import Navbar from "../components/navbar";
 import Footer from "../components/footer";
 import Pagination from "../components/pagination";
 import { Link } from "react-router-dom";
+import { apiGet,backendURL } from "../api"; // konsisten pakai helper API
 
 const ShopAsesoris = () => {
   const [products, setProducts] = useState([]);
@@ -13,13 +14,14 @@ const ShopAsesoris = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch("http://localhost:8081/api/v1/products");
-        const json = await res.json();
+        // Tidak perlu token untuk melihat produk
+        const json = await apiGet("/products", false);
 
         const allProducts = Array.isArray(json?.data?.products)
           ? json.data.products
           : [];
 
+        // Filter hanya kategori yang mengandung "aksesoris"
         const asesorisOnly = allProducts.filter((product) => {
           const categoryName =
             product.category_name ||
@@ -30,8 +32,7 @@ const ShopAsesoris = () => {
         });
 
         const total = asesorisOnly.length;
-        const pages = Math.ceil(total / itemsPerPage);
-        setTotalPages(pages);
+        setTotalPages(Math.ceil(total / itemsPerPage));
 
         const start = (currentPage - 1) * itemsPerPage;
         const end = start + itemsPerPage;
@@ -60,7 +61,7 @@ const ShopAsesoris = () => {
               <Link key={product.id} to={`/productdetails/${product.id}`}>
                 <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden flex flex-col hover:shadow-md transition duration-200 h-full">
                   <img
-                    src={`http://localhost:8081${product.image_url}`}
+                    src={`${backendURL}${product.image_url}`}
                     alt={product.name}
                     className="w-full h-48 object-contain bg-white"
                   />

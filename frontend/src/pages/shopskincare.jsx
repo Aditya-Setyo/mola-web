@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
+import Pagination from "../components/pagination";
+import { Link } from "react-router-dom";
+import { apiGet, backendURL } from "../api";
+
 import IlustrasiSkincare from "../assets/bgskincare.png";
 import IlustrasiSkincare1 from "../assets/bgskincare1.png";
 import IlustrasiSkincare2 from "../assets/bgskincare2.png";
-import Pagination from "../components/pagination";
-import { Link } from "react-router-dom";
 
 const ShopSkincare = () => {
   const productRef = useRef(null);
@@ -21,8 +23,7 @@ const ShopSkincare = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch("http://localhost:8081/api/v1/products");
-        const json = await res.json();
+        const json = await apiGet("/products", false); // public, no token
         const allProducts = Array.isArray(json?.data?.products)
           ? json.data.products
           : [];
@@ -43,7 +44,7 @@ const ShopSkincare = () => {
 
         setProducts(skincareOnly.slice(start, end));
       } catch (error) {
-        console.error("❌ Gagal ambil produk:", error);
+        console.error("Gagal ambil produk:", error);
       }
     };
 
@@ -81,10 +82,14 @@ const ShopSkincare = () => {
         <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-2 gap-6 justify-items-center">
           {products.length > 0 ? (
             products.map((product) => (
-              <Link key={product.id} to={`/productdetails/${product.id}`} className="w-full max-w-xs">
+              <Link
+                key={product.id}
+                to={`/productdetails/${product.id}`}
+                className="w-full max-w-xs"
+              >
                 <div className="bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden h-full flex flex-col hover:scale-105 hover:shadow-lg transition-transform">
                   <img
-                    src={`http://localhost:8081${product.image_url}`}
+                    src={`${backendURL}${product.image_url}`}
                     alt={product.name}
                     className="w-full h-64 object-contain bg-white"
                   />

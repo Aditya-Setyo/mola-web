@@ -3,6 +3,7 @@ import ilustrasi from "../assets/loginlogo.png";
 import ilustrasibg from "../assets/bg.png";
 import { Link, useNavigate } from "react-router-dom";
 import { auth, googleProvider, signInWithPopup } from "../firebase";
+import { apiPost } from "../api"; // panggil helper API
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -12,29 +13,19 @@ const RegisterPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  // Fungsi handle daftar akun
   const handleRegister = async (e) => {
     e.preventDefault();
 
     try {
-      // Simulasi request ke backend untuk mendaftar
-      const response = await fetch("http://localhost:8081/api/v1/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name,
-          phone_number,
-          email,
-          password,
-        }),
-      });
+      // Kirim data ke endpoint register pakai helper apiPost
+      const data = await apiPost("/register", {
+        name,
+        phone_number,
+        email,
+        password,
+      }, false); // `false` karena register tidak butuh token
 
-      if (!response.ok) {
-        throw new Error("Registrasi gagal");
-      }
-
-      const data = await response.json();
       alert("Registrasi berhasil! Silakan login.");
       navigate("/loginpage");
     } catch (err) {
@@ -43,6 +34,7 @@ const RegisterPage = () => {
     }
   };
 
+  // Login dengan Google (Firebase)
   const handleGoogleLogin = () => {
     signInWithPopup(auth, googleProvider)
       .then((result) => {
@@ -62,10 +54,12 @@ const RegisterPage = () => {
       style={{ backgroundImage: `url(${ilustrasibg})` }}
       className="flex flex-col lg:flex-row min-h-screen bg-gradient-to-r from-white to-slate-100 font-sans px-4 py-8 gap-8 justify-between items-center"
     >
-      {/* Kiri - gambar dan teks */}
+      {/* Kiri - Ilustrasi dan info */}
       <div className="w-full lg:w-1/2 flex flex-col lg:flex-row items-center justify-between px-4 lg:px-10 text-center lg:text-left">
         <div className="mb-6 lg:mb-0">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-7">Gabung dan Mulai Belanja!</h2>
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-7">
+            Gabung dan Mulai Belanja!
+          </h2>
           <p className="text-sm text-gray-600">
             Sudah punya akun?{" "}
             <Link to="/loginpage" className="text-blue-600 font-medium">
@@ -80,7 +74,7 @@ const RegisterPage = () => {
         />
       </div>
 
-      {/* Kanan - Form daftar */}
+      {/* Kanan - Form registrasi */}
       <div className="w-full max-w-md mx-auto flex flex-col justify-center px-4 sm:px-8">
         <div className="flex justify-center gap-4 text-sm mb-8">
           <button
@@ -126,12 +120,14 @@ const RegisterPage = () => {
             onChange={(e) => setPassword(e.target.value)}
             className="w-full px-4 py-3 rounded-lg bg-gray-100 text-sm outline-none"
           />
+
           <div className="text-right text-xs text-gray-500">
             <Link to="/resetpage" className="hover:underline">
               Lupa Password?
             </Link>
           </div>
-          <button onClick={handleRegister}
+
+          <button
             type="submit"
             className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 transition"
           >

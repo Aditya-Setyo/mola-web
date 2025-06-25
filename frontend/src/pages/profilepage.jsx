@@ -3,7 +3,6 @@ import Navbar from "../components/navbar";
 import ilustrasidashboard from "../assets/iklan1.png";
 import Footer from "../components/footer";
 import IlustrasiProfile from "../assets/profile1.jpg";
-import NewArrival from "../components/newarrival";
 import { Link } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
 
