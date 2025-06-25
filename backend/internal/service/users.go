@@ -1,10 +1,12 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"log"
 	"mola-web/configs"
 	"mola-web/internal/entity"
@@ -437,14 +439,48 @@ func (s *userService) ForgotPassword(ctx context.Context, email string) error {
 func (s *userService) sendResetEmail(toEmail, token string) error {
 	from := s.SMTPConfigs.Email
 	password := s.SMTPConfigs.Password
-	log.Println("Sending email from", from, password)
 
-	msg := "Subject: Reset Password Request\n\n" +
-		"Berikut adalah Token untuk melakukan reset password:\n" + token
+	log.Println("Sending email from", from)
 
-	auth := smtp.PlainAuth("", from, password, "smtp.gmail.com")
-	return smtp.SendMail("smtp.gmail.com:587", auth, from, []string{toEmail}, []byte(msg))
+	// Load template HTML
+	templatePath := "./template/reset_password_email.html"
+	tmpl, err := template.ParseFiles(templatePath)
+	if err != nil {
+		return err
+	}
+
+	// Isi token ke template
+	var body bytes.Buffer
+	replacerEmail := struct {
+		Token string
+	}{
+		Token: token,
+	}
+	if err := tmpl.Execute(&body, replacerEmail); err != nil {
+		return err
+	}
+
+	// Buat header dan body untuk email HTML
+	subject := "Subject: 🔐 Reset Password Request\r\n"
+	mime := "MIME-version: 1.0;\r\nContent-Type: text/html; charset=\"UTF-8\";\r\n\r\n"
+	msg := []byte(subject + mime + "\r\n" + body.String())
+
+	// Konfigurasi SMTP Gmail
+	smtpHost := "smtp.gmail.com"
+	smtpPort := "587"
+	auth := smtp.PlainAuth("", from, password, smtpHost)
+
+	// Kirim email
+	err = smtp.SendMail(smtpHost+":"+smtpPort, auth, from, []string{toEmail}, msg)
+	if err != nil {
+		log.Println("Gagal mengirim email:", err)
+		return err
+	}
+
+	log.Println("Email berhasil dikirim ke", toEmail)
+	return nil
 }
+
 
 func (s *userService) ResetPassword(ctx context.Context, request *dto.ResetPasswordRequest) error {
 	tx := s.DB.WithContext(ctx).Begin()
