@@ -22,24 +22,27 @@ import (
 type TransactionService interface {
 	PaymentNotification(ctx context.Context, request *dto.MidtransNotification, userID uuid.UUID) error
 	Refund(ctx context.Context, request *dto.RefundRequest) error
+	Cancel(ctx context.Context, request *dto.CancelRequest) error
 }
 
 type transactionService struct {
 	productRepo     repository.ProductRepository
 	transactionRepo repository.TransactionRepository
 	orderRepo       repository.OrderRepository
+	repoVariant     repository.ProductVariantRepository
 	DB              *gorm.DB
 	cacheable       cache.Cacheable
 	tokenUseCase    token.TokenUseCase
 	config          configs.MidtransConfig
 }
 
-func NewTransactionService(db *gorm.DB, productRepo repository.ProductRepository, transactionRepo repository.TransactionRepository, orderRepo repository.OrderRepository, tokenUseCase token.TokenUseCase, cacheable cache.Cacheable, config configs.MidtransConfig) TransactionService {
+func NewTransactionService(db *gorm.DB, productRepo repository.ProductRepository, transactionRepo repository.TransactionRepository, orderRepo repository.OrderRepository, repoVariant repository.ProductVariantRepository, tokenUseCase token.TokenUseCase, cacheable cache.Cacheable, config configs.MidtransConfig) TransactionService {
 	return &transactionService{
 		DB:              db,
 		productRepo:     productRepo,
 		transactionRepo: transactionRepo,
 		orderRepo:       orderRepo,
+		repoVariant:     repoVariant,
 		tokenUseCase:    tokenUseCase,
 		cacheable:       cacheable,
 		config:          config,
@@ -147,15 +150,24 @@ func (s *transactionService) PaymentNotification(ctx context.Context, request *d
 		result = updateOrder("lunas", true)
 	case "cancel", "expire":
 		dataOrder, err := s.orderRepo.GetOrderByID(ctx, orderID)
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			err = errors.New("order not found")
-			tx.Error = err
-			return err
-		} else if err != nil {
-			tx.Error = err
-			return errors.New("order not found")
-		}
-		for _, item := range dataOrder.OrderItems {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		err = errors.New("order not found")
+		tx.Error = err
+		return err
+	} else if err != nil {
+		tx.Error = err
+		return errors.New("order not found")
+	}
+	for _, item := range dataOrder.OrderItems {
+		if item.Product.HasVariant {
+			for _, variant := range item.Product.Variants {
+				stock := int64(variant.Stock + item.Quantity)
+				err = s.repoVariant.UpdateStock(tx, variant.ID, int(stock))
+				if err != nil {
+					return err
+				}
+			}
+		} else {
 			stock := int64(item.Product.Stock + item.Quantity)
 			err = s.productRepo.UpdateStockProduct(tx, stock, item.Product.ID)
 			if err != nil {
@@ -163,11 +175,11 @@ func (s *transactionService) PaymentNotification(ctx context.Context, request *d
 				return errors.New("failed to update stock product")
 			}
 		}
+	}
 		result = updateOrder("failure", false)
 	}
 	key := "carts:" + userID.String()
 	_ = s.cacheable.Delete(key)
-	
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Error = err
@@ -188,4 +200,60 @@ func (s *transactionService) Refund(ctx context.Context, request *dto.RefundRequ
 		return errors.New("failed to refund transaction")
 	}
 	return nil
+}
+
+func (s *transactionService) Cancel(ctx context.Context, request *dto.CancelRequest) error {
+	tx := s.DB.WithContext(ctx).Begin()
+	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			log.Printf("PANIC RECOVERED: Rolling back transaction due to panic: %v", p)
+			panic(p)
+		} else if tx.Error != nil {
+			tx.Rollback()
+			log.Printf("ERROR: Rolling back transaction due to service error: %v", tx.Error)
+		}
+	}()
+	
+	orderID := uuid.MustParse(request.OrderID)
+	dataOrder, err := s.orderRepo.GetOrderByID(ctx, orderID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		err = errors.New("order not found")
+		tx.Error = err
+		return err
+	} else if err != nil {
+		tx.Error = err
+		return errors.New("order not found")
+	}
+
+	updateOrder := func(status string, isPaid bool) error {
+		dataOrder.PaymentStatus = status
+		dataOrder.IsPaid = isPaid
+		if err := s.orderRepo.Update(tx, dataOrder); err != nil {
+			err = errors.New("failed to update order")
+			tx.Error = err
+			return err
+		}
+		return nil
+	}
+	for _, item := range dataOrder.OrderItems {
+		if item.Product.HasVariant {
+			for _, variant := range item.Product.Variants {
+				stock := int64(variant.Stock + item.Quantity)
+				err = s.repoVariant.UpdateStock(tx, variant.ID, int(stock))
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			stock := int64(item.Product.Stock + item.Quantity)
+			err = s.productRepo.UpdateStockProduct(tx, stock, item.Product.ID)
+			if err != nil {
+				tx.Error = err
+				return errors.New("failed to update stock product")
+			}
+		}
+	}
+	result := updateOrder("failure", false)
+	return result
 }
