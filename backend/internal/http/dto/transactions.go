@@ -68,3 +68,9 @@ type RefundRequest struct {
 	Reason        string `json:"reason" validate:"required"`
 	Amount        int64    `json:"amount" validate:"required"`
 }
+
+type CancelRequest struct {
+	OrderID       string `json:"order_id" validate:"required"`
+	TransactionID string `json:"transaction_id" validate:"required"`
+	Reason        string `json:"reason" validate:"required"`
+}
