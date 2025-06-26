@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/sidebar";
+import { apiGet, apiDelete, apiPost, apiPut } from "../../api"; // impor fungsi fetch dari api.js
+import { backendURL } from "../../api"; // untuk akses gambar dari backend
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -24,449 +26,287 @@ const Products = () => {
     size: "",
     color: "",
     description: "",
+    variants: [{ color_id: "", size_id: "", stock: "" }]
   });
 
   const token = localStorage.getItem("token")?.trim();
 
   const fetchProducts = async () => {
-    if (!token) return;
     try {
-      const res = await fetch("http://localhost:8081/api/v1/products", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setProducts(Array.isArray(data?.data?.products) ? data.data.products : []);
+      const dataProd = await apiGet("/products");
+      setProducts(dataProd?.data?.products?.filter(p => p.has_variant) || []);
     } catch (err) {
       console.error("Gagal ambil produk:", err);
-      setProducts([]);
     }
   };
 
   const fetchMasterData = async () => {
-    if (!token) return;
     try {
-      const [resCat, resSizes, resColors] = await Promise.all([
-        fetch("http://localhost:8081/api/v1/categories", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("http://localhost:8081/api/v1/sizes", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("http://localhost:8081/api/v1/colors", { headers: { Authorization: `Bearer ${token}` } }),
-      ]);
-
-      const catData = await resCat.json();
-      const sizeData = await resSizes.json();
-      const colorData = await resColors.json();
-
-      if (catData.meta?.code === 401) {
-        alert("Sesi habis. Silakan login ulang.");
-        localStorage.removeItem("token");
-        window.location.href = "/loginpage";
-        return;
-      }
+      const catData = await apiGet("/categories", { headers: { Authorization: `Bearer ${token}` } });
+      const sizeData = await apiGet("/sizes", { headers: { Authorization: `Bearer ${token}` } });
+      const colorData = await apiGet("/colors", { headers: { Authorization: `Bearer ${token}` } });
 
       setCategories(catData?.data?.categories || []);
       setSizes(sizeData?.data?.sizes || []);
       setColors(colorData?.data?.colors || []);
     } catch (err) {
       console.error("Gagal mengambil data master:", err);
-      setCategories([]);
-      setSizes([]);
-      setColors([]);
     }
   };
+
+
 
   useEffect(() => {
     fetchProducts();
     fetchMasterData();
   }, []);
 
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      price: "",
-      stock: "",
-      category: "",
-      image: null,
-      image_url: "",
-      size: "",
-      color: "",
-      description: "",
-    });
-    setUploadType("file");
-    setEditMode(false);
-    setEditId(null);
-  };
 
-  const handleEdit = (item) => {
-    setFormData({
-      name: item.name || "",
-      price: item.price || "",
-      stock: item.stock || "",
-      category: item.category_id?.toString() || "",
-      image: null,
-      image_url: item.image_url || "",
-      size: item.size || "",
-      color: item.color || "",
-      description: item.description || "",
-    });
-    setEditMode(true);
-    setEditId(item.id);
-    setUploadType(item.image_url ? "url" : "file");
-    setShowModal(true);
-  };
+  const fetchData = async () => {
+    try {
+      const dataProd = await apiGet("/products");
+      const dataCat = await apiGet("/categories");
+      const dataSize = await apiGet("/sizes");
+      const dataColor = await apiGet("/colors");
 
-  const handleAddOrUpdateProduct = () => {
-    const { name, price, stock, category, image, image_url, size, color, description } = formData;
-    if (!name || !price || !stock || !category || (uploadType === "file" && !image) || (uploadType === "url" && !image_url)) {
-      alert("Lengkapi semua data produk!");
-      return;
+      setProducts(dataProd?.data?.products?.filter(p => p.has_variant) || []);
+      setCategories(dataCat?.data?.categories || []);
+      setSizes(dataSize?.data?.sizes || []);
+      setColors(dataColor?.data?.colors || []);
+    } catch (err) {
+      console.error("Gagal ambil data:", err);
     }
+  };
 
+
+
+  const handleAddVariant = () => {
+    setFormData({ ...formData, variants: [...formData.variants, { color_id: "", size_id: "", stock: "" }] });
+  };
+
+  const handleVariantChange = (index, field, value) => {
+    const updated = [...formData.variants];
+    updated[index][field] = value;
+    setFormData({ ...formData, variants: updated });
+  };
+
+  const handleRemoveVariant = (index) => {
+    const updated = [...formData.variants];
+    updated.splice(index, 1);
+    setFormData({ ...formData, variants: updated });
+  };
+
+  const handleSubmit = async () => {
     const data = new FormData();
-    data.append("name", name);
-    data.append("price", price);
-    data.append("stock", stock);
-    data.append("category_id", Number(category));
+    data.append("name", formData.name);
+    data.append("price", formData.price);
+    data.append("category_id", formData.category);
+    data.append("description", formData.description);
+    data.append("has_variant", true);
 
-    const selectedCat = categories.find(c => c.id === Number(category));
-    if (selectedCat?.name === "Pakaian") {
-      data.append("size_id", size);
-      data.append("color_id", color);
-      data.append("description", description);
+    if (uploadType === "file" && formData.image) {
+      data.append("image", formData.image);
+    }
+    if (uploadType === "url") {
+      data.append("image_url", formData.image_url);
     }
 
-    if (uploadType === "file") data.append("image", image);
-    else data.append("image_url", image_url);
+    formData.variants.forEach((v, i) => {
+      data.append(`variants[${i}].color_id`, v.color_id);
+      data.append(`variants[${i}].size_id`, v.size_id);
+      data.append(`variants[${i}].stock`, v.stock);
+    });
 
-    const endpoint = editMode
-      ? `http://localhost:8081/api/v1/admin/products/${editId}`
-      : "http://localhost:8081/api/v1/admin/products";
+    try {
+      if (editId) {
+        await apiPut(`/admin/products/${editId}`, data, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } else {
+        await apiPost("/admin/products", data, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
 
-    fetch(endpoint, {
-      method: editMode ? "PUT" : "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: data,
-    })
-      .then((res) => res.json())
-      .then(() => {
-        fetchProducts();
-        alert(editMode ? "Produk diperbarui." : "Produk ditambahkan.");
-        setShowModal(false);
-        resetForm();
-      })
-      .catch((err) => {
-        console.error("Gagal simpan produk:", err);
-        alert("Gagal menyimpan produk.");
+      resetForm();
+      setShowModal(false);
+      fetchData();
+    } catch (err) {
+      console.error("Gagal simpan produk:", err);
+    }
+  };
+
+
+  const handleEdit = (prod) => {
+    setEditId(prod.id);
+    setEditMode(true);
+    setShowModal(true);
+    setUploadType("url"); // diasumsikan default ambil image_url
+
+    setFormData({
+      name: prod.name,
+      price: prod.price,
+      category: prod.category_id,
+      image: null,
+      image_url: prod.image_url || "",
+      description: prod.description || "",
+      variants: prod.variants?.map(v => ({
+        color_id: v.color_id,
+        size_id: v.size_id,
+        stock: v.stock
+      })) || [{ color_id: "", size_id: "", stock: "" }]
+    });
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Yakin ingin menghapus produk ini?")) return;
+    try {
+      await apiDelete(`/admin/products/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
+      fetchData();
+    } catch (err) {
+      console.error("Gagal hapus produk:", err);
+    }
   };
 
-  const handleDelete = (id) => {
-    if (!window.confirm("Yakin hapus produk ini?")) return;
-    fetch(`http://localhost:8081/api/v1/admin/products/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(res => res.json())
-      .then(() => {
-        alert("Produk dihapus.");
-        fetchProducts();
-      })
-      .catch(err => {
-        console.error("Gagal hapus produk:", err);
-        alert("Gagal menghapus produk.");
-      });
-  };
 
-  const filteredProducts = products
-    .filter(p => {
-      if (filter === "Semua") return true;
-      return p.category_id === Number(filter);
-    })
-    .filter(p => p.name?.toLowerCase().includes(search.toLowerCase())
-      || p.name?.toLowerCase().includes(search.toLowerCase())
-      || p.category?.name?.toLowerCase().includes(search.toLowerCase())
-      || p.price?.toString().includes(search)
-      || p.stock?.toString().includes(search)
-      || p.color?.toLowerCase().includes(search.toLowerCase())
-      || p.size?.toLowerCase().includes(search.toLowerCase())
-      || p.description?.toLowerCase().includes(search.toLowerCase()));
 
-  const toggleDescription = (id) => {
-    setExpandedDesc(prev => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const renderDescription = (desc, id) => {
-    const isExpanded = expandedDesc[id];
-    if (!desc) return "";
-    return (
-      <>
-        {isExpanded ? desc : desc.slice(0, 50) + (desc.length > 50 ? "..." : "")}
-        {desc.length > 50 && (
-          <button
-            onClick={() => toggleDescription(id)}
-            className="text-indigo-600 text-xs ml-2 underline"
-          >
-            {isExpanded ? "Sembunyikan" : "Lihat selengkapnya"}
-          </button>
-        )}
-      </>
-    );
-  };
 
   return (
     <div className="flex">
       <Sidebar />
       <main className="ml-0 md:ml-64 flex-1 p-6 bg-gray-50 min-h-screen">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-          <h1 className="text-2xl font-bold">🛍️ Kelola Produk</h1>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <input
-              type="text"
-              placeholder="Cari produk..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="border px-3 py-1 rounded text-sm"
-            />
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="border px-3 py-1 rounded text-sm"
-            >
-              <option value="Semua">Semua Kategori</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
-            <button
-              onClick={() => { setShowModal(true); resetForm(); }}
-              className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 text-sm"
-            >+ Tambah Produk</button>
-          </div>
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold">🧬 Produk Varian</h1>
+          <button onClick={() => setShowModal(true)} className="bg-indigo-600 text-white px-4 py-2 rounded">+ Tambah Produk Varian</button>
         </div>
 
-        <div className="overflow-x-auto bg-white rounded shadow">
+        <div className="bg-white shadow rounded overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead className="bg-gray-100 text-gray-700">
+            <thead className="bg-gray-100">
               <tr>
-                <th className="px-4 py-3 text-left">Nama</th>
-                <th className="px-4 py-3 text-left">Kategori</th>
-                <th className="px-4 py-3 text-left">Harga</th>
-                <th className="px-4 py-3 text-left">Stok</th>
-                <th className="px-4 py-3 text-left">Warna</th>
-                <th className="px-4 py-3 text-left">Size</th>
-                <th className="px-4 py-3 text-left">Deskripsi</th>
-                <th className="px-4 py-3 text-left">Aksi</th>
+                <th className="px-4 py-2 text-left">Nama</th>
+                <th className="px-4 py-2 text-left">Kategori</th>
+                <th className="px-4 py-2 text-left">Ukuran</th>
+                <th className="px-4 py-2 text-left">Warna</th>
+                <th className="px-4 py-2 text-left">Deskripsi</th>
+                <th className="px-4 py-2 text-left">Aksi</th>
               </tr>
             </thead>
             <tbody>
-              {filteredProducts.length > 0 ? (
-                filteredProducts.map((item) => (
-                  <tr key={item.id} className="border-t hover:bg-gray-50">
-                    <td className="px-4 py-2">{item.name}</td>
-                    <td className="px-4 py-2">
-                      {(() => {
-                        const cat = categories.find(c => c.id === item.category_id);
-                        return cat?.name || "(Kategori tidak ditemukan)";
-                      })()}
-                    </td>
-                    <td className="px-4 py-2">Rp {item.price?.toLocaleString()}</td>
-                    <td className="px-4 py-2">{item.stock}</td>
-                    <td className="px-4 py-2">{item.color}</td>
-                    <td className="px-4 py-2">{item.size}</td>
-                    <td className="px-4 py-2">{item.description}</td>
-                    <td className="px-4 py-2 space-x-2 ">
-                      <button onClick={() => handleEdit(item)} className="bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-1 rounded text-xs mb-5">Edit</button>
-                      <button onClick={() => handleDelete(item.id)} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs">Hapus</button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="text-center py-6 text-gray-500">Tidak ada produk ditemukan.</td>
+              {products.map((prod) => (
+                <tr key={prod.id} className="border-t">
+                  <td className="px-4 py-2">{prod.name}</td>
+                  <td className="px-4 py-2">{categories.find(c => c.id === prod.category_id)?.name}</td>
+                  <td className="px-4 py-2">
+                    {prod.variants?.map((v, i) => {
+                      const size = sizes.find(s => s.id === v.size_id)?.name || "-";
+                      return <div key={i} className="text-sm">• {size}</div>;
+                    })}
+                  </td>
+                  <td className="px-4 py-2">
+                    {prod.variants?.map((v, i) => {
+                      const color = colors.find(c => String(c.id) === String(v.color_id));
+                      const colorHex = color?.name || "#CCCCCC"; // hex dari DB
+                      return (
+                        <div key={i} className="flex items-center gap-2 text-sm mb-1">
+                          <div
+                            className="w-4 h-4 rounded border"
+                            style={{ backgroundColor: colorHex }}
+                            title={colorHex}
+                          ></div>
+                          <span>{colorHex}</span>
+                        </div>
+                      );
+                    })}
+                  </td>
+                  <td className="px-4 py-2">{prod.description}</td>
+                  <td className="px-4 py-2 space-x-2">
+                    <button onClick={() => handleEdit(prod)} className="bg-indigo-600 text-white px-3 py-1 rounded text-xs mb-4">Edit</button>
+                    <button onClick={() => handleDelete(prod.id)} className="bg-red-500 text-white px-3 py-1 rounded text-xs">Hapus</button>
+                  </td>
                 </tr>
-              )}
+              ))}
             </tbody>
           </table>
-          {/* MODAL FORM TAMBAH / EDIT */}
-          {showModal && (
-            <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
-              <div className="bg-white w-full max-w-md p-6 rounded shadow overflow-y-auto max-h-[90vh]">
-                <h2 className="text-xl font-semibold mb-4">{editMode ? "Edit Produk" : "Tambah Produk"}</h2>
-                <div className="space-y-3">
-                  <input
-                    type="text"
-                    placeholder="Nama Produk"
-                    className="w-full border px-3 py-2 rounded"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Harga"
-                    className="w-full border px-3 py-2 rounded"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Stok"
-                    className="w-full border px-3 py-2 rounded"
-                    value={formData.stock}
-                    onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                  />
-                  <select
-                    className="w-full border px-3.5 py-2 rounded pr-10 appearance-none"
-                    value={formData.size}
-                    onChange={(e) => setFormData({ ...formData, size: e.target.value })}
-                  >
-                    <option value="">Pilih Ukuran</option>
-                    {sizes.map((size) => (
-                      <option key={size.id} value={size.name}>
-                        {size.name}
-                      </option>
-                    ))}
-                  </select>
+        </div>
+        {showModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <div className="bg-white rounded p-6 w-full max-w-2xl overflow-y-auto max-h-[90vh]">
+              <h2 className="text-xl font-bold mb-4">Form Produk Varian</h2>
+              <div className="space-y-3">
+                <input placeholder="Nama Produk" className="w-full border px-3 py-2 rounded" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+                <input placeholder="Harga" type="number" className="w-full border px-3 py-2 rounded" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} />
+                <textarea placeholder="Deskripsi" className="w-full border px-3 py-2 rounded" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
+                <select className="w-full border px-3 py-2 rounded" value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })}>
+                  <option value="">Pilih Kategori</option>
+                  {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+                </select>
 
-                  <div className="w-full flex items-center gap-3 mt-2">
-                    <div
-                      className="w-10 h-10 rounded border"
-                      style={{ backgroundColor: formData.color }}
-                      title={
-                        colors.find((c) => c.name === formData.color)?.code || "Warna tidak ditemukan"
-                      }
-                    />
-                    <select
-                      className="flex-1 border px-3 py-2 rounded pr-10 appearance-none"
-                      value={formData.color}
-                      onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                    >
-                      <option value="">Pilih Warna</option>
-                      {colors.map((color) => (
-                        <option key={color.id} value={color.name}>
-                          {color.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Deskripsi"
-                    className="w-full border px-3 py-2 rounded"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  />
-                  <select
-                    className="w-full border px-3 py-2 rounded pr-10 appearance-none"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  >
-                    <textarea
-                      placeholder="Deskripsi"
-                      className="w-full border px-3 py-2 rounded"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    />
-                    <option value="">-- Pilih Kategori --</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                  </select>
-
-                  {categories.find(c => c.id === Number(formData.category))?.name === "Pakaian" && (
-                    <>
-                      <div className="mb-3">
-                        <p className="text-sm font-semibold text-gray-700 mb-1">Ukuran</p>
-                        <div className="flex flex-wrap gap-2">
-                          {sizes.map((size) => (
-                            <button
-                              key={size.id}
-                              type="button"
-                              onClick={() => setFormData({ ...formData, size: size.id })}
-                              className={`px-4 py-1 rounded border ${formData.size === size.id
-                                ? "bg-black text-white border-black"
-                                : "bg-white text-gray-800 hover:bg-gray-100"
-                                }`}
-                            >
-                              {size.name}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="mb-3">
-                        <p className="text-sm font-semibold text-gray-700 mb-1">Warna</p>
-                        <div className="flex flex-wrap gap-2">
-                          {colors.map((color) => (
-                            <button
-                              key={color.id}
-                              type="button"
-                              onClick={() => setFormData({ ...formData, color: color.id })}
-                              className={`px-4 py-1 rounded border ${formData.color === color.id
-                                ? "bg-black text-white border-black"
-                                : "bg-white text-gray-800 hover:bg-gray-100"
-                                }`}
-                            >
-                              {color.name}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                    </>
-                  )}
-
-                  <div className="flex gap-3 text-sm">
-                    <label>
-                      <input
-                        type="radio"
-                        name="uploadType"
-                        value="file"
-                        checked={uploadType === "file"}
-                        onChange={() => setUploadType("file")}
-                      /> Upload
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        name="uploadType"
-                        value="url"
-                        checked={uploadType === "url"}
-                        onChange={() => setUploadType("url")}
-                      /> Link Gambar
-                    </label>
-                  </div>
-
-                  {uploadType === "file" ? (
+                <div className="flex gap-3 text-sm">
+                  <label><input type="radio" name="uploadType" checked={uploadType === "file"} onChange={() => setUploadType("file")} /> Upload</label>
+                  <label><input type="radio" name="uploadType" checked={uploadType === "url"} onChange={() => setUploadType("url")} /> URL</label>
+                </div>
+                {uploadType === "file" ? (
+                  <>
                     <input
                       type="file"
-                      accept="image/*"
-                      onChange={(e) => setFormData({ ...formData, image: e.target.files[0] })}
-                      className="w-full border px-3 py-2 rounded"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (!file) {
+                          alert("Silakan pilih file gambar!");
+                        }
+                        setFormData({ ...formData, image: file });
+                      }}
+                      className="w-full"
                     />
-                  ) : (
+                  </>
+                ) : (
+                  <>
                     <input
                       type="text"
-                      placeholder="https://..."
-                      className="w-full border px-3 py-2 rounded"
+                      placeholder="URL Gambar"
                       value={formData.image_url}
-                      onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                      onChange={(e) => {
+                        const url = e.target.value;
+                        setFormData({ ...formData, image_url: url });
+                        if (!url.trim()) {
+                          alert("Silakan isi URL gambar!");
+                        }
+                      }}
+                      className="w-full border px-3 py-2 rounded"
                     />
-                  )}
+                  </>
+                )}
+
+                <div className="space-y-2">
+                  <p className="font-semibold">Varian</p>
+                  {formData.variants.map((v, i) => (
+                    <div key={i} className="flex gap-2">
+                      <select value={v.color_id} onChange={(e) => handleVariantChange(i, "color_id", e.target.value)} className="flex-1 border px-2 py-1 rounded">
+                        <option value="">Warna</option>
+                        {colors.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                      <select value={v.size_id} onChange={(e) => handleVariantChange(i, "size_id", e.target.value)} className="flex-1 border px-2 py-1 rounded">
+                        <option value="">Ukuran</option>
+                        {sizes.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      </select>
+                      <input type="number" placeholder="Stok" value={v.stock} onChange={(e) => handleVariantChange(i, "stock", e.target.value)} className="w-24 border px-2 py-1 rounded" />
+                      <button onClick={() => handleRemoveVariant(i)} className="text-red-500 font-bold">×</button>
+                    </div>
+                  ))}
+                  <button onClick={handleAddVariant} className="text-sm text-indigo-600">+ Tambah Varian</button>
                 </div>
 
-                <div className="mt-6 flex justify-end gap-2">
-                  <button
-                    onClick={() => { setShowModal(false); resetForm(); }}
-                    className="px-4 py-2 rounded border border-gray-300"
-                  >Batal</button>
-                  <button
-                    onClick={handleAddOrUpdateProduct}
-                    className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
-                  >{editMode ? "Simpan Perubahan" : "Tambah"}</button>
+                <div className="flex justify-end gap-2 mt-4">
+                  <button onClick={() => setShowModal(false)} className="px-4 py-2 border rounded">Batal</button>
+                  <button onClick={handleSubmit} className="bg-indigo-600 text-white px-4 py-2 rounded">Simpan</button>
                 </div>
               </div>
             </div>
-          )}
-
-        </div>
+          </div>
+        )}
       </main>
     </div>
   );

@@ -5,7 +5,6 @@ import Sidebar from "../../components/sidebar";
 const colorNameToHex = {
   merah: "#FF0000",
   biru: "#0000FF",
-  "biru langit": "#00BFFF",
   hijau: "#008000",
   kuning: "#FFFF00",
   putih: "#FFFFFF",
@@ -24,24 +23,20 @@ const MasterData = () => {
   const [categories, setCategories] = useState([]);
   const [sizes, setSizes] = useState([]);
   const [colors, setColors] = useState([]);
-  const [discounts, setDiscounts] = useState([]);
 
   const [newCategory, setNewCategory] = useState("");
   const [newSize, setNewSize] = useState("");
   const [newColor, setNewColor] = useState("");
   const [newColorCode, setNewColorCode] = useState("#000000");
-  const [newDiscount, setNewDiscount] = useState("");
 
   const [editCategoryId, setEditCategoryId] = useState(null);
   const [editSizeId, setEditSizeId] = useState(null);
   const [editColorId, setEditColorId] = useState(null);
-  const [editDiscountId, setEditDiscountId] = useState(null);
 
 
   const [editCategoryValues, setEditCategoryValues] = useState({});
   const [editSizeValues, setEditSizeValues] = useState({});
   const [editColorValues, setEditColorValues] = useState({});
-  const [editDiscountValues, setEditDiscountValues] = useState({});
 
   useEffect(() => {
     const hex = colorNameToHex[newColor.trim().toLowerCase()];
@@ -72,19 +67,10 @@ const MasterData = () => {
     setColors(data?.data?.colors || []);
   };
 
-  const fetchDiscounts = async () => {
-    const res = await fetch("http://localhost:8081/api/v1/discounts", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
-    setDiscounts(data?.data?.discounts || []);
-  };
-
   useEffect(() => {
     fetchCategories();
     fetchSizes();
     fetchColors();
-    fetchDiscounts();
   }, []);
 
   // ACTIONS
@@ -111,8 +97,6 @@ const MasterData = () => {
       setNewSize(""); fetchSizes();
     } else if (type === "color") {
       setNewColor(""); setNewColorCode("#000000"); fetchColors();
-    } else if (type === "discount") {
-      setNewDiscount(""); fetchDiscounts();
     } 
   };
 
@@ -146,7 +130,6 @@ const MasterData = () => {
     if (type === "category") fetchCategories();
     if (type === "size") fetchSizes();
     if (type === "color") fetchColors();
-    if (type === "discount") fetchDiscounts();
     if (type === "shipment") fetchShipments();
   };
 
@@ -253,7 +236,6 @@ const MasterData = () => {
         {renderSection("Kategori", "category", categories, newCategory, setNewCategory, editCategoryId, setEditCategoryId, editCategoryValues, setEditCategoryValues)}
         {renderSection("Ukuran", "size", sizes, newSize, setNewSize, editSizeId, setEditSizeId, editSizeValues, setEditSizeValues)}
         {renderSection("Warna", "color", colors, newColor, setNewColor, editColorId, setEditColorId, editColorValues, setEditColorValues)}
-        {renderSection("Diskon", "discount", discounts, newDiscount, setNewDiscount, editDiscountId, setEditDiscountId, editDiscountValues, setEditDiscountValues)}
       </main>
     </div>
   );

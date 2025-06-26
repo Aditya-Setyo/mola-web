@@ -6,11 +6,9 @@ import {
     FaClipboardList,
     FaCreditCard,
     FaStar,
-    FaHeart,
     FaCog,
     FaMegaport,
     FaChartLine,
-    FaTruck
 } from "react-icons/fa";
 import { useState } from "react";
 import { FaBars } from "react-icons/fa";
