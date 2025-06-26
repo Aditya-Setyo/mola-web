@@ -113,7 +113,7 @@ func (r *productRepository) GetProductReviews(ctx context.Context, productID uui
 	reviews := make([]entity.ProductReview, 0)
 	if err := r.db.WithContext(ctx).
 		Where("product_id = ?", productID).
-		First(&reviews).Error; err != nil {
+		Find(&reviews).Error; err != nil {
 		return nil, err
 	}
 	return reviews, nil

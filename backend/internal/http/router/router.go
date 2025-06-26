@@ -287,7 +287,7 @@ func PrivateRoutes(
 		},
 		{
 			Method:  http.MethodPost,
-			Path:    "/review/:productID",
+			Path:    "/admin/review/:productID",
 			Handler: productHandler.AddReview,
 			Roles:   []string{"admin"},
 		},

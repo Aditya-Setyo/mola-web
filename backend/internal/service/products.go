@@ -442,6 +442,7 @@ func (s *productService) InsertProductReview(ctx context.Context, request *dto.P
 		tx.Error = err
 		return err
 	}
+	_ = s.invalidateProductListCaches()
 	return nil
 }
 

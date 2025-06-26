@@ -391,6 +391,7 @@ func (h *ProductHandler) AddReview(ctx echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(http.StatusBadRequest, response.ErrorResponse(http.StatusBadRequest, err.Error()))
 	}
+	req.ProductID = productID
 	err = h.productService.InsertProductReview(ctx.Request().Context(), &req)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, response.ErrorResponse(http.StatusInternalServerError, err.Error()))
