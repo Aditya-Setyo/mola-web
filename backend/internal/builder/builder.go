@@ -31,7 +31,7 @@ func BuildPublicRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []ro
 	productService := service.NewProductService(db, productRepository, variantRepository, tokenUseCase, cacheable)
 	cartService := service.NewCartService(db, cartRepository, orderRepository, productRepository, variantRepository ,tokenUseCase, cacheable, cfg.MidtransConfig)
 	orderService := service.NewOrderService(db, orderRepository, cartRepository, cartService, productService, cacheable, tokenUseCase, cfg.MidtransConfig)
-	transactionService := service.NewTransactionService(db, productRepository, transactionRepository, orderRepository, tokenUseCase, cacheable, cfg.MidtransConfig)
+	transactionService := service.NewTransactionService(db, productRepository, transactionRepository, orderRepository, variantRepository,tokenUseCase, cacheable, cfg.MidtransConfig)
 	salesReportService := service.NewSalesReportService(db, salesReportRepository)
 	adsService := service.NewAdsService(db, adsRepository, tokenUseCase, cacheable)
 
@@ -69,7 +69,7 @@ func BuildPrivateRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []r
 	orderRepository := repository.NewOrderRepository(db)
 	cartService := service.NewCartService(db, cartRepository, orderRepository, productRepository, variantRepository, tokenUseCase, cacheable, cfg.MidtransConfig)
 	orderService := service.NewOrderService(db, orderRepository, cartRepository, cartService, productService, cacheable, tokenUseCase, cfg.MidtransConfig)
-	transactionService := service.NewTransactionService(db, productRepository, transactionRepository, orderRepository, tokenUseCase, cacheable, cfg.MidtransConfig)
+	transactionService := service.NewTransactionService(db, productRepository, transactionRepository, orderRepository, variantRepository, tokenUseCase, cacheable, cfg.MidtransConfig)
 	salesReportService := service.NewSalesReportService(db, salesReportRepository)
 	shipmentService := service.NewShipmentService(db, shipmentRepository)
 	categoryService := service.NewCategoryService(db, categoryRepository, tokenUseCase, cacheable)
