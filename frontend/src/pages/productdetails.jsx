@@ -32,21 +32,39 @@ const ProductDetailPage = () => {
       return;
     }
 
-    try {
-      await apiPost("/carts", {
-        product_id: product.id,
-        quantity,
+    let payload = {
+      product_id: product.id,
+      quantity,
+    };
+
+    if (product.has_variant) {
+      const variant = product.variants.find(
+        (v) => v.size === selectedSize && v.color === selectedColor
+      );
+
+      if (!variant) {
+        alert("Varian tidak ditemukan. Silakan periksa pilihan warna dan ukuran.");
+        return;
+      }
+
+      payload = {
+        ...payload,
         size: selectedSize,
         color: selectedColor,
-      });
+        product_variant_id: variant.id, // opsional kalau backend perlu
+      };
+    }
 
+    try {
+      await apiPost("/carts", payload);
       alert("Produk berhasil ditambahkan ke keranjang!");
       navigate("/chartpage");
     } catch (error) {
-      console.error(error);
+      console.error("Gagal tambah ke keranjang:", error);
       alert("Terjadi kesalahan saat menambahkan ke keranjang.");
     }
   };
+
 
   const handleBuyNow = async () => {
     const token = localStorage.getItem("token");
@@ -148,16 +166,16 @@ const ProductDetailPage = () => {
 
   const sizes = product?.variants
     ? [...new Set(product.variants.map((v) => v.size))].map((name, i) => ({
-        id: i,
-        name,
-      }))
+      id: i,
+      name,
+    }))
     : [];
 
   const colors = product?.variants
     ? [...new Set(product.variants.map((v) => v.color))].map((name, i) => ({
-        id: i,
-        name,
-      }))
+      id: i,
+      name,
+    }))
     : [];
 
   if (loading) {
@@ -242,11 +260,10 @@ const ProductDetailPage = () => {
                         key={color.id}
                         onClick={() => setSelectedColor(color.name)}
                         title={color.name}
-                        className={`w-8 h-8 rounded-full border-2 focus:outline-none ${
-                          selectedColor === color.name
+                        className={`w-8 h-8 rounded-full border-2 focus:outline-none ${selectedColor === color.name
                             ? "ring-2 ring-black"
                             : "border-gray-300"
-                        }`}
+                          }`}
                         style={{ backgroundColor: color.name || "#ccc" }}
                       />
                     ))}
@@ -263,11 +280,10 @@ const ProductDetailPage = () => {
                       <button
                         key={size.id}
                         onClick={() => setSelectedSize(size.name)}
-                        className={`w-10 h-10 rounded-full border text-sm font-medium hover:bg-gray-200 transition ${
-                          selectedSize === size.name
+                        className={`w-10 h-10 rounded-full border text-sm font-medium hover:bg-gray-200 transition ${selectedSize === size.name
                             ? "bg-black text-white"
                             : "text-gray-800 border-gray-300"
-                        }`}
+                          }`}
                       >
                         {size.name}
                       </button>
@@ -315,21 +331,19 @@ const ProductDetailPage = () => {
           <div className="flex justify-center space-x-6 text-sm font-semibold text-gray-600 mb-4">
             <button
               onClick={() => setActiveTab("description")}
-              className={`pb-2 border-b-2 ${
-                activeTab === "description"
+              className={`pb-2 border-b-2 ${activeTab === "description"
                   ? "border-black text-black"
                   : "border-transparent"
-              }`}
+                }`}
             >
               Deskripsi Produk
             </button>
             <button
               onClick={() => setActiveTab("reviews")}
-              className={`pb-2 border-b-2 ${
-                activeTab === "reviews"
+              className={`pb-2 border-b-2 ${activeTab === "reviews"
                   ? "border-black text-black"
                   : "border-transparent"
-              }`}
+                }`}
             >
               Ulasan
             </button>
@@ -358,11 +372,10 @@ const ProductDetailPage = () => {
                         {[...Array(5)].map((_, j) => (
                           <FaStar
                             key={j}
-                            className={`text-sm ${
-                              j < review.rating
+                            className={`text-sm ${j < review.rating
                                 ? "text-yellow-400"
                                 : "text-gray-300"
-                            }`}
+                              }`}
                           />
                         ))}
                       </div>

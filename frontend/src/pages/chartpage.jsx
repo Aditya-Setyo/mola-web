@@ -10,6 +10,40 @@ import {
   FaArrowRight,
 } from "react-icons/fa";
 
+
+const handleCheckout = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Silakan login terlebih dahulu.");
+      return;
+    }
+
+    const payload = {
+      cart_items: items.map((item) => ({
+        product_id: item.id,
+        quantity: item.qty,
+        size: item.size,
+        color: item.color,
+      })),
+    };
+
+    // Atur sesuai endpoint backend kamu
+    const res = await apiPost("/payments/midtrans", payload);
+    const redirectUrl = res.redirect_url || res.data?.redirect_url;
+
+    if (redirectUrl) {
+      window.location.href = redirectUrl;
+    } else {
+      alert("Gagal mendapatkan URL pembayaran.");
+    }
+  } catch (err) {
+    console.error("Gagal checkout:", err);
+    alert("Terjadi kesalahan saat checkout.");
+  }
+};
+
+
 const ChartPage = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +62,7 @@ const ChartPage = () => {
 
     const fetchCart = async () => {
       try {
-        const res = await apiGet("/cart", true); // ambil keranjang dengan auth
+        const res = await apiGet("/carts", true); // ambil keranjang dengan auth
         const cartItems = res?.data?.cart?.cart_items || [];
 
         const transformedItems = cartItems.map((item) => ({
@@ -37,9 +71,10 @@ const ChartPage = () => {
           price: item.product?.price,
           qty: item.quantity,
           image_url: item.product?.image_url,
-          color: item.product?.color,
-          size: item.product?.size,
+          color: item.color, // ambil langsung dari cart_item
+          size: item.size,   // ambil langsung dari cart_item
         }));
+
 
         setItems(transformedItems);
       } catch (err) {
@@ -64,7 +99,9 @@ const ChartPage = () => {
     setItems((prev) => prev.filter((it) => it.id !== id));
   };
 
-  const subtotal = items.reduce((s, it) => s + it.price * it.qty, 0);
+  const [selectedItems, setSelectedItems] = useState([]);
+  const selected = items.filter((it) => selectedItems.includes(it.id));
+  const subtotal = selected.reduce((s, it) => s + it.price * it.qty, 0);
   const total = subtotal * 0.3;
 
   return (
@@ -91,6 +128,20 @@ const ChartPage = () => {
                   key={it.id}
                   className="flex items-center gap-4 border rounded-lg p-4 shadow-sm"
                 >
+                  {/* Checkbox untuk memilih item */}
+                  <input
+                    type="checkbox"
+                    checked={selectedItems.includes(it.id)}
+                    onChange={() => {
+                      if (selectedItems.includes(it.id)) {
+                        setSelectedItems(selectedItems.filter((sid) => sid !== it.id));
+                      } else {
+                        setSelectedItems([...selectedItems, it.id]);
+                      }
+                    }}
+                    className="w-4 h-4 mr-2 accent-black"
+                  />
+
                   <img
                     src={
                       it.image_url
@@ -151,15 +202,16 @@ const ChartPage = () => {
 
               <button
                 disabled={items.length === 0}
-                className={`w-full py-3 rounded-full flex items-center justify-center gap-2 transition ${
-                  items.length > 0
-                    ? "bg-black text-white hover:bg-gray-900"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
+                onClick={handleCheckout}
+                className={`w-full py-3 rounded-full flex items-center justify-center gap-2 transition ${items.length > 0
+                  ? "bg-black text-white hover:bg-gray-900"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
               >
                 Go to Checkout
                 <FaArrowRight />
               </button>
+
             </aside>
           </div>
         )}
