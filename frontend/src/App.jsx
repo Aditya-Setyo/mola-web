@@ -16,6 +16,7 @@ import ProductDetailPage from "./pages/productdetails";
 import AdminPage from "./pages/admin/adminpage";
 import MasterData from "./pages/admin/MasterData";
 import Products from "./pages/admin/Product";
+import VariantsProducts from "./pages/admin/VariantPage"
 import Orders from "./pages/admin/Order";
 import Users from "./pages/admin/Users";
 import Payments from "./pages/admin/Payments";
@@ -50,6 +51,7 @@ const App = () => {
       <Route path="/adminpage" element={<AdminPage />} />
       <Route path="/admin/masterdata" element={<MasterData />} />
       <Route path="/admin/products" element={<Products />} />
+      <Route path="/admin/variantpage" element={<VariantsProducts />} />
       <Route path="/admin/orders" element={<Orders />} />
       <Route path="/admin/users" element={<Users />} />
       <Route path="/admin/payments" element={<Payments />} />
