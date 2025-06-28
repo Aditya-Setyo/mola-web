@@ -13,15 +13,12 @@ const ProductDetailPage = () => {
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
-  
 
   const increment = () => setQuantity((q) => q + 1);
   const decrement = () => setQuantity((q) => (q > 1 ? q - 1 : 1));
 
-  // Handle tambah ke keranjang
   const handleAddToCart = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -30,10 +27,17 @@ const ProductDetailPage = () => {
       return;
     }
 
+    if (product.has_variant && (!selectedSize || !selectedColor)) {
+      alert("Silakan pilih ukuran dan warna terlebih dahulu.");
+      return;
+    }
+
     try {
       await apiPost("/carts", {
         product_id: product.id,
         quantity,
+        size: selectedSize,
+        color: selectedColor,
       });
 
       alert("Produk berhasil ditambahkan ke keranjang!");
@@ -44,7 +48,6 @@ const ProductDetailPage = () => {
     }
   };
 
-  // Handle tombol Beli Sekarang
   const handleBuyNow = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -73,7 +76,8 @@ const ProductDetailPage = () => {
       };
 
       const res = await apiPost("/payments/midtrans", payload);
-      const redirectUrl = res.redirect_url || res.data?.redirect_url?.redirect_url;
+      const redirectUrl =
+        res.redirect_url || res.data?.redirect_url?.redirect_url;
 
       if (redirectUrl) {
         window.location.href = redirectUrl;
@@ -87,7 +91,6 @@ const ProductDetailPage = () => {
     }
   };
 
-  // Ambil kategori untuk kebutuhan modal jika ingin
   const [categories, setCategories] = useState([]);
   useEffect(() => {
     const fetchCategories = async () => {
@@ -104,8 +107,6 @@ const ProductDetailPage = () => {
     fetchCategories();
   }, []);
 
-
-  // Ambil data produk berdasarkan ID
   useEffect(() => {
     const controller = new AbortController();
     const { signal } = controller;
@@ -113,8 +114,10 @@ const ProductDetailPage = () => {
     const fetchProduct = async () => {
       setLoading(true);
       try {
-        const res = await apiGet(`/products/${id}`, { signal });
-        setProduct(res?.data?.product || null);
+        const res = await apiGet("/products", { signal });
+        const allProducts = res?.data?.products || [];
+        const found = allProducts.find((item) => item.id === id);
+        setProduct(found || null);
       } catch (err) {
         if (err.name !== "AbortError") {
           console.error("Gagal ambil produk:", err);
@@ -129,13 +132,12 @@ const ProductDetailPage = () => {
     return () => controller.abort();
   }, [id]);
 
-  // Ambil ulasan dari semua produk, lalu filter sesuai ID produk saat ini
   const [reviews, setReviews] = useState([]);
   useEffect(() => {
     const fetchReviews = async () => {
       try {
         const res = await apiGet("/reviews");
-        const productReviews = res.filter((r) => r.product_id === Number(id));
+        const productReviews = res.filter((r) => r.product_id === id);
         setReviews(productReviews);
       } catch (err) {
         console.error("Gagal ambil ulasan:", err);
@@ -143,6 +145,20 @@ const ProductDetailPage = () => {
     };
     fetchReviews();
   }, [id]);
+
+  const sizes = product?.variants
+    ? [...new Set(product.variants.map((v) => v.size))].map((name, i) => ({
+        id: i,
+        name,
+      }))
+    : [];
+
+  const colors = product?.variants
+    ? [...new Set(product.variants.map((v) => v.color))].map((name, i) => ({
+        id: i,
+        name,
+      }))
+    : [];
 
   if (loading) {
     return (
@@ -160,7 +176,9 @@ const ProductDetailPage = () => {
     return (
       <>
         <Navbar />
-        <div className="text-center py-20 text-red-500">Produk tidak ditemukan.</div>
+        <div className="text-center py-20 text-red-500">
+          Produk tidak ditemukan.
+        </div>
         <Footer />
       </>
     );
@@ -171,7 +189,6 @@ const ProductDetailPage = () => {
       <Navbar />
       <section className="px-4 py-8 md:px-20 md:py-10">
         <div className="grid md:grid-cols-2 gap-10">
-          {/* Gambar produk */}
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex flex-row md:flex-col gap-2">
               {[1, 2, 3].map((n) => (
@@ -198,11 +215,12 @@ const ProductDetailPage = () => {
             />
           </div>
 
-          {/* Detail informasi produk */}
           <div>
             <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
             <div className="flex items-center text-yellow-500 space-x-1 mb-4">
-              {[...Array(4)].map((_, i) => <FaStar key={i} />)}
+              {[...Array(4)].map((_, i) => (
+                <FaStar key={i} />
+              ))}
               <FaStarHalfAlt />
               <span className="text-sm text-gray-600 ml-2">4.5/5 (1.2k)</span>
             </div>
@@ -211,44 +229,73 @@ const ProductDetailPage = () => {
               Rp {product.price?.toLocaleString()}
             </div>
 
-            {product.size && (
-              <div className="mb-4">
-                <p className="text-sm font-semibold text-gray-700 mb-1">Ukuran</p>
-                <span className="border rounded px-4 py-1 text-sm">{product.size}</span>
-              </div>
-            )}
+            {product.has_variant && (
+              <>
+                {/* Warna Tersedia */}
+                <div className="mb-4">
+                  <p className="text-sm font-semibold text-gray-700 mb-1">
+                    Warna Tersedia
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {colors.map((color) => (
+                      <button
+                        key={color.id}
+                        onClick={() => setSelectedColor(color.name)}
+                        title={color.name}
+                        className={`w-8 h-8 rounded-full border-2 focus:outline-none ${
+                          selectedColor === color.name
+                            ? "ring-2 ring-black"
+                            : "border-gray-300"
+                        }`}
+                        style={{ backgroundColor: color.name || "#ccc" }}
+                      />
+                    ))}
+                  </div>
+                </div>
 
-            {product.color && (
-              <div className="mb-4">
-                <p className="text-sm font-semibold text-gray-700 mb-1">Warna</p>
-                <div
-                  className="w-6 h-6 rounded-full border"
-                  style={{ backgroundColor: product.color }}
-                />
-              </div>
+                {/* Ukuran Tersedia */}
+                <div className="mb-4">
+                  <p className="text-sm font-semibold text-gray-700 mb-1">
+                    Ukuran Tersedia
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {sizes.map((size) => (
+                      <button
+                        key={size.id}
+                        onClick={() => setSelectedSize(size.name)}
+                        className={`w-10 h-10 rounded-full border text-sm font-medium hover:bg-gray-200 transition ${
+                          selectedSize === size.name
+                            ? "bg-black text-white"
+                            : "text-gray-800 border-gray-300"
+                        }`}
+                      >
+                        {size.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
 
             <div className="flex items-center space-x-4 mb-6">
-              {/* Counter jumlah */}
               <div className="flex items-center border rounded">
-                <button onClick={decrement} className="px-3 py-1 hover:bg-gray-100">
+                <button
+                  onClick={decrement}
+                  className="px-3 py-1 hover:bg-gray-100"
+                >
                   <FaMinus />
                 </button>
                 <span className="px-4 py-1">{quantity}</span>
-                <button onClick={increment} className="px-3 py-1 hover:bg-gray-100">
+                <button
+                  onClick={increment}
+                  className="px-3 py-1 hover:bg-gray-100"
+                >
                   <FaPlus />
                 </button>
               </div>
 
-              {/* Tombol Keranjang dan Beli Sekarang */}
               <button
-                onClick={() => {
-                  if (product.category?.name?.toLowerCase() === "pakaian") {
-                    setShowModal(true);
-                  } else {
-                    handleAddToCart();
-                  }
-                }}
+                onClick={handleAddToCart}
                 className="bg-black text-white px-6 py-2 rounded hover:bg-gray-800"
               >
                 Keranjang
@@ -264,119 +311,80 @@ const ProductDetailPage = () => {
           </div>
         </div>
 
-        {/* Tab Deskripsi / Ulasan */}
         <div className="border-t pt-6 mt-10">
           <div className="flex justify-center space-x-6 text-sm font-semibold text-gray-600 mb-4">
             <button
               onClick={() => setActiveTab("description")}
-              className={`pb-2 border-b-2 ${activeTab === "description" ? "border-black text-black" : "border-transparent"}`}
+              className={`pb-2 border-b-2 ${
+                activeTab === "description"
+                  ? "border-black text-black"
+                  : "border-transparent"
+              }`}
             >
               Deskripsi Produk
             </button>
             <button
               onClick={() => setActiveTab("reviews")}
-              className={`pb-2 border-b-2 ${activeTab === "reviews" ? "border-black text-black" : "border-transparent"}`}
+              className={`pb-2 border-b-2 ${
+                activeTab === "reviews"
+                  ? "border-black text-black"
+                  : "border-transparent"
+              }`}
             >
               Ulasan
             </button>
           </div>
 
-          {/* Konten tab */}
           {activeTab === "description" ? (
             <div className="text-gray-700 max-w-3xl mx-auto px-4 ml-4">
               <h4 className="text-xl font-semibold mb-2">Detail Produk</h4>
-              <p className="text-justify">{product.description || "Tidak ada deskripsi."}</p>
+              <p className="text-justify">
+                {product.description || "Tidak ada deskripsi."}
+              </p>
             </div>
           ) : (
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-2">
               {reviews.length > 0 ? (
                 reviews.map((review, i) => (
-                  <div key={review.id || i} className="border p-4 rounded-lg bg-white shadow-sm">
+                  <div
+                    key={review.id || i}
+                    className="border p-4 rounded-lg bg-white shadow-sm"
+                  >
                     <div className="flex justify-between mb-2">
-                      <h4 className="font-bold text-gray-800">{review.user_name || `User ${i + 1}`}</h4>
+                      <h4 className="font-bold text-gray-800">
+                        {review.user_name || `User ${i + 1}`}
+                      </h4>
                       <div className="flex text-yellow-400">
                         {[...Array(5)].map((_, j) => (
                           <FaStar
                             key={j}
-                            className={`text-sm ${j < review.rating ? "text-yellow-400" : "text-gray-300"}`}
+                            className={`text-sm ${
+                              j < review.rating
+                                ? "text-yellow-400"
+                                : "text-gray-300"
+                            }`}
                           />
                         ))}
                       </div>
                     </div>
                     <p className="text-gray-700 text-sm mb-1">
-                      <span className="font-medium text-gray-900">{review.product_name || "-"}</span>
+                      <span className="font-medium text-gray-900">
+                        {review.product_name || "-"}
+                      </span>
                     </p>
                     <p className="text-gray-600 text-sm">{review.comment}</p>
                   </div>
                 ))
               ) : (
-                <p className="text-center text-sm text-gray-500 col-span-full">Belum ada ulasan.</p>
+                <p className="text-center text-sm text-gray-500 col-span-full">
+                  Belum ada ulasan.
+                </p>
               )}
             </div>
           )}
         </div>
       </section>
-
       <Footer />
-
-      {/* Modal pilih ukuran & warna */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-80 space-y-4">
-            <h3 className="text-lg font-semibold">Pilih Ukuran & Warna</h3>
-
-            <div>
-              <label className="block text-sm font-medium">Ukuran</label>
-              <select
-                className="border w-full px-3 py-2 rounded"
-                value={selectedSize}
-                onChange={(e) => setSelectedSize(e.target.value)}
-              >
-                <option value="">Pilih Ukuran</option>
-                {sizes.map((size) => (
-                  <option key={size.id} value={size.name}>
-                    {size.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium">Warna</label>
-              <select
-                className="border w-full px-3 py-2 rounded"
-                value={selectedColor}
-                onChange={(e) => setSelectedColor(e.target.value)}
-              >
-                <option value="">Pilih Warna</option>
-                {colors.map((color) => (
-                  <option key={color.id} value={color.name}>
-                    {color.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex justify-end space-x-2 pt-2">
-              <button
-                onClick={() => setShowModal(false)}
-                className="px-4 py-2 text-sm bg-gray-300 rounded hover:bg-gray-400"
-              >
-                Batal
-              </button>
-              <button
-                onClick={() => {
-                  handleAddToCart();
-                  setShowModal(false);
-                }}
-                className="px-4 py-2 text-sm bg-black text-white rounded hover:bg-gray-800"
-              >
-                Tambah
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 };
