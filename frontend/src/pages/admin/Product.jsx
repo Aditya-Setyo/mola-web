@@ -96,36 +96,66 @@ const Products = () => {
     setFormData({ ...formData, variants: updated });
   };
 
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      price: "",
+      stock: "",
+      category: "",
+      image: null,
+      image_url: "",
+      size: "",
+      color: "",
+      description: "",
+      variants: [{ color_id: "", size_id: "", stock: "" }],
+    });
+    setEditId(null);
+    setEditMode(false);
+    setUploadType("file");
+  };
+
+
   const handleSubmit = async () => {
     const data = new FormData();
     data.append("name", formData.name);
     data.append("price", formData.price);
     data.append("category_id", formData.category);
     data.append("description", formData.description);
-    data.append("has_variant", true);
+    data.append("has_variant", true); // wajib string untuk FormData
 
+    // Upload file atau URL
     if (uploadType === "file" && formData.image) {
       data.append("image", formData.image);
     }
-    if (uploadType === "url") {
+    if (uploadType === "url" && formData.image_url) {
       data.append("image_url", formData.image_url);
     }
 
-    formData.variants.forEach((v, i) => {
-      data.append(`variants[${i}].color_id`, v.color_id);
-      data.append(`variants[${i}].size_id`, v.size_id);
-      data.append(`variants[${i}].stock`, v.stock);
+    // Tambahkan varian (array warna & ukuran)
+    formData.variants.forEach((variant, index) => {
+      data.append(`variants[${index}].color_id`, variant.color_id);
+      data.append(`variants[${index}].size_id`, variant.size_id);
+      data.append(`variants[${index}].stock`, variant.stock);
     });
 
+    // Tentukan endpoint
+    const endpoint = editId
+      ? `http://localhost:8081/api/v1/admin/products/${editId}`
+      : `http://localhost:8081/api/v1/admin/products`;
+
     try {
-      if (editId) {
-        await apiPut(`/admin/products/${editId}`, data, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      } else {
-        await apiPost("/admin/products", data, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+      const res = await fetch(endpoint, {
+        method: editId ? "PUT" : "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // ❌ JANGAN set "Content-Type" untuk FormData!
+        },
+        body: data,
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Error ${res.status}: ${errText}`);
       }
 
       resetForm();
@@ -133,8 +163,10 @@ const Products = () => {
       fetchData();
     } catch (err) {
       console.error("Gagal simpan produk:", err);
+      alert("Gagal simpan produk. Cek konsol untuk detail.");
     }
   };
+
 
 
   const handleEdit = (prod) => {
