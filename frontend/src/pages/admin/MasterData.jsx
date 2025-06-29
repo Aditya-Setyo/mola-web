@@ -1,6 +1,7 @@
 // IMPORT & SETUP
 import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/sidebar";
+import { apiGet, apiPost, apiPut, apiDelete } from "../../api";
 
 const colorNameToHex = {
   merah: "#FF0000",
@@ -38,33 +39,34 @@ const MasterData = () => {
   const [editSizeValues, setEditSizeValues] = useState({});
   const [editColorValues, setEditColorValues] = useState({});
 
+  const getEndpoint = (type) => {
+    switch (type) {
+      case "category": return "categories";
+      case "size": return "sizes";
+      case "color": return "colors";
+      default: return "";
+    }
+  };
+
+
   useEffect(() => {
     const hex = colorNameToHex[newColor.trim().toLowerCase()];
     if (hex) setNewColorCode(hex);
   }, [newColor]);
 
   const fetchCategories = async () => {
-    const res = await fetch("http://localhost:8081/api/v1/categories", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
-    setCategories(data?.data?.categories || []);
+    const res = await apiGet("/categories");
+    setCategories(res?.data?.categories || []);
   };
 
   const fetchSizes = async () => {
-    const res = await fetch("http://localhost:8081/api/v1/sizes", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
-    setSizes(data?.data?.sizes || []);
+    const res = await apiGet("/sizes");
+    setSizes(res?.data?.sizes || []);
   };
 
   const fetchColors = async () => {
-    const res = await fetch("http://localhost:8081/api/v1/colors", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
-    setColors(data?.data?.colors || []);
+    const res = await apiGet("/colors");
+    setColors(res?.data?.colors || []);
   };
 
   useEffect(() => {
@@ -76,20 +78,13 @@ const MasterData = () => {
   // ACTIONS
   const addData = async (type, value) => {
     if (!value.trim()) return alert(`${type} tidak boleh kosong.`);
-    const url = `http://localhost:8081/api/v1/admin/${type}s`;
+    const endpoint = `/admin/${getEndpoint(type)}`;
 
-    let payload = type === "color"
+    const payload = type === "color"
       ? { name: value, code: newColorCode }
       : { name: value };
 
-    await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    });
+    await apiPost(endpoint, payload);
 
     if (type === "category") {
       setNewCategory(""); fetchCategories();
@@ -97,52 +92,40 @@ const MasterData = () => {
       setNewSize(""); fetchSizes();
     } else if (type === "color") {
       setNewColor(""); setNewColorCode("#000000"); fetchColors();
-    } 
+    }
   };
+
 
   const updateData = async (type, id, value) => {
     if (!value.trim()) return;
-    const url = `http://localhost:8081/api/v1/admin/${type}s/${id}`;
-    await fetch(url, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ name: value }),
-    });
+    const endpoint = `/admin/${getEndpoint(type)}/${id}`;
+    await apiPut(endpoint, { name: value });
 
     if (type === "category") { setEditCategoryId(null); fetchCategories(); }
     if (type === "size") { setEditSizeId(null); fetchSizes(); }
     if (type === "color") { setEditColorId(null); fetchColors(); }
-    if (type === "discount") { setEditDiscountId(null); fetchDiscounts(); }
-    if (type === "shipment") { setEditShipmentId(null); fetchShipments(); }
   };
+
 
   const deleteData = async (type, id) => {
     if (!window.confirm(`Hapus ${type}?`)) return;
-    const url = `http://localhost:8081/api/v1/admin/${type}s/${id}`;
-    await fetch(url, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const endpoint = `/admin/${getEndpoint(type)}/${id}`;
+    await apiDelete(endpoint);
 
     if (type === "category") fetchCategories();
     if (type === "size") fetchSizes();
     if (type === "color") fetchColors();
-    if (type === "shipment") fetchShipments();
   };
-
 
   const renderSection = (title, type, items, newValue, setNewValue, editId, setEditId, editValues, setEditValues) => (
     <div className="mb-10">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
         <h2 className="text-lg font-semibold">{title}</h2>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-wrap items-center gap-2">
           <input
             type="text"
             placeholder={`Tambah ${title.toLowerCase()}`}
-            className="border px-3 py-1 rounded"
+            className="border px-3 py-1 rounded w-full sm:w-auto"
             value={newValue}
             onChange={(e) => setNewValue(e.target.value)}
           />
@@ -178,29 +161,37 @@ const MasterData = () => {
 
       <ul className="bg-white shadow rounded divide-y">
         {items.map((item) => (
-          <li key={item.id} className="p-3 flex justify-between items-center">
-            <div className="w-1/3 font-mono text-sm text-gray-500">ID: {item.id}</div>
-            <div className="w-1/3 flex items-center gap-2">
+          <li
+            key={item.id}
+            className="p-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3"
+          >
+            <div className="font-mono text-sm text-gray-500">ID: {item.id}</div>
+            <div className="flex items-center gap-2 flex-wrap">
               {editId === item.id ? (
                 <input
                   value={editValues[item.id] ?? item.name}
-                  onChange={(e) => setEditValues({ ...editValues, [item.id]: e.target.value })}
-                  className="border px-2 py-1 rounded w-full"
+                  onChange={(e) =>
+                    setEditValues({ ...editValues, [item.id]: e.target.value })
+                  }
+                  className="border px-2 py-1 rounded w-full sm:w-auto"
                 />
               ) : (
                 <>
                   <span>{item.name}</span>
                   {item.code && (
-                    <span className="ml-2 w-5 h-5 inline-block border rounded" style={{ backgroundColor: item.code }} />
+                    <span
+                      className="ml-2 w-5 h-5 inline-block border rounded"
+                      style={{ backgroundColor: item.code }}
+                    />
                   )}
                 </>
               )}
             </div>
-            <div className="space-x-2 w-1/3 text-right">
+            <div className="flex gap-2 sm:justify-end">
               {editId === item.id ? (
                 <button
                   onClick={() => updateData(type, item.id, editValues[item.id])}
-                  className="bg-green-500 text-white px-2 py-1 rounded text-xs"
+                  className="bg-green-500 text-white px-3 py-1 rounded text-xs"
                 >
                   Simpan
                 </button>
@@ -210,14 +201,14 @@ const MasterData = () => {
                     setEditId(item.id);
                     setEditValues({ ...editValues, [item.id]: item.name });
                   }}
-                  className="bg-indigo-600 text-white px-2 py-1 rounded text-xs"
+                  className="bg-indigo-600 text-white px-3 py-1 rounded text-xs"
                 >
                   Edit
                 </button>
               )}
               <button
                 onClick={() => deleteData(type, item.id)}
-                className="bg-red-500 text-white px-2 py-1 rounded text-xs"
+                className="bg-red-500 text-white px-3 py-1 rounded text-xs"
               >
                 Hapus
               </button>

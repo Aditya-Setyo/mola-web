@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/sidebar";
 import DashboardCard from "../../components/dashboardCard";
 import DataTable from "../../components/dataTable";
+import { apiGet } from "../../api";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 const AdminPage = () => {
@@ -60,12 +61,12 @@ const AdminPage = () => {
   };
 
   return (
-    <div className="flex">
+    <div className="flex flex-col md:flex-row min-h-screen">
       <Sidebar />
-      <main className="flex-1 ml-0 md:ml-64 p-6 bg-gray-100 min-h-screen">
+      <main className="flex-1 md:ml-64 p-4 sm:p-6 bg-gray-100">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">📊 Admin Dashboard</h1>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold">📊 Admin Dashboard</h1>
           <button
             onClick={handleLogout}
             className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm"
@@ -75,7 +76,7 @@ const AdminPage = () => {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-10">
           <DashboardCard label="Products" value={summary.products} color="bg-indigo-500" />
           <DashboardCard label="Users" value={summary.users} color="bg-green-500" />
           <DashboardCard label="Orders" value={summary.orders} color="bg-yellow-500" />
@@ -84,7 +85,7 @@ const AdminPage = () => {
 
         {/* Grafik Penjualan */}
         <div className="bg-white p-4 mb-10 rounded shadow">
-          <h2 className="text-xl font-semibold mb-4">📈 Grafik Penjualan</h2>
+          <h2 className="text-lg sm:text-xl font-semibold mb-4">📈 Grafik Penjualan</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={orders.slice(0, 10)}>
               <XAxis dataKey="id" />
@@ -96,10 +97,17 @@ const AdminPage = () => {
         </div>
 
         {/* Tables */}
-        <DataTable title="🛒 Produk Terbaru" data={products.slice(0, 5)} columns={["id", "name", "price", "stock"]} />
-        <DataTable title="👥 Pengguna Terbaru" data={users.slice(0, 5)} columns={["user_id", "name", "email", "phone"]}/>
+        <div className="mb-6 overflow-x-auto">
+          <DataTable title="🛒 Produk Terbaru" data={products.slice(0, 5)} columns={["id", "name", "price", "stock"]} />
+        </div>
 
-        <DataTable title="📦 Order Terakhir" data={orders.slice(0, 5)} columns={["id", "user", "total", "status"]} />
+        <div className="mb-6 overflow-x-auto">
+          <DataTable title="👥 Pengguna Terbaru" data={users.slice(0, 5)} columns={["user_id", "name", "email", "phone"]} />
+        </div>
+
+        <div className="mb-10 overflow-x-auto">
+          <DataTable title="📦 Order Terakhir" data={orders.slice(0, 5)} columns={["id", "user", "total", "status"]} />
+        </div>
       </main>
     </div>
   );

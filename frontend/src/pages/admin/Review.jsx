@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Sidebar from "../../components/sidebar";
+import { apiGet, apiPost, apiDelete } from "../../api";
 
 const Reviews = () => {
   const [reviews, setReviews] = useState([]);
@@ -7,36 +8,55 @@ const Reviews = () => {
   const [filteredReviews, setFilteredReviews] = useState([]);
   const [filter, setFilter] = useState("Semua");
   const [showModal, setShowModal] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [editId, setEditId] = useState(null);
   const [formData, setFormData] = useState({
     product_id: "",
-    user_id: "",
+    user_name: "",
     rating: 0,
-    comment: "",
+    review: "",
   });
-  const token = localStorage.getItem("token");
 
   const fetchReviews = async () => {
     try {
-      const res = await fetch("http://localhost:8081/api/v1/reviews", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setReviews(Array.isArray(data) ? data : []);
+      const productsRes = await apiGet("/products");
+      const products = productsRes?.data?.products || [];
+
+      const allReviews = [];
+
+      for (const product of products) {
+        try {
+          const res = await apiGet(`/products/review/${product.id}`);
+          const productReviews = Array.isArray(res?.data?.reviews)
+            ? res.data.reviews
+            : [];
+
+          const reviewsWithProductName = productReviews.map((r) => ({
+            ...r,
+            product_name: product.name || product.product_name || "Tanpa Nama",
+          }));
+
+
+          allReviews.push(...reviewsWithProductName);
+        } catch (err) {
+          console.warn(` Gagal ambil ulasan untuk produk ${product.id}:`, err);
+        }
+      }
+
+      setReviews(allReviews);
     } catch (err) {
-      console.error("Gagal ambil ulasan:", err);
+      console.error(" Gagal ambil produk atau ulasan:", err);
       setReviews([]);
     }
   };
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch("http://localhost:8081/api/v1/products", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setProducts(Array.isArray(data.data) ? data.data : []);
+      const response = await apiGet("/products");
+      const productList = response?.data?.products;
+      if (Array.isArray(productList)) {
+        setProducts(productList);
+      } else {
+        console.warn("Format produk tidak dikenali:", response);
+      }
     } catch (err) {
       console.error("Gagal ambil produk:", err);
     }
@@ -55,50 +75,42 @@ const Reviews = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Hapus ulasan ini?")) return;
     try {
-      await fetch(`http://localhost:8081/api/v1/reviews/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await apiDelete(`/reviews/${id}`);
       fetchReviews();
     } catch (err) {
       console.error("Gagal hapus:", err);
     }
   };
 
-  const handleAddOrEdit = async () => {
-    const method = editMode ? "PUT" : "POST";
-    const url = editMode
-      ? `http://localhost:8081/api/v1/reviews/${editId}`
-      : "http://localhost:8081/api/v1/reviews";
+  const handleAdd = async () => {
+    if (!formData.product_id || !formData.user_name || formData.rating < 1 || formData.rating > 5) {
+      alert("Mohon lengkapi semua isian dengan benar.");
+      return;
+    }
+
+    const url = `http://localhost:8081/api/v1/admin/review/${formData.product_id}`;
+    const token = localStorage.getItem("token");
+
     try {
       await fetch(url, {
-        method,
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          user_name: formData.user_name,
+          rating: formData.rating,
+          review  : formData.review ,
+        }),
       });
+
       setShowModal(false);
-      setFormData({ product_id: "", user_id: "", rating: 0, comment: "" });
-      setEditMode(false);
-      setEditId(null);
+      setFormData({ product_id: "", user_name: "", rating: 0, review  : "" });
       fetchReviews();
     } catch (err) {
       console.error("Gagal simpan ulasan:", err);
     }
-  };
-
-  const handleEdit = (item) => {
-    setFormData({
-      product_id: item.product_id,
-      user_id: item.user_id,
-      rating: item.rating,
-      comment: item.comment,
-    });
-    setEditMode(true);
-    setEditId(item.id);
-    setShowModal(true);
   };
 
   return (
@@ -123,8 +135,7 @@ const Reviews = () => {
             <button
               onClick={() => {
                 setShowModal(true);
-                setEditMode(false);
-                setFormData({ product_id: "", user_id: "", rating: 0, comment: "" });
+                setFormData({ product_id: "", user_name: "", rating: 0, review  : "" });
               }}
               className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 text-sm"
             >
@@ -151,14 +162,8 @@ const Reviews = () => {
                     <td className="px-4 py-2">{r.product_name}</td>
                     <td className="px-4 py-2">{r.user_name}</td>
                     <td className="px-4 py-2">{r.rating} ⭐</td>
-                    <td className="px-4 py-2">{r.comment}</td>
-                    <td className="px-4 py-2 space-x-2">
-                      <button
-                        onClick={() => handleEdit(r)}
-                        className="text-blue-600 hover:underline text-sm"
-                      >
-                        Edit
-                      </button>
+                    <td className="px-4 py-2">{r.review }</td>
+                    <td className="px-4 py-2">
                       <button
                         onClick={() => handleDelete(r.id)}
                         className="text-red-600 hover:underline text-sm"
@@ -182,9 +187,7 @@ const Reviews = () => {
         {showModal && (
           <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
             <div className="bg-white w-full max-w-md p-6 rounded shadow">
-              <h2 className="text-xl font-semibold mb-4">
-                {editMode ? "Edit Ulasan" : "Tambah Ulasan"}
-              </h2>
+              <h2 className="text-xl font-semibold mb-4">Tambah Ulasan</h2>
               <div className="space-y-3">
                 <select
                   className="w-full border px-3 py-2 rounded"
@@ -200,14 +203,13 @@ const Reviews = () => {
                     </option>
                   ))}
                 </select>
-
                 <input
                   type="text"
-                  placeholder="ID Pengguna"
+                  placeholder="Nama Pengguna"
                   className="w-full border px-3 py-2 rounded"
-                  value={formData.user_id}
+                  value={formData.user_name}
                   onChange={(e) =>
-                    setFormData({ ...formData, user_id: e.target.value })
+                    setFormData({ ...formData, user_name: e.target.value })
                   }
                 />
                 <input
@@ -218,18 +220,15 @@ const Reviews = () => {
                   className="w-full border px-3 py-2 rounded"
                   value={formData.rating}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      rating: parseInt(e.target.value),
-                    })
+                    setFormData({ ...formData, rating: parseInt(e.target.value) })
                   }
                 />
                 <textarea
                   placeholder="Komentar"
                   className="w-full border px-3 py-2 rounded"
-                  value={formData.comment}
+                  value={formData.review  }
                   onChange={(e) =>
-                    setFormData({ ...formData, comment: e.target.value })
+                    setFormData({ ...formData, review : e.target.value })
                   }
                 />
               </div>
@@ -241,10 +240,10 @@ const Reviews = () => {
                   Batal
                 </button>
                 <button
-                  onClick={handleAddOrEdit}
+                  onClick={handleAdd}
                   className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
                 >
-                  {editMode ? "Simpan Perubahan" : "Tambah"}
+                  Tambah
                 </button>
               </div>
             </div>

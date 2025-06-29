@@ -34,7 +34,7 @@ const ProductsVariant = () => {
   const fetchProducts = async () => {
     try {
       const dataProd = await apiGet("/products");
-      setProducts(dataProd?.data?.products?.filter(p => p.has_variant) || []);
+      setProducts(dataProd?.data?.products || []);
     } catch (err) {
       console.error("Gagal ambil produk:", err);
     }
@@ -120,7 +120,7 @@ const ProductsVariant = () => {
     data.append("price", formData.price);
     data.append("category_id", formData.category);
     data.append("description", formData.description);
-    data.append("has_variant", formData.has_variant); // ✅ hanya satu kali dan benar
+    data.append("has_variant", formData.has_variant); // hanya satu kali dan benar
 
     // Upload file atau URL
     if (uploadType === "file" && formData.image) {
@@ -132,7 +132,7 @@ const ProductsVariant = () => {
 
     // Kondisi produk biasa (tanpa varian)
     if (!formData.has_variant) {
-      data.append("stock", formData.stock); // ✅ penting untuk produk tanpa varian
+      data.append("stock", formData.stock); //penting untuk produk tanpa varian
     }
 
     // Kondisi produk varian
@@ -178,7 +178,7 @@ const ProductsVariant = () => {
     setEditId(prod.id);
     setEditMode(true);
     setShowModal(true);
-    setUploadType("url"); // diasumsikan default ambil image_url
+    setUploadType("url"); // diasumsikan ambil image_url saat edit
 
     setFormData({
       name: prod.name,
@@ -187,6 +187,8 @@ const ProductsVariant = () => {
       image: null,
       image_url: prod.image_url || "",
       description: prod.description || "",
+      has_variant: prod.has_variant || false, 
+      stock: prod.stock || "",
       variants: prod.variants?.map(v => ({
         color_id: v.color_id,
         size_id: v.size_id,
@@ -194,21 +196,6 @@ const ProductsVariant = () => {
       })) || [{ color_id: "", size_id: "", stock: "" }]
     });
   };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm("Yakin ingin menghapus produk ini?")) return;
-    try {
-      await apiDelete(`/admin/products/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      fetchData();
-    } catch (err) {
-      console.error("Gagal hapus produk:", err);
-    }
-  };
-
-
-
 
   return (
     <div className="flex">

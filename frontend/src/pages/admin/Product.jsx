@@ -34,7 +34,7 @@ const Products = () => {
   const fetchProducts = async () => {
     try {
       const dataProd = await apiGet("/products");
-      setProducts(dataProd?.data?.products?.filter(p => p.has_variant) || []);
+      setProducts(dataProd?.data?.products || []);
     } catch (err) {
       console.error("Gagal ambil produk:", err);
     }
@@ -214,7 +214,7 @@ const Products = () => {
     <div className="flex">
       <Sidebar />
       <main className="ml-0 md:ml-64 flex-1 p-6 bg-gray-50 min-h-screen">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4 flex-wrap">
           <h1 className="text-2xl font-bold">🧬 Produk</h1>
           <div className="flex flex-col md:flex-row gap-3 w-full lg:w-auto">
             <input
@@ -298,7 +298,7 @@ const Products = () => {
 
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-            <div className="bg-white rounded p-6 w-full max-w-2xl overflow-y-auto max-h-[90vh] space-y-4">
+            <div className="bg-white rounded p-6 w-full max-w-3xl overflow-y-auto max-h-[90vh] space-y-4">
               <h2 className="text-xl font-bold mb-4">Form Produk</h2>
 
               <div className="space-y-3">
@@ -337,7 +337,7 @@ const Products = () => {
                   <div className="space-y-2">
                     <p className="font-semibold">Varian</p>
                     {formData.variants.map((v, i) => (
-                      <div key={i} className="flex gap-2">
+                      <div key={i} className="flex gap-2 flex-wrap">
                         <select value={v.color_id} onChange={(e) => handleVariantChange(i, "color_id", e.target.value)} className="flex-1 border px-2 py-1 rounded">
                           <option value="">Warna</option>
                           {colors.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
-import { apiGet } from "../api"; // impor fungsi fetch dari api.js
+import { apiGet, apiPost } from "../api"; // impor fungsi fetch dari api.js
 import { backendURL } from "../api"; // untuk akses gambar dari backend
 import {
   FaTrashAlt,
@@ -10,44 +10,42 @@ import {
   FaArrowRight,
 } from "react-icons/fa";
 
-
-const handleCheckout = async () => {
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      alert("Silakan login terlebih dahulu.");
-      return;
-    }
-
-    const payload = {
-      cart_items: items.map((item) => ({
-        product_id: item.id,
-        quantity: item.qty,
-        size: item.size,
-        color: item.color,
-      })),
-    };
-
-    // Atur sesuai endpoint backend kamu
-    const res = await apiPost("/admin/orders", payload);
-    const redirectUrl = res.redirect_url || res.data?.redirect_url;
-
-    if (redirectUrl) {
-      window.location.href = redirectUrl;
-    } else {
-      alert("Gagal mendapatkan URL pembayaran.");
-    }
-  } catch (err) {
-    console.error("Gagal checkout:", err);
-    alert("Terjadi kesalahan saat checkout.");
-  }
-};
-
-
 const ChartPage = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const handleCheckout = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Silakan login terlebih dahulu.");
+        return;
+      }
+
+      const payload = {
+        cart_items: items.map((item) => ({
+          product_id: item.id,
+          quantity: item.qty,
+          size: item.size,
+          color: item.color,
+        })),
+      };
+
+      // Atur sesuai endpoint backend kamu
+      const res = await apiPost("/orders/checkout", payload);
+      const redirectUrl = res.redirect_url || res.data?.redirect_url;
+
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+      } else {
+        alert("Gagal mendapatkan URL pembayaran.");
+      }
+    } catch (err) {
+      console.error("Gagal checkout:", err);
+      alert("Terjadi kesalahan saat checkout.");
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("token");

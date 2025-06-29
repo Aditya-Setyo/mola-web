@@ -18,18 +18,6 @@ const ProductDetailPage = () => {
   const [availableStock, setAvailableStock] = useState(null);
 
 
-  useEffect(() => {
-    if (product?.has_variant) {
-      const variant = product.variants?.find(
-        (v) => v.size === selectedSize && v.color === selectedColor
-      );
-      setAvailableStock(variant?.stock ?? null);
-    } else {
-      setAvailableStock(product?.stock ?? null);
-    }
-  }, [product, selectedSize, selectedColor]);
-
-
   const increment = () => {
     if (availableStock === null || quantity < availableStock) {
       setQuantity((q) => q + 1);
@@ -92,11 +80,12 @@ const ProductDetailPage = () => {
     }
 
     try {
-      // 1. Cek order yang belum selesai
-      const res = await apiGet("/orders/show", true); // jangan ubah api.js
-      const orders = res?.data || [];
+      const res = await apiGet("/orders/show", true);
+      const orders = Array.isArray(res?.data) ? res.data : [];
 
-      const pending = orders.find(o => o.payment_status === "pending" && o.redirect_url);
+      const pending = orders.find(
+        (o) => o.payment_status === "pending" && o.redirect_url
+      );
 
       if (pending) {
         alert("Anda masih memiliki transaksi yang belum selesai. Mengarahkan ke halaman pembayaran...");
@@ -104,7 +93,31 @@ const ProductDetailPage = () => {
         return;
       }
 
-      // 2. Tidak ada order pending → Buat order baru
+      if (!product || !product.id || !product.name || !product.price) {
+        alert("Data produk tidak lengkap untuk checkout.");
+        return;
+      }
+
+      let item = {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        quantity,
+      };
+
+      if (product.has_variant) {
+        const variant = product.variants?.find(
+          (v) => v.size === selectedSize && v.color === selectedColor
+        );
+
+        if (!variant || !variant.id) {
+          alert("Pilih ukuran dan warna terlebih dahulu.");
+          return;
+        }
+
+        item.product_variant_id = variant.id;
+      }
+
       const orderId = `ORDER-${Date.now()}`;
       const grossAmount = product.price * quantity;
 
@@ -113,15 +126,11 @@ const ProductDetailPage = () => {
           order_id: orderId,
           gross_amount: grossAmount,
         },
-        item_details: [
-          {
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            quantity,
-          },
-        ],
+        item_details: [item],
       };
+
+      console.log("📦 Checkout Payload:", payload);
+      console.log("🧪 product.has_variant:", product.has_variant);
 
       const checkout = await apiPost("/orders/checkout", payload);
       const redirectUrl = checkout?.data?.redirect_url || checkout?.redirect_url;
@@ -136,6 +145,7 @@ const ProductDetailPage = () => {
       alert("Terjadi kesalahan saat memproses pembayaran.");
     }
   };
+
 
   const [categories, setCategories] = useState([]);
   useEffect(() => {
@@ -179,18 +189,33 @@ const ProductDetailPage = () => {
   }, [id]);
 
   const [reviews, setReviews] = useState([]);
+
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        const res = await apiGet("/reviews");
-        const productReviews = res.filter((r) => r.product_id === id);
-        setReviews(productReviews);
+        const res = await apiGet(`/products/review/${id}`);
+        const productReviews = Array.isArray(res?.data?.reviews)
+          ? res.data.reviews
+          : [];
+
+        const reviewsFormatted = productReviews.map((review) => ({
+          id: review.id,
+          user_name: review.user_name || "Pengguna",
+          rating: review.rating || 0,
+          review: review.review || "Tidak ada komentar.",
+          product_name: product?.name || "Tanpa Nama",
+        }));
+
+        setReviews(reviewsFormatted);
       } catch (err) {
-        console.error("Gagal ambil ulasan:", err);
+        console.error(`Gagal ambil ulasan untuk produk ${id}:`, err);
+        setReviews([]);
       }
     };
+
     fetchReviews();
-  }, [id]);
+  }, [id, product]);
+
 
   const sizes = product?.has_variant && Array.isArray(product.variants)
     ? [...new Set(product.variants.map((v) => v.size))].map((name, i) => ({
@@ -223,10 +248,6 @@ const ProductDetailPage = () => {
       setAvailableStock(variant?.stock ?? null);
     }
   }, [product, selectedSize, selectedColor]);
-
-
-
-
 
   if (loading) {
     return (
@@ -464,7 +485,7 @@ const ProductDetailPage = () => {
                         {review.product_name || "-"}
                       </span>
                     </p>
-                    <p className="text-gray-600 text-sm">{review.comment}</p>
+                    <p className="text-gray-600 text-sm">{review.review}</p>
                   </div>
                 ))
               ) : (
