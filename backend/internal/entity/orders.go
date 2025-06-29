@@ -39,7 +39,7 @@ type OrderItem struct {
 	ID               uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	OrderID          uuid.UUID `gorm:"type:uuid;not null" json:"order_id"`
 	ProductID        uuid.UUID `gorm:"type:uuid;not null" json:"product_id"`
-	ProductVariantID uuid.UUID `gorm:"type:uuid" json:"product_variant_id,omitempty"`
+	ProductVariantID *uuid.UUID `gorm:"type:uuid" json:"product_variant_id,omitempty"`
 	Quantity         int       `gorm:"not null;default:1" json:"quantity"`
 	Price            float64   `gorm:"not null" json:"price"`
 	Subtotal         float64   `gorm:"not null" json:"subtotal"`
