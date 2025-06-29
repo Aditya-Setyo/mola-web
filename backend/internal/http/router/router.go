@@ -107,7 +107,7 @@ func PrivateRoutes(
 			Roles:   []string{"admin"},
 		},
 		{
-			Method:  http.MethodPost,
+			Method:  http.MethodPut,
 			Path:    "/users/profile",
 			Handler: userHandler.UpdateUserProfile,
 			Roles:   []string{"admin", "user"},
