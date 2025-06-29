@@ -14,6 +14,7 @@ type CartRepository interface {
 	AddToCartItems(db *gorm.DB, req *entity.CartItem) error
 	GetCartItemByCartID(db *gorm.DB, cartID uuid.UUID, productID uuid.UUID) (*entity.CartItem, error)
 	GetCartItemByCartIDAndProductIDAndVariantID(db *gorm.DB, cartID uuid.UUID, productID uuid.UUID, variantID uuid.UUID) (*entity.CartItem, error)
+	GetCartItemByCartIDAndProductIDWithoutVariant(db *gorm.DB, cartID uuid.UUID, productID uuid.UUID) (*entity.CartItem, error)
 	UpdateCartItems(db *gorm.DB, req *entity.CartItem) error
 	UpdateCart(db *gorm.DB, req *entity.Cart) error
 	ClearCart(db *gorm.DB, cartID uuid.UUID) error
@@ -79,6 +80,16 @@ func (r *cartRepository) GetCartItemByCartIDAndProductIDAndVariantID(db *gorm.DB
 	}
 	return req, nil
 }
+
+func (r *cartRepository) GetCartItemByCartIDAndProductIDWithoutVariant(db *gorm.DB, cartID uuid.UUID, productID uuid.UUID) (*entity.CartItem, error) {
+    var item entity.CartItem
+    err := db.Where("cart_id = ? AND product_id = ? AND product_variant_id IS NULL", cartID, productID).First(&item).Error
+    if err != nil {
+        return nil, err
+    }
+    return &item, nil
+}
+
 
 func (r *cartRepository) UpdateCartItems(db *gorm.DB, req *entity.CartItem) error {
 	if err := db.Save(&req).Error; err != nil {
