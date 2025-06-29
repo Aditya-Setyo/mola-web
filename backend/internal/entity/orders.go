@@ -15,7 +15,7 @@ type Order struct {
 	IsPaid        bool           `gorm:"default:false" json:"is_paid"`
 	TotalAmount   float64        `gorm:"type:numeric(12,2);not null" json:"total_amount"`
 	TotalWeight   float64        `gorm:"type:numeric(12,2);not null" json:"total_weight"`
-	PaymentStatus string         `gorm:"type:varchar(30);default:pending" json:"payment_status"`
+	PaymentStatus string         `gorm:"type:varchar(30);default:uninitialized" json:"payment_status"`
 	TokenMidtrans *string        `gorm:"type:varchar(100)" json:"token_midtrans"`
 	PaymentUrl    *string        `gorm:"type:varchar(100)" json:"payment_url"`
 	CreatedAt     time.Time      `json:"created_at"`

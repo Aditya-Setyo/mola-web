@@ -104,40 +104,60 @@ func (s *cartService) AddToCart(ctx context.Context, userID uuid.UUID, req *dto.
 
 		stockAvailable = variant.Stock
 		variantID = &variant.ID
+		cartItemsData, err := s.cartRepo.GetCartItemByCartIDAndProductIDAndVariantID(tx, cart.ID, req.ProductID, *variantID)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			cartItem := &entity.CartItem{
+				CartID:           cart.ID,
+				ProductID:        req.ProductID,
+				ProductVariantID: variantID,
+				Quantity:         req.Quantity,
+				Note:             req.Note,
+			}
+			if err := s.cartRepo.AddToCartItems(tx, cartItem); err != nil {
+				tx.Error = err
+				return err
+			}
+		} else if err != nil {
+			return err
+		} else {
+			cartItemsData.Quantity += req.Quantity
+			if err := s.cartRepo.UpdateCartItems(tx, cartItemsData); err != nil {
+				tx.Error = err
+				return err
+			}
+		}
 
 	} else {
 		// Produk tanpa varian
 		stockAvailable = product.Stock
-	}
 
+		cartItemsData, err := s.cartRepo.GetCartItemByCartIDAndProductIDWithoutVariant(tx, cart.ID, req.ProductID)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			cartItem := &entity.CartItem{
+				CartID:    cart.ID,
+				ProductID: req.ProductID,
+				Quantity:  req.Quantity,
+				Note:      req.Note,
+			}
+			if err := s.cartRepo.AddToCartItems(tx, cartItem); err != nil {
+				tx.Error = err
+				return err
+			}
+		} else if err != nil {
+			return err
+		} else {
+			cartItemsData.Quantity += req.Quantity
+			if err := s.cartRepo.UpdateCartItems(tx, cartItemsData); err != nil {
+				tx.Error = err
+				return err
+			}
+		}
+
+	}
 	if req.Quantity > stockAvailable {
 		err = errors.New("stock not enough")
 		tx.Error = err
 		return err
-	}
-
-	// Cek apakah item sudah ada di cart (pakai ProductID + VariantID)
-	cartItemsData, err := s.cartRepo.GetCartItemByCartIDAndProductIDAndVariantID(tx, cart.ID, req.ProductID, *variantID)
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		cartItem := &entity.CartItem{
-			CartID:           cart.ID,
-			ProductID:        req.ProductID,
-			ProductVariantID: variantID,
-			Quantity:         req.Quantity,
-			Note:             req.Note,
-		}
-		if err := s.cartRepo.AddToCartItems(tx, cartItem); err != nil {
-			tx.Error = err
-			return err
-		}
-	} else if err != nil {
-		return err
-	} else {
-		cartItemsData.Quantity += req.Quantity
-		if err := s.cartRepo.UpdateCartItems(tx, cartItemsData); err != nil {
-			tx.Error = err
-			return err
-		}
 	}
 
 	if err := tx.Commit().Error; err != nil {
@@ -149,7 +169,6 @@ func (s *cartService) AddToCart(ctx context.Context, userID uuid.UUID, req *dto.
 
 	return nil
 }
-
 func (s *cartService) GetCartByUserID(db *gorm.DB, userID uuid.UUID) (*dto.GetCartItemsResponse, error) {
 	// Cek apakah user memiliki transaksi pending
 	dataPayment, err := s.orderRepo.GetPendingPaymentStatusByUserID(db, userID)
@@ -228,7 +247,7 @@ func (s *cartService) GetCartByUserID(db *gorm.DB, userID uuid.UUID) (*dto.GetCa
 			}
 
 			item.Product.Variants = append(item.Product.Variants, variantDTO)
-			
+
 		}
 
 		totalAmount += item.Subtotal
@@ -299,7 +318,6 @@ func (s *cartService) UpdateCartItem(ctx context.Context, userID uuid.UUID, req 
 	return nil
 }
 
-
 func (s *cartService) RemoveCartItem(ctx context.Context, userID uuid.UUID, cartItemID uuid.UUID) error {
 	tx := s.DB.WithContext(ctx).Begin()
 	defer func() {
@@ -329,4 +347,3 @@ func (s *cartService) RemoveCartItem(ctx context.Context, userID uuid.UUID, cart
 
 	return nil
 }
-

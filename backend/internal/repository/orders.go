@@ -20,6 +20,7 @@ type OrderRepository interface {
 	GetOrderItemsByOrderID(ctx context.Context, id uuid.UUID) ([]entity.OrderItem, error)
 	GetPendingPaymentStatusByUserID(db *gorm.DB, id uuid.UUID) (*dto.GetPaymentStatusResponse, error)
 	SetAdminOrderStatus(db *gorm.DB, id uuid.UUID, status string) error
+	ExpireUninitializedOrders(db *gorm.DB) error
 	Update(db *gorm.DB, order *entity.Order) error
 	UpdateOrderItem(db *gorm.DB, orderItem *entity.OrderItem) error
 	UpdatePaymentUrl(db *gorm.DB, id uuid.UUID, token string, paymentUrl string) error
@@ -134,6 +135,13 @@ func (r *orderRepository) UpdateOrderItem(db *gorm.DB, orderItem *entity.OrderIt
 			"quantity": orderItem.Quantity,
 			"subtotal": orderItem.Subtotal,
 		}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *orderRepository) ExpireUninitializedOrders(db *gorm.DB) error {
+	if err := db.Table("orders").Where("payment_status = ? AND created_at < NOW() - INTERVAL '24 HOURS'", "uninitialized").Update("payment_status", "expired").Error; err != nil {
 		return err
 	}
 	return nil

@@ -43,8 +43,8 @@ type OrderItems struct {
 }
 
 type GetPaymentStatusResponse struct {
-	TokenMidtrans string `json:"token_midtrans" gorm:"column:payment_url"`
-	PaymentUrl    string `json:"payment_url" gorm:"column:token_midtrans"`
+	TokenMidtrans string `json:"token_midtrans" gorm:"column:token_midtrans"`
+	PaymentUrl    string `json:"payment_url" gorm:"column:payment_url"`
 	PaymentStatus string `json:"payment_status" gorm:"column:payment_status"`
 }
 
