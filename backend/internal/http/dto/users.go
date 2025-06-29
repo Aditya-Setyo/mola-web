@@ -35,6 +35,7 @@ type UpdateUserProfileRequest struct {
 	ProfileID uuid.UUID `json:"profile_id" validate:"required"`
 	FullName  string    `json:"full_name"`
 	Phone     string    `json:"phone"`
+	Address   string    `json:"address"`
 }
 type GetUserAddressResponse struct {
 	ID           uuid.UUID `json:"id"`
