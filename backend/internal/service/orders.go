@@ -229,15 +229,25 @@ func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email str
 		orderItem := entity.OrderItem{
 			OrderID:   orderID,
 			ProductID: item.Product.ID,
-			// ProductVariantID: item.Product.Variants[i].ID,
+			ProductVariantID: nil,
 			Quantity: item.Quantity,
 			Price:    item.Product.Price,
 			Subtotal: item.Subtotal,
 			Note:     item.Note,
 		}
-		for _, value := range item.Product.Variants {
-			orderItem.ProductVariantID = value.ID
-		}
+		if item.Product.HasVariant {
+			for _, value := range item.Product.Variants {
+				log.Println("value: ================", value.ID)
+				if value.ID == uuid.Nil {
+					// User tidak memilih variant padahal harus
+					tx.Error = errors.New("product variant must be selected for product: " + item.Product.Name)
+					return nil, tx.Error
+				}
+				orderItem.ProductVariantID = &value.ID
+			}
+	}
+
+
 		if err := s.orderRepo.CreateOrderItem(tx, &orderItem); err != nil {
 			tx.Error = err
 			return nil, err
@@ -392,7 +402,7 @@ func (s *orderService) ShowOrder(ctx context.Context, userID uuid.UUID) ([]dto.S
 	return results, nil
 }
 
-func (s *orderService) GetAllOrders(ctx context.Context) ([]dto.GetAllOrdersResponse, error){
+func (s *orderService) GetAllOrders(ctx context.Context) ([]dto.GetAllOrdersResponse, error) {
 	key := "orders:all-orders"
 	var results []dto.GetAllOrdersResponse
 
