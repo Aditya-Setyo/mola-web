@@ -1,9 +1,8 @@
-// src/pages/UserProfile.jsx
 import React, { useEffect, useState } from "react";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
-import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
+import { apiGet, apiPost, apiPut } from "../api";
 
 const UserProfile = () => {
   const [profile, setProfile] = useState({
@@ -12,28 +11,40 @@ const UserProfile = () => {
     phone: "",
     address: "",
   });
-
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        setProfile({
-          name: decoded.name || "",
-          email: decoded.email || "",
-          phone: decoded.phone || "",
-          address: decoded.address || "",
-        });
-      } catch (err) {
-        console.error("Token tidak valid", err);
-        navigate("/loginpage");
-      }
-    } else {
+    if (!token) {
       navigate("/loginpage");
+      return;
     }
+
+    apiGet("/users/profile", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((data) => {
+        const user = data?.data?.user || {};
+        setProfile({
+          name: user.name || "",
+          email: user.email || "",
+          phone: user.phone || "",
+          address: user.address || "",
+        });
+      })
+      .catch((err) => {
+        console.error("Gagal mengambil profil:", err);
+        alert("Gagal mengambil data profil. Silakan login ulang.");
+        navigate("/loginpage");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [navigate]);
 
   const handleLogout = () => {
@@ -45,28 +56,38 @@ const UserProfile = () => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
   };
 
-  const handleSave = () => {
-    // Simpan ke database di sini kalau ada
-    setIsEditing(false);
+  const handleSave = async () => {
+    const token = localStorage.getItem("token");
+    setSaving(true);
+    try {
+      const res = await apiPut("/users/profile", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(profile),
+      });
+      if (!res || res.meta?.code !== 200) throw new Error("Gagal menyimpan data profil");
+      alert("Profil berhasil diperbarui.");
+      setIsEditing(false);
+    } catch (err) {
+      console.error("Gagal menyimpan profil:", err);
+      alert("Terjadi kesalahan saat menyimpan data profil.");
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) return <div className="text-center py-10">Memuat profil...</div>;
 
   return (
     <div className="min-h-screen bg-gray-100">
       <Navbar />
-
-      <section className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-6 mt-10">
+      <section className="max-w-4xl mx-auto bg-white shadow-md rounded-lg p-6 mt-10">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-gray-800">Profil Pengguna</h1>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 text-sm bg-red-500 text-white rounded hover:bg-red-600"
-          >
-            Logout
-          </button>
         </div>
-
         <div className="flex flex-col md:flex-row md:space-x-10">
-          {/* Foto dan Info Ringkas */}
           <div className="flex flex-col items-center text-center mb-6 md:mb-0">
             <img
               src="https://via.placeholder.com/150"
@@ -76,8 +97,6 @@ const UserProfile = () => {
             <h2 className="mt-4 text-lg font-semibold text-gray-700">{profile.name}</h2>
             <p className="text-sm text-gray-500">{profile.email}</p>
           </div>
-
-          {/* Info Detail */}
           <div className="flex-1 space-y-4">
             <div>
               <label className="block text-gray-600 font-medium mb-1">Nama Lengkap</label>
@@ -86,7 +105,7 @@ const UserProfile = () => {
                 name="name"
                 value={profile.name}
                 onChange={handleChange}
-                className="w-full border border-gray-300 px-4 py-2 rounded bg-gray-50"
+                className="w-full border border-gray-300 px-4 py-2 rounded bg-white"
                 readOnly={!isEditing}
               />
             </div>
@@ -97,7 +116,7 @@ const UserProfile = () => {
                 name="email"
                 value={profile.email}
                 onChange={handleChange}
-                className="w-full border border-gray-300 px-4 py-2 rounded bg-gray-50"
+                className="w-full border border-gray-300 px-4 py-2 rounded bg-white"
                 readOnly={!isEditing}
               />
             </div>
@@ -106,9 +125,9 @@ const UserProfile = () => {
               <input
                 type="tel"
                 name="phone"
-                value={profile.phone_number}
+                value={profile.phone}
                 onChange={handleChange}
-                className="w-full border border-gray-300 px-4 py-2 rounded bg-gray-50"
+                className="w-full border border-gray-300 px-4 py-2 rounded bg-white"
                 readOnly={!isEditing}
               />
             </div>
@@ -118,12 +137,12 @@ const UserProfile = () => {
                 name="address"
                 value={profile.address}
                 onChange={handleChange}
-                className="w-full border border-gray-300 px-4 py-2 rounded bg-gray-50"
+                className="w-full border border-gray-300 px-4 py-2 rounded bg-white"
                 rows={3}
                 readOnly={!isEditing}
               />
             </div>
-            <div className="text-right">
+            <div className="flex gap-2">
               {!isEditing ? (
                 <button
                   onClick={() => setIsEditing(true)}
@@ -132,18 +151,32 @@ const UserProfile = () => {
                   Edit Profil
                 </button>
               ) : (
-                <button
-                  onClick={handleSave}
-                  className="px-4 py-2 text-sm bg-green-500 text-white rounded hover:bg-green-600"
-                >
-                  Simpan
-                </button>
+                <>
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    className="px-4 py-2 text-sm bg-gray-400 text-white rounded hover:bg-gray-500"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    className="px-4 py-2 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+                    disabled={saving}
+                  >
+                    {saving ? "Menyimpan..." : "Simpan"}
+                  </button>
+                </>
               )}
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 text-sm bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                Logout
+              </button>
             </div>
           </div>
         </div>
       </section>
-
       <Footer />
     </div>
   );

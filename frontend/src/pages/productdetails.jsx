@@ -15,8 +15,27 @@ const ProductDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
+  const [availableStock, setAvailableStock] = useState(null);
 
-  const increment = () => setQuantity((q) => q + 1);
+
+  useEffect(() => {
+    if (product?.has_variant) {
+      const variant = product.variants?.find(
+        (v) => v.size === selectedSize && v.color === selectedColor
+      );
+      setAvailableStock(variant?.stock ?? null);
+    } else {
+      setAvailableStock(product?.stock ?? null);
+    }
+  }, [product, selectedSize, selectedColor]);
+
+
+  const increment = () => {
+    if (availableStock === null || quantity < availableStock) {
+      setQuantity((q) => q + 1);
+    }
+  };
+
   const decrement = () => setQuantity((q) => (q > 1 ? q - 1 : 1));
 
   const handleAddToCart = async () => {
@@ -27,15 +46,7 @@ const ProductDetailPage = () => {
       return;
     }
 
-    if (product.has_variant && (!selectedSize || !selectedColor)) {
-      alert("Silakan pilih ukuran dan warna terlebih dahulu.");
-      return;
-    }
-
-    let payload = {
-      product_id: product.id,
-      quantity,
-    };
+    let payload;
 
     if (product.has_variant) {
       const variant = product.variants.find(
@@ -48,14 +59,21 @@ const ProductDetailPage = () => {
       }
 
       payload = {
-        ...payload,
+        product_id: product.id,
+        quantity,
+        product_variant_id: variant.id,
         size: selectedSize,
         color: selectedColor,
-        product_variant_id: variant.id, // opsional kalau backend perlu
+      };
+    } else {
+      payload = {
+        product_id: product.id,
+        quantity,
       };
     }
 
     try {
+      console.log("Payload ke /carts:", payload);
       await apiPost("/carts", payload);
       alert("Produk berhasil ditambahkan ke keranjang!");
       navigate("/chartpage");
@@ -64,7 +82,6 @@ const ProductDetailPage = () => {
       alert("Terjadi kesalahan saat menambahkan ke keranjang.");
     }
   };
-
 
   const handleBuyNow = async () => {
     const token = localStorage.getItem("token");
@@ -75,6 +92,19 @@ const ProductDetailPage = () => {
     }
 
     try {
+      // 1. Cek order yang belum selesai
+      const res = await apiGet("/orders/show", true); // jangan ubah api.js
+      const orders = res?.data || [];
+
+      const pending = orders.find(o => o.payment_status === "pending" && o.redirect_url);
+
+      if (pending) {
+        alert("Anda masih memiliki transaksi yang belum selesai. Mengarahkan ke halaman pembayaran...");
+        window.location.href = pending.redirect_url;
+        return;
+      }
+
+      // 2. Tidak ada order pending → Buat order baru
       const orderId = `ORDER-${Date.now()}`;
       const grossAmount = product.price * quantity;
 
@@ -88,20 +118,18 @@ const ProductDetailPage = () => {
             id: product.id,
             name: product.name,
             price: product.price,
-            quantity: quantity,
+            quantity,
           },
         ],
       };
 
-      const res = await apiPost("/payments/midtrans", payload);
-      const redirectUrl =
-        res.redirect_url || res.data?.redirect_url?.redirect_url;
+      const checkout = await apiPost("/orders/checkout", payload);
+      const redirectUrl = checkout?.data?.redirect_url || checkout?.redirect_url;
 
       if (redirectUrl) {
         window.location.href = redirectUrl;
       } else {
         alert("URL pembayaran tidak ditemukan.");
-        console.error("redirect_url tidak ada:", res);
       }
     } catch (error) {
       console.error("Gagal proses pembayaran:", error);
@@ -164,19 +192,41 @@ const ProductDetailPage = () => {
     fetchReviews();
   }, [id]);
 
-  const sizes = product?.variants
+  const sizes = product?.has_variant && Array.isArray(product.variants)
     ? [...new Set(product.variants.map((v) => v.size))].map((name, i) => ({
       id: i,
       name,
     }))
     : [];
 
-  const colors = product?.variants
+  const colors = product?.has_variant && Array.isArray(product.variants)
     ? [...new Set(product.variants.map((v) => v.color))].map((name, i) => ({
       id: i,
       name,
     }))
     : [];
+
+  // Untuk produk tanpa varian → jalankan sekali saat product berubah
+  useEffect(() => {
+    if (product && !product.has_variant) {
+      setAvailableStock(product.stock ?? null);
+    }
+  }, [product]);
+
+
+  // Untuk produk dengan varian → jalankan ketika varian berubah
+  useEffect(() => {
+    if (product?.has_variant) {
+      const variant = product.variants?.find(
+        (v) => v.size === selectedSize && v.color === selectedColor
+      );
+      setAvailableStock(variant?.stock ?? null);
+    }
+  }, [product, selectedSize, selectedColor]);
+
+
+
+
 
   if (loading) {
     return (
@@ -247,50 +297,75 @@ const ProductDetailPage = () => {
               Rp {product.price?.toLocaleString()}
             </div>
 
-            {product.has_variant && (
+            {/* Jika produk punya varian, tampilkan pilihan warna, ukuran, dan info stok */}
+            {product.has_variant ? (
               <>
                 {/* Warna Tersedia */}
-                <div className="mb-4">
-                  <p className="text-sm font-semibold text-gray-700 mb-1">
-                    Warna Tersedia
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {colors.map((color) => (
-                      <button
-                        key={color.id}
-                        onClick={() => setSelectedColor(color.name)}
-                        title={color.name}
-                        className={`w-8 h-8 rounded-full border-2 focus:outline-none ${selectedColor === color.name
+                {colors.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-sm font-semibold text-gray-700 mb-1">
+                      Warna Tersedia
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {colors.map((color) => (
+                        <button
+                          key={color.id}
+                          onClick={() => setSelectedColor(color.name)}
+                          title={color.name}
+                          className={`w-8 h-8 rounded-full border-2 focus:outline-none ${selectedColor === color.name
                             ? "ring-2 ring-black"
                             : "border-gray-300"
-                          }`}
-                        style={{ backgroundColor: color.name || "#ccc" }}
-                      />
-                    ))}
+                            }`}
+                          style={{ backgroundColor: color.name || "#ccc" }}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Ukuran Tersedia */}
-                <div className="mb-4">
-                  <p className="text-sm font-semibold text-gray-700 mb-1">
-                    Ukuran Tersedia
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {sizes.map((size) => (
-                      <button
-                        key={size.id}
-                        onClick={() => setSelectedSize(size.name)}
-                        className={`w-10 h-10 rounded-full border text-sm font-medium hover:bg-gray-200 transition ${selectedSize === size.name
+                {sizes.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-sm font-semibold text-gray-700 mb-1">
+                      Ukuran Tersedia
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {sizes.map((size) => (
+                        <button
+                          key={size.id}
+                          onClick={() => setSelectedSize(size.name)}
+                          className={`w-10 h-10 rounded-full border text-sm font-medium hover:bg-gray-200 transition ${selectedSize === size.name
                             ? "bg-black text-white"
                             : "text-gray-800 border-gray-300"
-                          }`}
-                      >
-                        {size.name}
-                      </button>
-                    ))}
+                            }`}
+                        >
+                          {size.name}
+                        </button>
+                      ))}
+                    </div>
                   </div>
+                )}
+
+                {/* Stok berdasarkan varian */}
+                <div className="text-sm text-gray-700 mb-6">
+                  Stok tersedia:{" "}
+                  <span className="font-semibold">
+                    {typeof availableStock === "number"
+                      ? availableStock
+                      : product.has_variant
+                        ? "Pilih ukuran dan warna terlebih dahulu"
+                        : "Tidak tersedia"}
+                  </span>
                 </div>
               </>
+            ) : (
+              // Produk tanpa varian → hanya tampilkan stok langsung
+              <div className="text-sm text-gray-700 mb-6">
+                Stok tersedia:{" "}
+                <span className="font-semibold">
+                  {typeof availableStock === "number" ? availableStock : "Tidak tersedia"}
+                </span>
+              </div>
             )}
 
             <div className="flex items-center space-x-4 mb-6">
@@ -319,7 +394,11 @@ const ProductDetailPage = () => {
 
               <button
                 onClick={handleBuyNow}
-                className="bg-black text-white px-6 py-2 rounded hover:bg-gray-800"
+                disabled={availableStock <= 0}
+                className={`px-6 py-2 rounded text-white ${availableStock <= 0
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-black hover:bg-gray-800"
+                  }`}
               >
                 Beli Sekarang
               </button>
@@ -332,8 +411,8 @@ const ProductDetailPage = () => {
             <button
               onClick={() => setActiveTab("description")}
               className={`pb-2 border-b-2 ${activeTab === "description"
-                  ? "border-black text-black"
-                  : "border-transparent"
+                ? "border-black text-black"
+                : "border-transparent"
                 }`}
             >
               Deskripsi Produk
@@ -341,8 +420,8 @@ const ProductDetailPage = () => {
             <button
               onClick={() => setActiveTab("reviews")}
               className={`pb-2 border-b-2 ${activeTab === "reviews"
-                  ? "border-black text-black"
-                  : "border-transparent"
+                ? "border-black text-black"
+                : "border-transparent"
                 }`}
             >
               Ulasan
@@ -373,8 +452,8 @@ const ProductDetailPage = () => {
                           <FaStar
                             key={j}
                             className={`text-sm ${j < review.rating
-                                ? "text-yellow-400"
-                                : "text-gray-300"
+                              ? "text-yellow-400"
+                              : "text-gray-300"
                               }`}
                           />
                         ))}

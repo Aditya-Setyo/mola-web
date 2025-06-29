@@ -29,7 +29,7 @@ const handleCheckout = async () => {
     };
 
     // Atur sesuai endpoint backend kamu
-    const res = await apiPost("/payments/midtrans", payload);
+    const res = await apiPost("/admin/orders", payload);
     const redirectUrl = res.redirect_url || res.data?.redirect_url;
 
     if (redirectUrl) {

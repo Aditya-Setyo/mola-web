@@ -23,6 +23,7 @@ import Payments from "./pages/admin/Payments";
 import Reviews from "./pages/admin/Review";
 import Settings from "./pages/admin/Setting";
 import Advertisment from "./pages/admin/Advertisment";
+import SalesReport from "./pages/admin/SalesReportPage";
 
 
 
@@ -58,6 +59,7 @@ const App = () => {
       <Route path="/admin/reviews" element={<Reviews />} />
       <Route path="/admin/settings" element={<Settings />} />
       <Route path="/admin/advertisement" element={<Advertisment />} />
+      <Route path="/admin/salesreportpage" element={<SalesReport />} />
     </Routes>
   );
 };

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Sidebar from "../../components/sidebar";
+import {apiGet} from "../../api";
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -18,8 +19,7 @@ const Users = () => {
       return;
     }
 
-    fetch("http://localhost:8081/api/v1/users", {
-      method: "GET",
+    apiGet("/users", {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
