@@ -257,10 +257,9 @@ func (s *userService) GetUserProfile(ctx context.Context, userID uuid.UUID) (*dt
 		if dataUser.UserProfile.PhoneNumber != "" {
 			results.Phone = dataUser.UserProfile.PhoneNumber
 		}
-	}
-
-	if dataUser.UserAddresses != nil {
-		results.Address = dataUser.UserAddresses.AddressLine1
+		if dataUser.UserProfile.Address != "" {
+			results.Address = dataUser.UserProfile.Address
+		}
 	}
 
 	// Simpan ke cache
@@ -289,6 +288,7 @@ func (s *userService) UpdateUserProfile(ctx context.Context, userID uuid.UUID, r
 		UserID:      &userID,
 		FullName:    request.FullName,
 		PhoneNumber: request.Phone,
+		Address:     request.Address,
 	}
 	err := s.userRepository.UpdateUserProfile(tx, userProfile)
 	if err != nil {
@@ -480,7 +480,6 @@ func (s *userService) sendResetEmail(toEmail, token string) error {
 	log.Println("Email berhasil dikirim ke", toEmail)
 	return nil
 }
-
 
 func (s *userService) ResetPassword(ctx context.Context, request *dto.ResetPasswordRequest) error {
 	tx := s.DB.WithContext(ctx).Begin()

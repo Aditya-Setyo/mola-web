@@ -35,6 +35,7 @@ type UserProfile struct {
 	UserID      *uuid.UUID     `gorm:"type:uuid;unique" json:"user_id"`
 	FullName    string         `gorm:"type:varchar(100);not null" json:"full_name"`
 	PhoneNumber string        `gorm:"type:varchar(20)" json:"phone_number"`
+	Address     string         `gorm:"type:text" json:"address"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
