@@ -137,6 +137,8 @@ func (s *transactionService) PaymentNotification(ctx context.Context, request *d
 	}
 	var result error
 	switch transactionStatusResp.TransactionStatus {
+	case "pending":
+		result = updateOrder("pending", false)
 	case "capture":
 		switch transactionStatusResp.FraudStatus {
 		case "challenge":
@@ -148,35 +150,64 @@ func (s *transactionService) PaymentNotification(ctx context.Context, request *d
 		result = updateOrder("lunas", true)
 	case "deny":
 		result = updateOrder("lunas", true)
-	case "cancel", "expire":
+	case "cancel":
 		dataOrder, err := s.orderRepo.GetOrderByID(ctx, orderID)
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		err = errors.New("order not found")
-		tx.Error = err
-		return err
-	} else if err != nil {
-		tx.Error = err
-		return errors.New("order not found")
-	}
-	for _, item := range dataOrder.OrderItems {
-		if item.Product.HasVariant {
-			for _, variant := range item.Product.Variants {
-				stock := int64(variant.Stock + item.Quantity)
-				err = s.repoVariant.UpdateStock(tx, variant.ID, int(stock))
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = errors.New("order not found")
+			tx.Error = err
+			return err
+		} else if err != nil {
+			tx.Error = err
+			return errors.New("order not found")
+		}
+		for _, item := range dataOrder.OrderItems {
+			if item.Product.HasVariant {
+				for _, variant := range item.Product.Variants {
+					stock := int64(variant.Stock + item.Quantity)
+					err = s.repoVariant.UpdateStock(tx, variant.ID, int(stock))
+					if err != nil {
+						return err
+					}
+				}
+			} else {
+				stock := int64(item.Product.Stock + item.Quantity)
+				err = s.productRepo.UpdateStockProduct(tx, stock, item.Product.ID)
 				if err != nil {
-					return err
+					tx.Error = err
+					return errors.New("failed to update stock product")
 				}
 			}
-		} else {
-			stock := int64(item.Product.Stock + item.Quantity)
-			err = s.productRepo.UpdateStockProduct(tx, stock, item.Product.ID)
-			if err != nil {
-				tx.Error = err
-				return errors.New("failed to update stock product")
+		}
+		result = updateOrder("cancel", false)
+	case "expire":
+		dataOrder, err := s.orderRepo.GetOrderByID(ctx, orderID)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = errors.New("order not found")
+			tx.Error = err
+			return err
+		} else if err != nil {
+			tx.Error = err
+			return errors.New("order not found")
+		}
+		for _, item := range dataOrder.OrderItems {
+			if item.Product.HasVariant {
+				for _, variant := range item.Product.Variants {
+					stock := int64(variant.Stock + item.Quantity)
+					err = s.repoVariant.UpdateStock(tx, variant.ID, int(stock))
+					if err != nil {
+						return err
+					}
+				}
+			} else {
+				stock := int64(item.Product.Stock + item.Quantity)
+				err = s.productRepo.UpdateStockProduct(tx, stock, item.Product.ID)
+				if err != nil {
+					tx.Error = err
+					return errors.New("failed to update stock product")
+				}
 			}
 		}
-	}
-		result = updateOrder("failure", false)
+		result = updateOrder("expired", false)
 	}
 	key := "carts:" + userID.String()
 	_ = s.cacheable.Delete(key)
@@ -214,7 +245,7 @@ func (s *transactionService) Cancel(ctx context.Context, request *dto.CancelRequ
 			log.Printf("ERROR: Rolling back transaction due to service error: %v", tx.Error)
 		}
 	}()
-	
+
 	orderID := uuid.MustParse(request.OrderID)
 	dataOrder, err := s.orderRepo.GetOrderByID(ctx, orderID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -254,6 +285,6 @@ func (s *transactionService) Cancel(ctx context.Context, request *dto.CancelRequ
 			}
 		}
 	}
-	result := updateOrder("failure", false)
+	result := updateOrder("cancel", false)
 	return result
 }
