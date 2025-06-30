@@ -37,6 +37,7 @@ func NewOrderRepository(db *gorm.DB) OrderRepository {
 func (r *orderRepository) GetAll(ctx context.Context) ([]entity.Order, error) {
 	var orders []entity.Order
 	if err := r.db.WithContext(ctx).
+		Preload("User").
 		Preload("OrderItems.Product").
 		Preload("OrderItems.Product.Category").
 		Preload("OrderItems.ProductVariant").
