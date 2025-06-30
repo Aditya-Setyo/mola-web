@@ -13,7 +13,6 @@ func PublicRoutes(
 	orderHandler handler.OrderHandler,
 	transactionHandler handler.TransactionHandler,
 	salesReportHandler handler.SalesReportHandler,
-	adsHandler handler.AdHandler,
 ) []route.Route {
 	return []route.Route{
 		
@@ -69,11 +68,6 @@ func PublicRoutes(
 		},
 		{
 			Method:  http.MethodGet,
-			Path:    "/ads/:category",
-			Handler: adsHandler.GetAds,
-		},
-		{
-			Method:  http.MethodGet,
 			Path:    "/products/review/:productID",
 			Handler: productHandler.GetReviews,
 		},
@@ -90,8 +84,6 @@ func PrivateRoutes(
 	orderHandler handler.OrderHandler,
 	transactionHandler handler.TransactionHandler,
 	salesReportHandler handler.SalesReportHandler,
-	shipmentHandler handler.ShipmentHandler,
-	adsHandler handler.AdHandler,
 ) []route.Route {
 	return []route.Route{
 		{
@@ -257,21 +249,9 @@ func PrivateRoutes(
 			Roles:   []string{"admin", "user"},
 		},
 		{
-			Method:  http.MethodPost,
-			Path:    "/admin/shipments/add-resi-number/:orderID",
-			Handler: shipmentHandler.AddResiNumber,
-			Roles:   []string{"admin"},
-		},
-		{
 			Method:  http.MethodGet,
 			Path:    "/admin/sales-report",
 			Handler: salesReportHandler.GetSalesReport,
-			Roles:   []string{"admin"},
-		},
-		{
-			Method:  http.MethodPost,
-			Path:    "/admin/ads",
-			Handler: adsHandler.UploadAd,
 			Roles:   []string{"admin"},
 		},{
 			Method:  http.MethodGet,

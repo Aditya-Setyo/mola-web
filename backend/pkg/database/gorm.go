@@ -32,11 +32,9 @@ func AutoMigrate(db *gorm.DB) error {
 		&entity.UserAddress{},
 		&entity.ProductReview{},
 		&entity.Payment{},
-		&entity.Shipment{},
 		&entity.SalesReport{},
 		&entity.Cart{},
 		&entity.CartItem{},
-		&entity.Ad{},
         &entity.ProductVariant{},
 	)
 }
