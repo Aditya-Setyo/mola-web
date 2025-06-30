@@ -16,36 +16,22 @@ const ChartPage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const handleCheckout = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        alert("Silakan login terlebih dahulu.");
-        return;
-      }
+  try {
+    const res = await apiPost("/orders/checkout");
+    console.log("Checkout response:", res);
 
-      const payload = {
-        cart_items: items.map((item) => ({
-          product_id: item.id,
-          quantity: item.qty,
-          size_id: item.size_id,
-          color_id: item.color_id,
-        })),
-      };
-
-      // Atur sesuai endpoint backend kamu
-      const res = await apiPost("/orders/checkout", payload);
-      const redirectUrl = res.redirect_url || res.data?.redirect_url;
-
-      if (redirectUrl) {
-        window.location.href = redirectUrl;
-      } else {
-        alert("Gagal mendapatkan URL pembayaran.");
-      }
-    } catch (err) {
-      console.error("Gagal checkout:", err);
-      alert("Terjadi kesalahan saat checkout.");
+    const redirectUrl = res?.data?.redirect_url?.redirect_url;
+    if (redirectUrl) {
+      alert("Mengalihkan ke pembayaran...");
+      window.location.href = redirectUrl;
+    } else {
+      alert("Gagal mendapatkan URL pembayaran.");
     }
-  };
+  } catch (err) {
+    console.error("Gagal checkout:", err);
+    alert("Terjadi kesalahan saat checkout.");
+  }
+};
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -57,29 +43,40 @@ const ChartPage = () => {
     }
 
     setIsLoggedIn(true);
+const fetchCart = async () => {
+  try {
+    const res = await apiGet("/carts", true);
 
-    const fetchCart = async () => {
-      try {
-        const res = await apiGet("/carts", true);
-        const cartItems = res?.data?.cart?.cart_items || [];
+    // Ambil URL pembayaran dari respons
+    const paymentUrl = res?.data?.cart?.payment_url;
 
-        const transformedItems = cartItems.map((item) => ({
-          id: item.cart_item_id,
-          name: item.product?.name,
-          price: item.product?.price,
-          qty: item.quantity,
-          color_id: item.color_id,
-          size_id: item.size_id,
-          product: item.product,
-        }));
+    // Kalau payment_url tersedia, langsung redirect ke Midtrans
+    if (paymentUrl) {
+      alert("Anda memiliki transaksi yang belum diselesaikan. Mengarahkan ke halaman pembayaran...");
+      window.location.href = paymentUrl;
+      return; // stop di sini agar tidak setItems lagi
+    }
 
-        setItems(transformedItems);
-      } catch (err) {
-        console.error("Error fetching cart:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    const cartItems = res?.data?.cart?.cart_items || [];
+
+    const transformedItems = cartItems.map((item) => ({
+      id: item.cart_item_id,
+      name: item.product?.name,
+      price: item.product?.price,
+      qty: item.quantity,
+      color_id: item.color_id,
+      size_id: item.size_id,
+      product: item.product,
+    }));
+
+    setItems(transformedItems);
+  } catch (err) {
+    console.error("Error fetching cart:", err);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
     fetchCart();
   }, []);

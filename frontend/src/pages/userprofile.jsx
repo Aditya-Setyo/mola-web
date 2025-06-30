@@ -9,7 +9,6 @@ const UserProfile = () => {
     name: "",
     email: "",
     phone: "",
-    address: "",
   });
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -34,7 +33,6 @@ const UserProfile = () => {
           name: user.name || "",
           email: user.email || "",
           phone: user.phone || "",
-          address: user.address || "",
         });
       })
       .catch((err) => {
@@ -131,18 +129,7 @@ const UserProfile = () => {
                 readOnly={!isEditing}
               />
             </div>
-            <div>
-              <label className="block text-gray-600 font-medium mb-1">Alamat</label>
-              <textarea
-                name="address"
-                value={profile.address}
-                onChange={handleChange}
-                className="w-full border border-gray-300 px-4 py-2 rounded bg-white"
-                rows={3}
-                readOnly={!isEditing}
-              />
-            </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 mb-10">
               {!isEditing ? (
                 <button
                   onClick={() => setIsEditing(true)}

@@ -80,6 +80,7 @@ const ProductDetailPage = () => {
     }
 
     try {
+      // Cek apakah ada transaksi yang belum selesai
       const res = await apiGet("/orders/show", true);
       const orders = Array.isArray(res?.data) ? res.data : [];
 
@@ -121,6 +122,11 @@ const ProductDetailPage = () => {
       const orderId = `ORDER-${Date.now()}`;
       const grossAmount = product.price * quantity;
 
+      if (!grossAmount || grossAmount < 10000) {
+        alert("Total pembayaran minimal Rp10.000 agar bisa diproses.");
+        return;
+      }
+
       const payload = {
         transaction_details: {
           order_id: orderId,
@@ -129,8 +135,7 @@ const ProductDetailPage = () => {
         item_details: [item],
       };
 
-      console.log("📦 Checkout Payload:", payload);
-      console.log("🧪 product.has_variant:", product.has_variant);
+      console.log("📦 Payload Checkout:", payload);
 
       const checkout = await apiPost("/orders/checkout", payload);
       const redirectUrl = checkout?.data?.redirect_url || checkout?.redirect_url;
@@ -192,8 +197,13 @@ const ProductDetailPage = () => {
 
   useEffect(() => {
     const fetchReviews = async () => {
+      if (!product || !product.id) {
+        console.warn(" Produk belum siap, menunggu sebelum ambil review.");
+        return;
+      }
+
       try {
-        const res = await apiGet(`/products/review/${id}`);
+        const res = await apiGet(`/products/review/${product.id}`);
         const productReviews = Array.isArray(res?.data?.reviews)
           ? res.data.reviews
           : [];
@@ -208,13 +218,17 @@ const ProductDetailPage = () => {
 
         setReviews(reviewsFormatted);
       } catch (err) {
-        console.error(`Gagal ambil ulasan untuk produk ${id}:`, err);
+        console.error(`Gagal ambil ulasan untuk produk ${product.id}:`, err);
         setReviews([]);
       }
     };
 
-    fetchReviews();
+    // 💡 Hanya panggil fetchReviews kalau product sudah ada dan punya id
+    if (product && product.id) {
+      fetchReviews();
+    }
   }, [id, product]);
+
 
 
   const sizes = product?.has_variant && Array.isArray(product.variants)

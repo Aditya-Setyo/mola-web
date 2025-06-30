@@ -7,7 +7,7 @@ import { apiGet, apiPost, apiPut } from "../../api"; // gunakan helper
 const Settings = () => {
   const navigate = useNavigate();
 
-  const [profile, setProfile] = useState({ full_name: "", phone: "", address: "", email: "" });
+  const [profile, setProfile] = useState({ full_name: "", phone: "", email: "" });
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -19,7 +19,6 @@ const Settings = () => {
       setProfile({
         full_name: user.full_name || user.name || "",
         phone: user.phone || "",
-        address: user.address || "",
         email: user.email || "",
       });
       setLoading(false);
@@ -89,13 +88,6 @@ const Settings = () => {
               className="w-full border border-indigo-300 px-4 py-2 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400"
               value={profile.phone}
               onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-              readOnly={!isEditing}
-            />
-            <textarea
-              placeholder="Alamat Lengkap"
-              className="w-full border border-indigo-300 px-4 py-2 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400"
-              value={profile.address}
-              onChange={(e) => setProfile({ ...profile, address: e.target.value })}
               readOnly={!isEditing}
             />
             {isEditing && (
