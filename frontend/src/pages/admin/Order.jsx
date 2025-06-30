@@ -49,7 +49,6 @@ const Orders = () => {
                 <th className="px-4 py-3 text-left">Jumlah</th>
                 <th className="px-4 py-3 text-left">Total Harga</th>
                 <th className="px-4 py-3 text-left">Status</th>
-                <th className="px-4 py-3 text-left">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -57,7 +56,7 @@ const Orders = () => {
                 orders.map((order) => (
                   <tr key={order.id} className="border-t hover:bg-gray-50">
                     <td className="px-4 py-2">{order.order_code}</td>
-                    <td className="px-4 py-2">{order.name}</td>
+                    <td className="px-4 py-2">{order.user_name}</td>
                     <td className="px-4 py-2">
                       <div className="flex flex-col gap-1">
                         {order.order_items.map((item, index) => (
@@ -73,18 +72,7 @@ const Orders = () => {
                       </div>
                     </td>
                     <td className="px-4 py-2">Rp {order.total_amount.toLocaleString()}</td>
-                    <td className="px-4 py-2">{order.status}</td>
-                    <td className="px-4 py-2">
-                      <select
-                        value={order.status}
-                        onChange={(e) => updateStatus(order.id, e.target.value)}
-                        className="border text-sm px-2 py-1 rounded"
-                      >
-                        <option value="pending">Menunggu</option>
-                        <option value="diproses">Diproses</option>
-                        <option value="selesai">Selesai</option>
-                      </select>
-                    </td>
+                    <td className="px-4 py-2">{order.payment_status}</td>
                   </tr>
                 ))
               ) : (

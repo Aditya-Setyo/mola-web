@@ -8,7 +8,6 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recha
 
 const AdminPage = () => {
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
 
   const [summary, setSummary] = useState({ products: 0, users: 0, orders: 0, revenue: 0 });
   const [products, setProducts] = useState([]);
@@ -18,36 +17,23 @@ const AdminPage = () => {
   const fetchDashboardData = async () => {
     try {
       const [resProducts, resUsers, resOrders, resSummary] = await Promise.all([
-        fetch("http://localhost:8081/api/v1/products", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        fetch("http://localhost:8081/api/v1/users", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        fetch("http://localhost:8081/api/v1/orders/show", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        fetch("http://localhost:8081/api/v1/sales-report", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
+        apiGet("/products", true),
+        apiGet("/users", true),
+        apiGet("/admin/orders", true),
+        apiGet("/admin/sales-report", true),
       ]);
 
-      const dataProducts = await resProducts.json();
-      const dataUsers = await resUsers.json();
-      const dataOrders = await resOrders.json();
-      const dataSummary = await resSummary.json();
-
-      setProducts(dataProducts.data?.products || []);
-      setUsers(dataUsers.data?.users || []);
-      setOrders(dataOrders.data?.orders || []);
+      setProducts(resProducts.data?.products || []);
+      setUsers(resUsers.data?.users || []);
+      setOrders(resOrders.data?.orders || []);
       setSummary({
-        products: dataProducts.data?.products?.length || 0,
-        users: dataUsers.data?.users?.length || 0,
-        orders: dataOrders.data?.orders?.length || 0,
-        revenue: dataSummary.total_revenue || 0,
+        products: resProducts.data?.products?.length || 0,
+        users: resUsers.data?.users?.length || 0,
+        orders: resOrders.data?.orders?.length || 0,
+        revenue: resSummary.total_revenue || 0,
       });
     } catch (err) {
-      console.error("Gagal mengambil data dashboard:", err);
+      console.error("❌ Gagal mengambil data dashboard:", err);
     }
   };
 
@@ -61,12 +47,12 @@ const AdminPage = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen">
+    <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
       <Sidebar />
-      <main className="flex-1 md:ml-64 p-4 sm:p-6 bg-gray-100">
+      <main className="flex-1 md:ml-64 p-4 sm:p-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold">📊 Admin Dashboard</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">📊 Admin Dashboard</h1>
           <button
             onClick={handleLogout}
             className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm"
@@ -80,12 +66,16 @@ const AdminPage = () => {
           <DashboardCard label="Products" value={summary.products} color="bg-indigo-500" />
           <DashboardCard label="Users" value={summary.users} color="bg-green-500" />
           <DashboardCard label="Orders" value={summary.orders} color="bg-yellow-500" />
-          <DashboardCard label="Revenue" value={`Rp ${parseInt(summary.revenue).toLocaleString()}`} color="bg-purple-500" />
+          <DashboardCard
+            label="Revenue"
+            value={`Rp ${parseInt(summary.revenue).toLocaleString()}`}
+            color="bg-purple-500"
+          />
         </div>
 
         {/* Grafik Penjualan */}
         <div className="bg-white p-4 mb-10 rounded shadow">
-          <h2 className="text-lg sm:text-xl font-semibold mb-4">📈 Grafik Penjualan</h2>
+          <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-800">📈 Grafik Penjualan</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={orders.slice(0, 10)}>
               <XAxis dataKey="id" />
@@ -98,15 +88,27 @@ const AdminPage = () => {
 
         {/* Tables */}
         <div className="mb-6 overflow-x-auto">
-          <DataTable title="🛒 Produk Terbaru" data={products.slice(0, 5)} columns={["id", "name", "price", "stock"]} />
+          <DataTable
+            title="🛒 Produk Terbaru"
+            data={products.slice(0, 5)}
+            columns={["id", "name", "price", "stock"]}
+          />
         </div>
 
         <div className="mb-6 overflow-x-auto">
-          <DataTable title="👥 Pengguna Terbaru" data={users.slice(0, 5)} columns={["user_id", "name", "email", "phone"]} />
+          <DataTable
+            title="👥 Pengguna Terbaru"
+            data={users.slice(0, 5)}
+            columns={["user_id", "name", "email", "phone"]}
+          />
         </div>
 
         <div className="mb-10 overflow-x-auto">
-          <DataTable title="📦 Order Terakhir" data={orders.slice(0, 5)} columns={["id", "user", "total", "status"]} />
+          <DataTable
+            title="📦 Order Terakhir"
+            data={orders.slice(0, 5)}
+            columns={["id", "user", "total", "status"]}
+          />
         </div>
       </main>
     </div>

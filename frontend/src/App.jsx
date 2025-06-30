@@ -13,6 +13,7 @@ import UserProfile from "./pages/userprofile";
 import ResetPage from "./pages/resetpage";
 import ForgetPage from "./pages/forgetpage";
 import ProductDetailPage from "./pages/productdetails";
+import RiwayatPage from "./pages/riwayatpage";
 import AdminPage from "./pages/admin/adminpage";
 import MasterData from "./pages/admin/MasterData";
 import Products from "./pages/admin/Product";
@@ -23,6 +24,7 @@ import Payments from "./pages/admin/Payments";
 import Reviews from "./pages/admin/Review";
 import Settings from "./pages/admin/Setting";
 import SalesReport from "./pages/admin/SalesReportPage";
+import SearchPage from "./pages/searchpage"
 
 
 
@@ -46,6 +48,8 @@ const App = () => {
       <Route path="/userprofile" element={<UserProfile />} />
       <Route path="/resetpage" element={<ResetPage />} />
       <Route path="/forgetpage" element={<ForgetPage />} />
+      <Route path="/riwayatpage" element={<RiwayatPage />} />
+      <Route path="/searchpage" element={<SearchPage />} />
       
       {/* Admin Routes */}
       <Route path="/adminpage" element={<AdminPage />} />

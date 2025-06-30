@@ -2,11 +2,13 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { HiMenu, HiX } from "react-icons/hi";
 import LogoAccount from "../assets/logoaccount.png";
-import Logo1 from "../assets/logo1.png";
+import LogoRiwayat from "../assets/LogoRiwayat.png";
 import LogoKeranjang from "../assets/logokeranjang.png";
 import { HashLink } from "react-router-hash-link";
 import Logo from "../assets/logomola.png";
 import { jwtDecode } from "jwt-decode";
+import { apiGet } from "../api"; // tambahkan di atas
+
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -14,6 +16,26 @@ const Navbar = () => {
   const [showCategories, setShowCategories] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearch = async () => {
+  if (!searchQuery.trim()) return;
+
+  try {
+    const res = await apiGet(`/products/name/${searchQuery.trim()}`, false);
+    const products = res?.data?.products || [];
+
+    if (products.length > 0) {
+      // Kirim hasil pencarian ke halaman hasil
+      navigate("/searchpage", { state: { results: products, keyword: searchQuery.trim() } });
+    } else {
+      alert("Produk tidak ditemukan");
+    }
+  } catch (err) {
+    console.error("Gagal mencari produk:", err);
+    alert("Terjadi kesalahan saat pencarian.");
+  }
+};
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -43,12 +65,6 @@ const Navbar = () => {
 
   const toggleMenu = () => setIsOpen(!isOpen);
   const toggleCategories = () => setShowCategories(!showCategories);
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    setIsLoggedIn(false);
-    navigate("/loginpage");
-  };
 
   return (
     <nav className="bg-white shadow-md px-6 md:px-10">
@@ -83,17 +99,28 @@ const Navbar = () => {
         </div>
 
         <div className="hidden md:flex items-center space-x-4">
-          <input
-            type="text"
-            placeholder="Search..."
-            className="border rounded-xl px-4 py-1 text-sm bg-gray-100 w-64 mr-10"
-          />
+          <div className="flex items-center border rounded-xl bg-gray-100 px-2 w-64 mr-10">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) =>  setSearchQuery(e.target.value)}
+              placeholder="Cari Nama Produk..."
+              className="bg-transparent flex-1 py-1 px-2 text-sm outline-none"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSearch();
+              }}
+            />
+            <button onClick={handleSearch} className="text-gray-600 text-sm px-2">🔍</button>
+          </div>
+
           <button onClick={() => navigate("/chartpage")}> {/* keranjang */}
             <img src={LogoKeranjang} alt="Cart" className="w-6 h-6" />
           </button>
           {isLoggedIn ? (
             <>
-              <span className="text-sm text-gray-600">Halo, {userName}</span>
+              <button onClick={() => navigate("/riwayatpage")}>
+                <img src={LogoRiwayat} alt="Riwayat" className="w-6 h-6" />
+              </button>
               <button onClick={() => navigate("/userprofile")}>
                 <img src={LogoAccount} alt="Account" className="w-6 h-6" />
               </button>
@@ -126,7 +153,9 @@ const Navbar = () => {
               className="border rounded-xl px-3 py-1 text-sm bg-gray-100 flex-1"
             />
             {isLoggedIn ? (
-              <>
+              <><button onClick={() => navigate("/riwayatpage")} className="ml-10"> {/* Riwayat */}
+                <img src={LogoRiwayat} alt="Riwayat" className="w-6 h-6" />
+              </button>
                 <button onClick={() => navigate("/chartpage")} className="ml-10"> {/* Keranjang */}
                   <img src={LogoKeranjang} alt="Chart" className="w-6 h-6" />
                 </button>
