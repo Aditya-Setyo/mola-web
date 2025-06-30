@@ -80,16 +80,9 @@ func (s *orderService) GetAllOrdersPaid(ctx context.Context) ([]dto.GetOrdersPai
 				productNames = append(productNames, item.Product.Name)
 			}
 		}
-		var resi string
-		if len(order.Shipments) > 0 {
-			if order.Shipments[0].ResiNumber != "" {
-				resi = order.Shipments[0].ResiNumber
-			}
-		}
 		result := dto.GetOrdersPaidResponse{
 			ID:          order.ID,
 			UserName:    order.User.Name,
-			Resi:        resi,
 			ProductName: productNames,
 		}
 

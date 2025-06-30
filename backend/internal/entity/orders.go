@@ -28,7 +28,6 @@ type Order struct {
 	User      *User      `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"user,omitempty"`
 	Payments  []Payment  `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"payments,omitempty"`
 	Invoices  []Invoice  `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"invoices,omitempty"`
-	Shipments []Shipment `gorm:"constraint:OnUpdate:NO ACTION,OnDelete:CASCADE;" json:"shipments,omitempty"`
 }
 
 func (b *Order) TableName() string {
