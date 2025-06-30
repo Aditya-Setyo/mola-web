@@ -7,12 +7,19 @@ const Orders = () => {
 
   const fetchOrders = async () => {
     try {
-      const res = await apiGet("/admin/orders"); // endpoint admin
-      setOrders(Array.isArray(res) ? res : []);  // data langsung berupa array
+      const res = await apiGet("/admin/orders"); // panggil endpoint
+      console.log(" Full response:", res); // Lihat seluruh respons
+
+      const orderList = res?.data?.orders || [];
+      console.log(" Orders loaded:", orderList); // Debug hasil final
+
+      setOrders(orderList);
     } catch (err) {
-      console.error("Gagal mengambil pesanan:", err.message);
+      console.error(" Gagal mengambil pesanan:", err.message);
     }
   };
+
+
 
   const updateStatus = async (orderID, newStatus) => {
     try {
@@ -36,11 +43,11 @@ const Orders = () => {
           <table className="min-w-full text-sm">
             <thead className="bg-gray-100 text-gray-700">
               <tr>
-                <th className="px-4 py-3 text-left">ID</th>
-                <th className="px-4 py-3 text-left">Nama Pembeli</th>
+                <th className="px-4 py-3 text-left">Order Code</th>
+                <th className="px-4 py-3 text-left">Pembeli</th>
                 <th className="px-4 py-3 text-left">Produk</th>
                 <th className="px-4 py-3 text-left">Jumlah</th>
-                <th className="px-4 py-3 text-left">Total</th>
+                <th className="px-4 py-3 text-left">Total Harga</th>
                 <th className="px-4 py-3 text-left">Status</th>
                 <th className="px-4 py-3 text-left">Aksi</th>
               </tr>
@@ -49,11 +56,23 @@ const Orders = () => {
               {orders.length > 0 ? (
                 orders.map((order) => (
                   <tr key={order.id} className="border-t hover:bg-gray-50">
-                    <td className="px-4 py-2">{order.id}</td>
-                    <td className="px-4 py-2">{order.user_name}</td>
-                    <td className="px-4 py-2">{order.product_name}</td>
-                    <td className="px-4 py-2">{order.quantity}</td>
-                    <td className="px-4 py-2">Rp {order.total_price}</td>
+                    <td className="px-4 py-2">{order.order_code}</td>
+                    <td className="px-4 py-2">{order.name}</td>
+                    <td className="px-4 py-2">
+                      <div className="flex flex-col gap-1">
+                        {order.order_items.map((item, index) => (
+                          <span key={index}>{item.product.name}</span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2">
+                      <div className="flex flex-col gap-1">
+                        {order.order_items.map((item, index) => (
+                          <span key={index}>{item.quantity}</span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2">Rp {order.total_amount.toLocaleString()}</td>
                     <td className="px-4 py-2">{order.status}</td>
                     <td className="px-4 py-2">
                       <select
@@ -61,9 +80,9 @@ const Orders = () => {
                         onChange={(e) => updateStatus(order.id, e.target.value)}
                         className="border text-sm px-2 py-1 rounded"
                       >
-                        <option value="Menunggu">Menunggu</option>
-                        <option value="Diproses">Diproses</option>
-                        <option value="Selesai">Selesai</option>
+                        <option value="pending">Menunggu</option>
+                        <option value="diproses">Diproses</option>
+                        <option value="selesai">Selesai</option>
                       </select>
                     </td>
                   </tr>
