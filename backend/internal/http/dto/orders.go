@@ -20,6 +20,7 @@ type ShowOrderResponse struct {
 	OrderCode     string       `json:"order_code"`
 	Status        string       `json:"status"`
 	TotalAmount   float64      `json:"total_amount"`
+	TotalPaid     float64      `json:"total_paid"`
 	TotalWeight   float64      `json:"total_weight"`
 	PaymentStatus string       `json:"payment_status"`
 	OrderItems    []OrderItems `json:"order_items"`
@@ -30,6 +31,7 @@ type GetAllOrdersResponse struct {
 	OrderCode     string       `json:"order_code"`
 	Status        string       `json:"status"`
 	TotalAmount   float64      `json:"total_amount"`
+	TotalPaid     float64      `json:"total_paid"`
 	TotalWeight   float64      `json:"total_weight"`
 	PaymentStatus string       `json:"payment_status"`
 	OrderItems    []OrderItems `json:"order_items"`

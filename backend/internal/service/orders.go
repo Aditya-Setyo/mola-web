@@ -330,14 +330,14 @@ func (s *orderService) ShowOrder(ctx context.Context, userID uuid.UUID) ([]dto.S
 	key := "orders:show-order:" + userID.String()
 	var results []dto.ShowOrderResponse
 
-	data := s.cacheable.Get(key)
-	if data != "" {
-		if err := json.Unmarshal([]byte(data), &results); err != nil {
-			return nil, err
+	// Ambil dari cache
+	if data := s.cacheable.Get(key); data != "" {
+		if err := json.Unmarshal([]byte(data), &results); err == nil {
+			return results, nil
 		}
-		return results, nil
 	}
 
+	// Ambil dari database
 	orders, err := s.orderRepo.ShowOrder(ctx, userID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, errors.New("orders not found")
@@ -346,38 +346,65 @@ func (s *orderService) ShowOrder(ctx context.Context, userID uuid.UUID) ([]dto.S
 	}
 
 	for _, order := range orders {
-		items := []dto.OrderItems{}
+		var items []dto.OrderItems
 
-		for _, dataItem := range order.OrderItems {
-			var categoryName, sizeName, colorName *string
-			if dataItem.Product.Category != nil {
-				categoryName = &dataItem.Product.Category.Name
+		for _, item := range order.OrderItems {
+			product := item.Product
+			vari := item.ProductVariant
+
+			var (
+				categoryName, sizeName, colorName *string
+				variants                          []dto.ProductVariantInfo
+			)
+
+			if product.Category != nil {
+				categoryName = &product.Category.Name
 			}
-			if dataItem.ProductVariant.Size != nil {
-				sizeName = &dataItem.ProductVariant.Size.Name
+
+			// Jika produk memiliki varian dan varian tersedia
+			if product.HasVariant && vari != nil {
+				if vari.Size != nil {
+					sizeName = &vari.Size.Name
+				}
+				if vari.Color != nil {
+					colorName = &vari.Color.Name
+				}
+
+				var variantDTO dto.ProductVariantInfo
+				variantDTO.ID = vari.ID
+				variantDTO.Stock = vari.Stock
+				variantDTO.ColorID = vari.ColorID
+				variantDTO.SizeID = vari.SizeID
+				if vari.Color != nil {
+					variantDTO.Color = vari.Color.Name
+				}
+				if vari.Size != nil {
+					variantDTO.Size = vari.Size.Name
+				}
+				variants = append(variants, variantDTO)
 			}
-			if dataItem.ProductVariant.Color != nil {
-				colorName = &dataItem.ProductVariant.Color.Name
-			}
-			item := dto.OrderItems{
-				Quantity: dataItem.Quantity,
-				Note:     dataItem.Note,
+
+			itemResp := dto.OrderItems{
+				Quantity: item.Quantity,
+				Note:     item.Note,
 				Product: &dto.GetProductByIDShowOrder{
-					ID:           dataItem.Product.ID,
-					Name:         dataItem.Product.Name,
-					CategoryID:   dataItem.Product.CategoryID,
-					Description:  dataItem.Product.Description,
-					ImageURL:     dataItem.Product.ImageURL,
-					HasVariant:   dataItem.Product.HasVariant,
-					Price:        dataItem.Product.Price,
-					Weight:       dataItem.Product.Weight,
+					ID:           product.ID,
+					Name:         product.Name,
+					CategoryID:   product.CategoryID,
+					Description:  product.Description,
+					ImageURL:     product.ImageURL,
+					HasVariant:   product.HasVariant,
+					Price:        product.Price,
+					Weight:       product.Weight,
+					Stock:        product.Stock,
 					CategoryName: categoryName,
 					SizeName:     sizeName,
 					ColorName:    colorName,
+					Variants:     variants,
 				},
-				Subtotal: float64(dataItem.Quantity) * dataItem.Product.Price,
+				Subtotal: float64(item.Quantity) * product.Price,
 			}
-			items = append(items, item)
+			items = append(items, itemResp)
 		}
 
 		results = append(results, dto.ShowOrderResponse{
@@ -386,34 +413,34 @@ func (s *orderService) ShowOrder(ctx context.Context, userID uuid.UUID) ([]dto.S
 			OrderCode:     order.OrderCode,
 			Status:        order.Status,
 			TotalAmount:   order.TotalAmount,
+			TotalPaid:     float64(order.TotalAmount) * 0.3,
 			TotalWeight:   order.TotalWeight,
 			PaymentStatus: order.PaymentStatus,
 			OrderItems:    items,
 		})
 	}
 
-	marshaled, err := json.Marshal(results)
-	if err != nil {
-		return nil, err
+	// Simpan ke cache
+	if marshaled, err := json.Marshal(results); err == nil {
+		_ = s.cacheable.Set(key, marshaled)
 	}
-
-	_ = s.cacheable.Set(key, marshaled)
 
 	return results, nil
 }
+
 
 func (s *orderService) GetAllOrders(ctx context.Context) ([]dto.GetAllOrdersResponse, error) {
 	key := "orders:all-orders"
 	var results []dto.GetAllOrdersResponse
 
-	data := s.cacheable.Get(key)
-	if data != "" {
-		if err := json.Unmarshal([]byte(data), &results); err != nil {
-			return nil, err
+	// Ambil dari cache jika ada
+	if data := s.cacheable.Get(key); data != "" {
+		if err := json.Unmarshal([]byte(data), &results); err == nil {
+			return results, nil
 		}
-		return results, nil
 	}
 
+	// Ambil dari database
 	orders, err := s.orderRepo.GetAll(ctx)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, errors.New("orders not found")
@@ -422,38 +449,70 @@ func (s *orderService) GetAllOrders(ctx context.Context) ([]dto.GetAllOrdersResp
 	}
 
 	for _, order := range orders {
-		items := []dto.OrderItems{}
+		var items []dto.OrderItems
 
-		for _, dataItem := range order.OrderItems {
-			var categoryName, sizeName, colorName *string
-			if dataItem.Product.Category != nil {
-				categoryName = &dataItem.Product.Category.Name
+		for _, item := range order.OrderItems {
+			product := item.Product
+			vari := item.ProductVariant
+
+			var (
+				categoryName, sizeName, colorName *string
+				variants                          []dto.ProductVariantInfo
+			)
+
+			// Set harga dan berat berdasarkan varian jika ada
+			if product.HasVariant && vari != nil {
+
+				if vari.Size != nil {
+					sizeName = &vari.Size.Name
+				}
+				if vari.Color != nil {
+					colorName = &vari.Color.Name
+				}
+
+				// Tambah varian yang digunakan ke daftar
+				var variantDTO dto.ProductVariantInfo
+				variantDTO.ID = vari.ID
+				variantDTO.Stock = vari.Stock
+				variantDTO.ColorID = vari.ColorID
+				variantDTO.SizeID = vari.SizeID
+				if vari.Color != nil {
+					variantDTO.Color = vari.Color.Name
+				}
+				if vari.Size != nil {
+					variantDTO.Size = vari.Size.Name
+				}
+				variants = append(variants, variantDTO)
+
+			} else {
+				
 			}
-			if dataItem.ProductVariant.Size != nil {
-				sizeName = &dataItem.ProductVariant.Size.Name
+
+			// Ambil nama kategori jika ada
+			if product.Category != nil {
+				categoryName = &product.Category.Name
 			}
-			if dataItem.ProductVariant.Color != nil {
-				colorName = &dataItem.ProductVariant.Color.Name
-			}
-			item := dto.OrderItems{
-				Quantity: dataItem.Quantity,
-				Note:     dataItem.Note,
+
+			itemResp := dto.OrderItems{
+				Quantity: item.Quantity,
+				Note:     item.Note,
 				Product: &dto.GetProductByIDShowOrder{
-					ID:           dataItem.Product.ID,
-					Name:         dataItem.Product.Name,
-					CategoryID:   dataItem.Product.CategoryID,
-					Description:  dataItem.Product.Description,
-					ImageURL:     dataItem.Product.ImageURL,
-					HasVariant:   dataItem.Product.HasVariant,
-					Price:        dataItem.Product.Price,
-					Weight:       dataItem.Product.Weight,
+					ID:           product.ID,
+					Name:         product.Name,
+					CategoryID:   product.CategoryID,
+					Description:  product.Description,
+					ImageURL:     product.ImageURL,
+					HasVariant:   product.HasVariant,
+					Price:        product.Price,
+					Weight:       product.Weight,
+					Stock:        product.Stock,
 					CategoryName: categoryName,
 					SizeName:     sizeName,
 					ColorName:    colorName,
+					Variants:     variants,
 				},
-				Subtotal: float64(dataItem.Quantity) * dataItem.Product.Price,
 			}
-			items = append(items, item)
+			items = append(items, itemResp)
 		}
 
 		results = append(results, dto.GetAllOrdersResponse{
@@ -462,21 +521,22 @@ func (s *orderService) GetAllOrders(ctx context.Context) ([]dto.GetAllOrdersResp
 			OrderCode:     order.OrderCode,
 			Status:        order.Status,
 			TotalAmount:   order.TotalAmount,
+			TotalPaid:     float64(order.TotalAmount) * 0.3,
 			TotalWeight:   order.TotalWeight,
 			PaymentStatus: order.PaymentStatus,
 			OrderItems:    items,
 		})
 	}
 
-	marshaled, err := json.Marshal(results)
-	if err != nil {
-		return nil, err
+	// Simpan ke cache
+	if marshaled, err := json.Marshal(results); err == nil {
+		_ = s.cacheable.Set(key, marshaled)
 	}
-
-	_ = s.cacheable.Set(key, marshaled)
 
 	return results, nil
 }
+
+
 
 func (s *orderService) ExpireUninitializedOrders() error {
 	tx := s.DB.Begin()

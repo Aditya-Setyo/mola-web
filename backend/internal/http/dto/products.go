@@ -79,12 +79,14 @@ type GetProductByIDShowOrder struct {
 	Weight       float64   `json:"weight"`
 	Price        float64   `json:"price"`
 	Description  *string   `json:"description"`
+	Stock        int       `json:"stock"`
 	ImageURL     *string   `json:"image_url"`
 	CategoryID   *uint     `json:"category_id"`
 	CategoryName *string   `json:"category_name"`
 	HasVariant   bool      `json:"has_variant"`
 	ColorName    *string   `json:"color"`
 	SizeName     *string   `json:"size"`
+	Variants     []ProductVariantInfo  `json:"variants,omitempty"`
 }
 
 type GetProductReviewResponse struct {
@@ -133,10 +135,10 @@ type UpdateProductRequest struct {
 	Variants []UpdateProductVariantRequest `json:"variants,omitempty" validate:"omitempty,dive"`
 }
 type UpdateProductVariantRequest struct {
-	ID      *uuid.UUID // NULL jika varian baru
-	ColorID *uint
-	SizeID  *uint
-	Stock   int
+	ID      *uuid.UUID `json:"id"` // NULL jika varian baru
+	ColorID *uint `json:"color_id"`
+	SizeID  *uint `json:"size_id"`
+	Stock   int   `json:"stock" validate:"min=0"`
 }
 type DeleteProductRequest struct {
 	ID uuid.UUID `json:"id" validate:"required"`
