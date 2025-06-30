@@ -27,8 +27,8 @@ const ChartPage = () => {
         cart_items: items.map((item) => ({
           product_id: item.id,
           quantity: item.qty,
-          size: item.size,
-          color: item.color,
+          size_id: item.size_id,
+          color_id: item.color_id,
         })),
       };
 
@@ -60,7 +60,7 @@ const ChartPage = () => {
 
     const fetchCart = async () => {
       try {
-        const res = await apiGet("/carts", true); // ambil keranjang dengan auth
+        const res = await apiGet("/carts", true);
         const cartItems = res?.data?.cart?.cart_items || [];
 
         const transformedItems = cartItems.map((item) => ({
@@ -68,11 +68,10 @@ const ChartPage = () => {
           name: item.product?.name,
           price: item.product?.price,
           qty: item.quantity,
-          image_url: item.product?.image_url,
-          color: item.color, // ambil langsung dari cart_item
-          size: item.size,   // ambil langsung dari cart_item
+          color_id: item.color_id,
+          size_id: item.size_id,
+          product: item.product,
         }));
-
 
         setItems(transformedItems);
       } catch (err) {
@@ -84,6 +83,7 @@ const ChartPage = () => {
 
     fetchCart();
   }, []);
+
 
   const updateQty = (id, delta) => {
     setItems((prev) =>
@@ -99,7 +99,9 @@ const ChartPage = () => {
 
   const [selectedItems, setSelectedItems] = useState([]);
   const selected = items.filter((it) => selectedItems.includes(it.id));
-  const subtotal = selected.reduce((s, it) => s + it.price * it.qty, 0);
+  const subtotal = selected.reduce(
+    (s, it) => s + (Number(it.price) || 0) * (Number(it.qty) || 0), 0);
+
   const total = subtotal * 0.3;
 
   return (
@@ -126,38 +128,51 @@ const ChartPage = () => {
                   key={it.id}
                   className="flex items-center gap-4 border rounded-lg p-4 shadow-sm"
                 >
-                  {/* Checkbox untuk memilih item */}
                   <input
                     type="checkbox"
                     checked={selectedItems.includes(it.id)}
                     onChange={() => {
-                      if (selectedItems.includes(it.id)) {
-                        setSelectedItems(selectedItems.filter((sid) => sid !== it.id));
-                      } else {
-                        setSelectedItems([...selectedItems, it.id]);
-                      }
+                      setSelectedItems((prev) =>
+                        prev.includes(it.id)
+                          ? prev.filter((sid) => sid !== it.id)
+                          : [...prev, it.id]
+                      );
                     }}
                     className="w-4 h-4 mr-2 accent-black"
                   />
 
                   <img
                     src={
-                      it.image_url
-                        ? `${backendURL}${it.image_url}`
+                      it.product?.image_url
+                        ? `${backendURL}${it.product.image_url}`
                         : "https://via.placeholder.com/70x90"
                     }
-                    alt={it.name}
+                    alt={it.product?.name}
                     className="w-20 h-24 object-cover rounded"
                   />
                   <div className="flex-1">
-                    <h4 className="font-semibold">{it.name}</h4>
-                    <p className="text-xs text-gray-500">
-                      Size: {it.size || "-"} | Color: {it.color || "-"}
-                    </p>
+                    <h4 className="font-semibold">{it.product?.name}</h4>
+
+                    {it.product?.has_variant ? (
+                      <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                        <span>Size: {it.size_id?.name || "-"}</span>
+                        <span>|</span>
+                        <span>Color:</span>
+                        <span
+                          className="inline-block w-4 h-4 rounded-full border"
+                          style={{ backgroundColor: it.color_id?.code || "#ccc" }}
+                          title={it.color_id?.name || ""}
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 mt-1">Tanpa varian</p>
+                    )}
+
                     <p className="mt-1 font-semibold">
-                      Rp {it.price.toLocaleString()}
+                      Rp {it.product?.price?.toLocaleString()}
                     </p>
                   </div>
+
                   <div className="flex items-center gap-2 bg-gray-100 rounded-full px-3 py-1">
                     <button onClick={() => updateQty(it.id, -1)}>
                       <FaMinus />
@@ -167,6 +182,7 @@ const ChartPage = () => {
                       <FaPlus />
                     </button>
                   </div>
+
                   <button
                     onClick={() => removeItem(it.id)}
                     className="text-red-500 hover:text-red-600"
@@ -180,28 +196,36 @@ const ChartPage = () => {
             <aside className="border rounded-lg p-6 space-y-4 h-fit shadow-md">
               <h3 className="font-semibold text-lg">Order Summary</h3>
 
-              <dl className="text-sm space-y-1">
-                <div className="flex justify-between">
-                  <dt>Subtotal</dt>
-                  <dd className="font-medium">Rp {subtotal.toLocaleString()}</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt>Preorder (30%)</dt>
-                  <dd className="font-medium text-blue-500">
-                    Rp {total.toLocaleString()}
-                  </dd>
-                </div>
-                <hr />
-                <div className="flex justify-between text-base font-bold">
-                  <dt>Total</dt>
-                  <dd>Rp {total.toLocaleString()}</dd>
-                </div>
-              </dl>
+              {selected.length === 0 ? (
+                <p className="text-sm text-gray-500">
+                  Pilih produk terlebih dahulu untuk melihat total.
+                </p>
+              ) : (
+                <dl className="text-sm space-y-1">
+                  <div className="flex justify-between">
+                    <dt>Subtotal</dt>
+                    <dd className="font-medium">
+                      Rp {subtotal.toLocaleString()}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt>Preorder (30%)</dt>
+                    <dd className="font-medium text-blue-500">
+                      Rp {total.toLocaleString()}
+                    </dd>
+                  </div>
+                  <hr />
+                  <div className="flex justify-between text-base font-bold">
+                    <dt>Total</dt>
+                    <dd>Rp {total.toLocaleString()}</dd>
+                  </div>
+                </dl>
+              )}
 
               <button
-                disabled={items.length === 0}
+                disabled={selected.length === 0}
                 onClick={handleCheckout}
-                className={`w-full py-3 rounded-full flex items-center justify-center gap-2 transition ${items.length > 0
+                className={`w-full py-3 rounded-full flex items-center justify-center gap-2 transition ${selected.length > 0
                   ? "bg-black text-white hover:bg-gray-900"
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
                   }`}
@@ -209,7 +233,6 @@ const ChartPage = () => {
                 Go to Checkout
                 <FaArrowRight />
               </button>
-
             </aside>
           </div>
         )}
