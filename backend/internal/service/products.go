@@ -45,7 +45,7 @@ type productService struct {
 	cacheable    cache.Cacheable
 }
 
-func NewProductService(db *gorm.DB, repo repository.ProductRepository,repoVariant repository.ProductVariantRepository, tokenUseCase token.TokenUseCase, cacheable cache.Cacheable) ProductService {
+func NewProductService(db *gorm.DB, repo repository.ProductRepository, repoVariant repository.ProductVariantRepository, tokenUseCase token.TokenUseCase, cacheable cache.Cacheable) ProductService {
 	return &productService{
 		DB:           db,
 		repo:         repo,
@@ -75,15 +75,15 @@ func (s *productService) GetAll(ctx context.Context) (results []*dto.GetAllProdu
 
 	for _, value := range dataProducts {
 		productDTO := &dto.GetAllProducts{
-			ID:           value.ID,
-			Name:         value.Name,
-			Stock:        value.Stock,
-			Weight:       value.Weight,
-			Price:        value.Price,
-			Description:  value.Description,
-			ImageURL:     value.ImageURL,
-			CategoryID:   value.CategoryID,
-			HasVariant:   value.HasVariant,
+			ID:          value.ID,
+			Name:        value.Name,
+			Stock:       value.Stock,
+			Weight:      value.Weight,
+			Price:       value.Price,
+			Description: value.Description,
+			ImageURL:    value.ImageURL,
+			CategoryID:  value.CategoryID,
+			HasVariant:  value.HasVariant,
 		}
 		if value.Category != nil {
 			productDTO.CategoryName = &value.Category.Name
@@ -148,15 +148,15 @@ func (s *productService) GetProductByCategoryID(ctx context.Context, categoryID 
 
 	for _, value := range dataProducts {
 		productDTO := &dto.GetProductByCategoryID{
-			ID:           value.ID,
-			Name:         value.Name,
-			Stock:        value.Stock,
-			Weight:       value.Weight,
-			Price:        value.Price,
-			Description:  value.Description,
-			ImageURL:     value.ImageURL,
-			CategoryID:   value.CategoryID,
-			HasVariant:   value.HasVariant,
+			ID:          value.ID,
+			Name:        value.Name,
+			Stock:       value.Stock,
+			Weight:      value.Weight,
+			Price:       value.Price,
+			Description: value.Description,
+			ImageURL:    value.ImageURL,
+			CategoryID:  value.CategoryID,
+			HasVariant:  value.HasVariant,
 		}
 		if value.Category != nil {
 			productDTO.CategoryName = &value.Category.Name
@@ -324,7 +324,6 @@ func (s *productService) GetByID(ctx context.Context, id uuid.UUID) (result *dto
 	return result, nil
 }
 
-
 func (s *productService) CheckStockProduct(tx *gorm.DB, productID uuid.UUID) (int64, error) {
 	stock, err := s.repo.GetStockProduct(tx, productID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -372,7 +371,7 @@ func (s *productService) UpdateStockProductOnOrder(tx *gorm.DB, productID uuid.U
 	return nil
 }
 
-func (s *productService)  UpdateStockProductVariantOnOrder(tx *gorm.DB, variantID uuid.UUID, stock int64) error{
+func (s *productService) UpdateStockProductVariantOnOrder(tx *gorm.DB, variantID uuid.UUID, stock int64) error {
 	dataStock, err := s.CheckStockProductVariant(tx, variantID)
 	if err != nil {
 		return err
@@ -481,11 +480,10 @@ func (s *productService) GetProductReviews(ctx context.Context, productID uuid.U
 		return nil, err
 	}
 
-	_= s.cacheable.Set(key, marshalledData)
-	
+	_ = s.cacheable.Set(key, marshalledData)
+
 	return results, nil
 }
-
 
 func (s *productService) Create(ctx context.Context, request *dto.CreateProductRequest) error {
 	src, err := request.Image.Open()
@@ -635,17 +633,21 @@ func (s *productService) Update(ctx context.Context, request *dto.UpdateProductR
 			return err
 		}
 
-		// Tandai varian yang sudah diproses
+		// Map untuk melacak varian yang sudah diproses
 		processed := make(map[string]bool)
 
-		for _, newVar := range request.Variants {
+		for i, newVar := range request.Variants {
+			log.Println("==========================", request.Variants[i].ID)
+			key := fmt.Sprintf("%v:%v", newVar.ColorID, newVar.SizeID)
+			processed[key] = true
 			found := false
 
+			// Cek apakah varian baru ini sudah ada di varian lama
 			for _, oldVar := range existingVariants {
 				if (oldVar.ColorID == nil && newVar.ColorID == nil || oldVar.ColorID != nil && newVar.ColorID != nil && *oldVar.ColorID == *newVar.ColorID) &&
 					(oldVar.SizeID == nil && newVar.SizeID == nil || oldVar.SizeID != nil && newVar.SizeID != nil && *oldVar.SizeID == *newVar.SizeID) {
 
-					// Update jika stock berubah
+					// Update stok jika berubah
 					if oldVar.Stock != newVar.Stock {
 						oldVar.Stock = newVar.Stock
 						if err := s.repoVariant.Update(tx, oldVar); err != nil {
@@ -653,15 +655,12 @@ func (s *productService) Update(ctx context.Context, request *dto.UpdateProductR
 							return err
 						}
 					}
-
-					key := fmt.Sprintf("%v:%v", newVar.ColorID, newVar.SizeID)
-					processed[key] = true
 					found = true
 					break
 				}
 			}
 
-			// Jika tidak ditemukan, buat baru
+			// Jika varian tidak ditemukan, tambahkan sebagai varian baru
 			if !found {
 				newEntity := &entity.ProductVariant{
 					ProductID: product.ID,
@@ -673,21 +672,38 @@ func (s *productService) Update(ctx context.Context, request *dto.UpdateProductR
 					tx.Error = err
 					return err
 				}
-				key := fmt.Sprintf("%v:%v", newVar.ColorID, newVar.SizeID)
-				processed[key] = true
 			}
 		}
+		// for i, value := range existingVariants {
+		// 	if request.Variants[i].ID == &value.ID {
+		// 		continue
+		// 	} else {
+		// 		if err := s.repoVariant.DeleteByID(tx, value.ID); err != nil {
+		// 			tx.Error = err
+		// 			return err
+		// 		}
+		// 	}
+		// }
+		// Helper: bandingkan UUID dengan aman, termasuk nil
 
-		// Hapus varian yang tidak ada di request
+		variantIDsFromRequest := make(map[uuid.UUID]bool)
+		log.Println("variantID", request.Variants[0].ID)
+		for _, newVar := range request.Variants {
+			if newVar.ID != nil {
+				variantIDsFromRequest[*newVar.ID] = true
+			}
+		}
+		log.Println("variantIDsFromRequest", variantIDsFromRequest)
+		// Hapus varian lama yang tidak ada di permintaan update
 		for _, oldVar := range existingVariants {
-			key := fmt.Sprintf("%v:%v", oldVar.ColorID, oldVar.SizeID)
-			if !processed[key] {
+			if _, exists := variantIDsFromRequest[oldVar.ID]; !exists {
 				if err := s.repoVariant.DeleteByID(tx, oldVar.ID); err != nil {
 					tx.Error = err
 					return err
 				}
 			}
 		}
+
 	}
 
 	if err := tx.Commit().Error; err != nil {
@@ -700,6 +716,15 @@ func (s *productService) Update(ctx context.Context, request *dto.UpdateProductR
 	return nil
 }
 
+func isSameUUID(a, b *uuid.UUID) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a != nil && b != nil {
+		return *a == *b
+	}
+	return false
+}
 
 func (s *productService) Delete(ctx context.Context, id uuid.UUID) error {
 	tx := s.DB.WithContext(ctx).Begin()
