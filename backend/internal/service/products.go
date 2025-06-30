@@ -218,38 +218,39 @@ func (s *productService) GetProductByName(ctx context.Context, name string) (res
 			ImageURL:    product.ImageURL,
 			CategoryID:  product.CategoryID,
 			HasVariant:  product.HasVariant,
+			Price:       product.Price,
+			Stock:       product.Stock,
 		}
 
-		// Tambahkan nama kategori jika tersedia
 		if product.Category != nil {
 			result.CategoryName = &product.Category.Name
 		}
 
-		if !product.HasVariant {
-			// Produk tanpa varian: ambil dari field di entitas Product
-			result.Price = product.Price
-			result.Stock = product.Stock
-		} else {
-			// Produk dengan varian: ambil dari entitas ProductVariant
-			for _, variant := range product.Variants {
-				variantDTO := dto.ProductVariantInfo{
-					ID:    variant.ID,
-					Stock: variant.Stock,
+		if product.HasVariant {
+			for _, v := range product.Variants {
+				var variantDTO dto.ProductVariantInfo
+				variantDTO.ID = v.ID
+				variantDTO.Stock = v.Stock
+
+				if v.ColorID != nil {
+					variantDTO.ColorID = v.ColorID
 				}
-				if variant.Color != nil {
-					variantDTO.Color = variant.Color.Name
+				if v.SizeID != nil {
+					variantDTO.SizeID = v.SizeID
 				}
-				if variant.Size != nil {
-					variantDTO.Size = variant.Size.Name
+				if v.Color != nil {
+					variantDTO.Color = v.Color.Name
 				}
+				if v.Size != nil {
+					variantDTO.Size = v.Size.Name
+				}
+
 				result.Variants = append(result.Variants, variantDTO)
 			}
-
 		}
 
 		results = append(results, result)
 	}
-
 	return results, nil
 }
 

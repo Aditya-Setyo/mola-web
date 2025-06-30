@@ -22,7 +22,6 @@ func BuildPublicRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []ro
 	orderRepository := repository.NewOrderRepository(db)
 	transactionRepository := repository.NewTransactionRepository(db)
 	salesReportRepository := repository.NewSalesReportRepository(db)
-	adsRepository := repository.NewAdRepository(db)
 	variantRepository := repository.NewProductVariantRepository(db)
 
 
@@ -33,7 +32,6 @@ func BuildPublicRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []ro
 	orderService := service.NewOrderService(db, orderRepository, cartRepository, cartService, productService, cacheable, tokenUseCase, cfg.MidtransConfig)
 	transactionService := service.NewTransactionService(db, productRepository, transactionRepository, orderRepository, variantRepository,tokenUseCase, cacheable, cfg.MidtransConfig)
 	salesReportService := service.NewSalesReportService(db, salesReportRepository)
-	adsService := service.NewAdsService(db, adsRepository, tokenUseCase, cacheable)
 
 	userHandler := handler.NewUserHandler(userService)
 	productHandler := handler.NewProductHandler(productService)
@@ -41,9 +39,8 @@ func BuildPublicRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []ro
 	orderHandler := handler.NewOrderHandler(orderService)
 	transactionHandler := handler.NewTransactionHandler(transactionService)
 	salesReportHandler := handler.NewSalesReportHandler(salesReportService)
-	adsHandler := handler.NewAdHandler(adsService)
 
-	return router.PublicRoutes(userHandler,productHandler, cartHandler, orderHandler, transactionHandler, salesReportHandler, adsHandler)
+	return router.PublicRoutes(userHandler,productHandler, cartHandler, orderHandler, transactionHandler, salesReportHandler)
 }
 func BuildPrivateRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []route.Route {
 	cacheable := cache.NewCacheable(rdb)
@@ -57,11 +54,9 @@ func BuildPrivateRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []r
 	productHandler := handler.NewProductHandler(productService)
 	transactionRepository := repository.NewTransactionRepository(db)
 	salesReportRepository := repository.NewSalesReportRepository(db)
-	shipmentRepository := repository.NewShipmentRepository(db)
 	categoryRepository := repository.NewCategoryRepository(db)
 	colorRepository := repository.NewColorRepository(db)
 	sizeRepository := repository.NewSizeRepository(db)
-	adsRepository := repository.NewAdRepository(db)
 
 
 
@@ -71,23 +66,19 @@ func BuildPrivateRoutes(cfg *configs.Config, db *gorm.DB, rdb *redis.Client) []r
 	orderService := service.NewOrderService(db, orderRepository, cartRepository, cartService, productService, cacheable, tokenUseCase, cfg.MidtransConfig)
 	transactionService := service.NewTransactionService(db, productRepository, transactionRepository, orderRepository, variantRepository, tokenUseCase, cacheable, cfg.MidtransConfig)
 	salesReportService := service.NewSalesReportService(db, salesReportRepository)
-	shipmentService := service.NewShipmentService(db, shipmentRepository)
 	categoryService := service.NewCategoryService(db, categoryRepository, tokenUseCase, cacheable)
 	colorService := service.NewColorService(db, colorRepository, tokenUseCase, cacheable)
 	sizeService := service.NewSizeService(db, sizeRepository, tokenUseCase, cacheable)
-	adsService := service.NewAdsService(db, adsRepository, tokenUseCase, cacheable)
 
 
 	cartHandler := handler.NewCartHandler(cartService, db)
 	orderHandler := handler.NewOrderHandler(orderService)
 	transactionHandler := handler.NewTransactionHandler(transactionService)
 	salesReportHandler := handler.NewSalesReportHandler(salesReportService)
-	shipmentHandler := handler.NewShipmentHandler(shipmentService)
 	categoryHandler := handler.NewCategoryHandler(categoryService)	
 	colorHandler := handler.NewColorHandler(colorService)
 	sizeHandler := handler.NewSizeHandler(sizeService)
-	adsHandler := handler.NewAdHandler(adsService)
 
 
-	return router.PrivateRoutes(userHandler, productHandler, categoryHandler, colorHandler, sizeHandler, cartHandler, orderHandler, transactionHandler, salesReportHandler, shipmentHandler, adsHandler)
+	return router.PrivateRoutes(userHandler, productHandler, categoryHandler, colorHandler, sizeHandler, cartHandler, orderHandler, transactionHandler, salesReportHandler)
 }
