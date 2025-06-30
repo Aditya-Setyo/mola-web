@@ -28,6 +28,7 @@ type ShowOrderResponse struct {
 type GetAllOrdersResponse struct {
 	ID            uuid.UUID    `json:"id"`
 	UserID        uuid.UUID    `json:"user_id"`
+	UserName      string       `json:"user_name"`
 	OrderCode     string       `json:"order_code"`
 	Status        string       `json:"status"`
 	TotalAmount   float64      `json:"total_amount"`

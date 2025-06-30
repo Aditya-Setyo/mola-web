@@ -518,6 +518,7 @@ func (s *orderService) GetAllOrders(ctx context.Context) ([]dto.GetAllOrdersResp
 		results = append(results, dto.GetAllOrdersResponse{
 			ID:            order.ID,
 			UserID:        order.UserID,
+			UserName:      order.User.Name,
 			OrderCode:     order.OrderCode,
 			Status:        order.Status,
 			TotalAmount:   order.TotalAmount,
