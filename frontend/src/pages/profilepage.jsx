@@ -5,22 +5,13 @@ import Footer from "../components/footer";
 import IlustrasiProfile from "../assets/profile1.jpg";
 import { Link } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
+import Hero from "../components/hero";
 
 const ProfilePage = () => {
     return (
         <div>
             <Navbar />
-            <section
-                className="bg-cover bg-center flex flex-col md:flex-row items-center justify-between px-4 sm:px-8 md:px-16 py-12 min-h-[665px]"
-                style={{ backgroundImage: `url(${ilustrasidashboard})` }}
-            >
-                <div className=" backdrop-blur-sm p-6 sm:p-10 w-full md:w-1/2 max-w-xl rounded-lg">
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-snug text-gray-900 mt-50">
-                        TEMUKAN PRODUK PILIHAN GAYA HIDUP ANDA
-                    </h1>
-
-                </div>
-            </section>
+            <Hero />
             <section className="px-4 py-12 md:px-20 md:py-16 bg-white mt-30 mb-30">
                 <div className="max-w-10xl mx-auto grid grid-cols-1 md:grid-cols-2 items-center gap-10">
 
@@ -115,17 +106,6 @@ const ProfilePage = () => {
                                 alt="Volunteer Image"
                                 className="w-full max-h-[400px] rounded-lg shadow-md object-cover"
                             />
-
-                            <div className="absolute bottom-4 left-4 flex gap-4">
-                                <div className="bg-white/90 px-6 py-4 rounded-lg shadow text-center">
-                                    <h2 className="text-xl font-bold">5 Years</h2>
-                                    <p className="text-sm text-gray-600">Contribute To Humanity</p>
-                                </div>
-                                <div className="bg-white/90 px-6 py-4 rounded-lg shadow text-center">
-                                    <h2 className="text-xl font-bold">180 Volunteer</h2>
-                                    <p className="text-sm text-gray-600">Contribute To Humanity</p>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>

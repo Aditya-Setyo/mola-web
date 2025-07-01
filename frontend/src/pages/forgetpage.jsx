@@ -47,20 +47,6 @@ const ForgetPage = () => {
     }
   };
 
-
-  // Fungsi untuk menangani login dengan Google
-  const handleGoogleLogin = () => {
-    signInWithPopup(auth, googleProvider)
-      .then((result) => {
-        const user = result.user;
-        alert(`Selamat datang, ${user.displayName}`);
-        navigate("/");
-      })
-      .catch((error) => {
-        alert("Login Google gagal: " + error.message);
-      });
-  };
-
   return (
     <div style={{ backgroundImage: `url(${ilustrasibg})` }} className="flex flex-col lg:flex-row min-h-screen bg-gradient-to-r from-white to-slate-100 font-sans px-4 py-8 gap-8 justify-between items-center">
       {/* Kiri - gambar dan teks */}
@@ -69,7 +55,7 @@ const ForgetPage = () => {
           <h1 className="text-2xl sm:text-3xl lg:text-7xl font-semibold text-gray-800 mb-2">Reset Password</h1>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-6">Masukkan Password Baru</h2>
           <p className="text-sm text-gray-600">
-            Jika sudah reset token, silakan isi form ini <br />
+            Silakan isi form ini <br />
             atau kembali ke{" "}
             <Link to="/loginpage" className="text-blue-600 font-medium">
               halaman login
@@ -128,18 +114,6 @@ const ForgetPage = () => {
             Simpan
           </button>
         </form>
-
-        <div className="flex items-center my-6">
-          <div className="flex-grow h-px bg-gray-300"></div>
-          <span className="mx-3 text-gray-400 text-sm">Atau</span>
-          <div className="flex-grow h-px bg-gray-300"></div>
-        </div>
-
-        <div className="flex justify-center gap-4">
-          <button onClick={handleGoogleLogin} className="flex items-center justify-center w-100 py-3 bg-white rounded-lg shadow-md hover:shadow-md">
-            <img src="https://cdn-icons-png.flaticon.com/512/281/281764.png" alt="Google" className="w-5 h-5" />
-          </button>
-        </div>
       </div>
     </div>
   );

@@ -82,7 +82,7 @@ const Navbar = () => {
 
         <div className="hidden md:flex space-x-6 text-sm items-center">
           <Link to="/dashboard" className="hover:text-blue-500">Beranda</Link>
-          <HashLink smooth to="/dashboard#newarrival" className="hover:text-blue-500">Shop</HashLink>
+          <HashLink smooth to="/dashboard#newarrival" className="hover:text-blue-500">Produk</HashLink>
 
           <div className="relative">
             <button onClick={toggleCategories} className="hover:text-blue-500 focus:outline-none">

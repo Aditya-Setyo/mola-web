@@ -105,7 +105,7 @@ const fetchCart = async () => {
     <div>
       <Navbar />
       <main className="px-4 md:px-20 py-10">
-        <h1 className="text-3xl font-extrabold mb-6">YOUR CART</h1>
+        <h1 className="text-3xl font-extrabold mb-6">Keranjang</h1>
 
         {!isLoggedIn && (
           <div className="mb-4 p-4 bg-yellow-100 border-l-4 border-yellow-400 text-yellow-700 rounded">
@@ -191,7 +191,7 @@ const fetchCart = async () => {
             </div>
 
             <aside className="border rounded-lg p-6 space-y-4 h-fit shadow-md">
-              <h3 className="font-semibold text-lg">Order Summary</h3>
+              <h3 className="font-semibold text-lg">Pesanan</h3>
 
               {selected.length === 0 ? (
                 <p className="text-sm text-gray-500">
@@ -227,7 +227,7 @@ const fetchCart = async () => {
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
                   }`}
               >
-                Go to Checkout
+                Beli Sekarang
                 <FaArrowRight />
               </button>
             </aside>

@@ -62,7 +62,7 @@ const ShopSkincare = () => {
       >
         <div className="backdrop-blur-sm p-6 sm:p-10 w-full md:w-1/2 max-w-xl rounded-lg">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-snug text-gray-900">
-            Enhance <br /> your Natural Radiance
+            Wujudkan <br /> Kilau Alami yang Memikat 
           </h1>
           <button
             onClick={handleScrollToProducts}
@@ -162,7 +162,7 @@ const ShopSkincare = () => {
               Cocok untuk semua jenis kulit.
             </p>
             <button className="bg-gray-900 text-white px-6 py-2 rounded hover:bg-gray-800 transition">
-              Read more →
+              Selengkapnya →
             </button>
           </div>
         </div>

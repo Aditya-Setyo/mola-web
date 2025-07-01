@@ -459,7 +459,7 @@ const ProductDetailPage = () => {
                 : "border-transparent"
                 }`}
             >
-              Ulasan
+              Rating & Ulasan
             </button>
           </div>
 
@@ -504,7 +504,7 @@ const ProductDetailPage = () => {
                 ))
               ) : (
                 <p className="text-center text-sm text-gray-500 col-span-full">
-                  Belum ada ulasan.
+                  Belum ada  Rating & Ulasan.
                 </p>
               )}
             </div>

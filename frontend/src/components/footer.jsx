@@ -36,16 +36,13 @@ const Footer = () => {
         </div>
 
         <div>
-          <h4 className="text-md font-semibold mb-3 text-gray-800">Follow Us</h4>
+          <h4 className="text-md font-semibold mb-3 text-gray-800">Ikuti Kami :</h4>
           <div className="flex gap-4">
             <a href="#" className="hover:text-blue-600">
               <FaFacebookF />
             </a>
             <a href="#" className="hover:text-pink-500">
               <FaInstagram />
-            </a>
-            <a href="#" className="hover:text-sky-400">
-              <FaTwitter />
             </a>
             <a href="#" className="hover:text-black">
               <FaTiktok />

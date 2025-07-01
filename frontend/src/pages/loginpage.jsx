@@ -71,19 +71,6 @@ const LoginPage = () => {
     }
   };
 
-  const handleGoogleLogin = () => {
-    signInWithPopup(auth, googleProvider)
-      .then((result) => {
-        const user = result.user;
-        alert(`Selamat datang, ${user.displayName}`);
-        navigate("/dashboard");
-      })
-      .catch((error) => {
-        console.error("Login Google gagal:", error.message);
-        alert("Login gagal: " + error.message);
-      });
-  };
-
   return (
     <div
       style={{ backgroundImage: `url(${ilustrasibg})` }}
@@ -151,25 +138,6 @@ const LoginPage = () => {
             Masuk
           </button>
         </form>
-
-        <div className="flex items-center my-6">
-          <div className="flex-grow h-px bg-gray-300"></div>
-          <span className="mx-3 text-gray-400 text-sm">Atau</span>
-          <div className="flex-grow h-px bg-gray-300"></div>
-        </div>
-
-        <div className="flex justify-center gap-4">
-          <button
-            onClick={handleGoogleLogin}
-            className="flex items-center justify-center w-100 py-3 bg-white rounded-lg shadow-md hover:shadow-md border-black"
-          >
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/281/281764.png"
-              alt="Google"
-              className="w-5 h-5"
-            />
-          </button>
-        </div>
       </div>
     </div>
   );

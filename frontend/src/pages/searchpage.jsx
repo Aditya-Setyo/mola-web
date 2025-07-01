@@ -18,7 +18,7 @@ const SearchPage = () => {
             <Navbar />
             <main className="px-4 sm:px-8 py-6 min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
                 <h1 className="text-2xl font-bold mb-6 text-gray-800">
-                    🔍 Hasil Pencarian untuk: <span className="text-blue-600">{keyword}</span>
+                     Hasil Pencarian untuk: <span className="text-blue-600">{keyword}</span>
                 </h1>
 
                 {results.length === 0 ? (
@@ -28,9 +28,9 @@ const SearchPage = () => {
                 ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
                         {results.map((prod) => {
-                            console.log("📦 Produk hasil pencarian:", results);
-                            console.log("🔍 Variants:", prod.variants);
-                            console.log("📦 Data produk:", prod);
+                            console.log(" Produk hasil pencarian:", results);
+                            console.log(" Variants:", prod.variants);
+                            console.log(" Data produk:", prod);
                             const price = prod.price || prod.product?.price || 0;
                             return (
                                 <div

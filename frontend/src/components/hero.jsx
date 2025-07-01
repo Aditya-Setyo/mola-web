@@ -24,16 +24,6 @@ const Hero = () => {
             Beli Sekarang
           </button>
         </HashLink>
-        <div className="flex flex-wrap sm:flex-nowrap space-y-4 sm:space-y-0 sm:space-x-8 mt-8 text-center">
-          <div className="flex-1">
-            <span className="block font-bold text-2xl text-gray-900">2,000+</span>
-            <span className="text-sm text-gray-600">Produk</span>
-          </div>
-          <div className="flex-1">
-            <span className="block font-bold text-2xl text-gray-900">30,000+</span>
-            <span className="text-sm text-gray-600">Pelanggan</span>
-          </div>
-        </div>
       </div>
     </section>
   );
