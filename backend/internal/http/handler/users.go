@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"log"
 	"mola-web/internal/http/dto"
 	"mola-web/internal/service"
 	"mola-web/pkg/response"
@@ -99,12 +100,15 @@ func (h *UserHandler) UpdateUserProfile(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, response.ErrorResponse(http.StatusBadRequest, "Unauthorized"))
 	}
 
-	var req *dto.UpdateUserProfileRequest
+	log.Println("------",userID)
+	var req dto.UpdateUserProfileRequest
+	req.ProfileID = userID
+	log.Println("------",req.ProfileID)
 	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(http.StatusBadRequest, response.ErrorResponse(http.StatusBadRequest, err.Error()))
 	}
 
-	err := h.userService.UpdateUserProfile(ctx.Request().Context(), userID, req)
+	err := h.userService.UpdateUserProfile(ctx.Request().Context(), userID, &req)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, response.ErrorResponse(http.StatusInternalServerError, err.Error()))
 	}
@@ -114,42 +118,42 @@ func (h *UserHandler) UpdateUserProfile(ctx echo.Context) error {
 	}))
 }
 
-func (h *UserHandler) GetUserAddress(ctx echo.Context) error {
-	userID, ok := ctx.Get("user_id").(uuid.UUID)
-	if !ok {
-		return ctx.JSON(http.StatusBadRequest, response.ErrorResponse(http.StatusBadRequest, "Unauthorized"))
-	}
+// func (h *UserHandler) GetUserAddress(ctx echo.Context) error {
+// 	userID, ok := ctx.Get("user_id").(uuid.UUID)
+// 	if !ok {
+// 		return ctx.JSON(http.StatusBadRequest, response.ErrorResponse(http.StatusBadRequest, "Unauthorized"))
+// 	}
 
-	address, err := h.userService.GetUserAddress(ctx.Request().Context(), userID)
-	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, response.ErrorResponse(http.StatusInternalServerError, err.Error()))
-	}
+// 	address, err := h.userService.GetUserAddress(ctx.Request().Context(), userID)
+// 	if err != nil {
+// 		return ctx.JSON(http.StatusInternalServerError, response.ErrorResponse(http.StatusInternalServerError, err.Error()))
+// 	}
 
-	return ctx.JSON(http.StatusOK, response.SuccessResponse("success", map[string]interface{}{
-		"address": address,
-	}))
-}
+// 	return ctx.JSON(http.StatusOK, response.SuccessResponse("success", map[string]interface{}{
+// 		"address": address,
+// 	}))
+// }
 
-func (h *UserHandler) UpdateUserAddress(ctx echo.Context) error {
-	userID, ok := ctx.Get("user_id").(uuid.UUID)
-	if !ok {
-		return ctx.JSON(http.StatusBadRequest, response.ErrorResponse(http.StatusBadRequest, "Unauthorized"))
-	}
+// func (h *UserHandler) UpdateUserAddress(ctx echo.Context) error {
+// 	userID, ok := ctx.Get("user_id").(uuid.UUID)
+// 	if !ok {
+// 		return ctx.JSON(http.StatusBadRequest, response.ErrorResponse(http.StatusBadRequest, "Unauthorized"))
+// 	}
 
-	var req *dto.UpdateUserAddressRequest
-	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(http.StatusBadRequest, response.ErrorResponse(http.StatusBadRequest, err.Error()))
-	}
+// 	var req *dto.UpdateUserAddressRequest
+// 	if err := ctx.Bind(&req); err != nil {
+// 		return ctx.JSON(http.StatusBadRequest, response.ErrorResponse(http.StatusBadRequest, err.Error()))
+// 	}
 
-	err := h.userService.UpdateUserAddress(ctx.Request().Context(), userID, req)
-	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, response.ErrorResponse(http.StatusInternalServerError, err.Error()))
-	}
+// 	err := h.userService.UpdateUserAddress(ctx.Request().Context(), userID, req)
+// 	if err != nil {
+// 		return ctx.JSON(http.StatusInternalServerError, response.ErrorResponse(http.StatusInternalServerError, err.Error()))
+// 	}
 
-	return ctx.JSON(http.StatusOK, response.SuccessResponse("success", map[string]interface{}{
-		"address": req,
-	}))
-}
+// 	return ctx.JSON(http.StatusOK, response.SuccessResponse("success", map[string]interface{}{
+// 		"address": req,
+// 	}))
+// }
 
 func (h *UserHandler) ForgotPassword(ctx echo.Context) error {
     type Request struct {

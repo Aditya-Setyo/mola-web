@@ -15,16 +15,16 @@ type RegisterRequest struct {
 }
 
 type GetUserProfileResponse struct {
-	ProfileID uuid.UUID `json:"profile_id"`
+	// ProfileID uuid.UUID `json:"profile_id"`
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
 	FullName  string    `json:"full_name"`
 	Phone     string    `json:"phone"`
-	Address   string    `json:"address"`
+	// Address   string    `json:"address"`
 }
 type GetAllUserResponse struct {
 	UserID    uuid.UUID `json:"user_id"`
-	ProfileID uuid.UUID `json:"profile_id"`
+	// ProfileID uuid.UUID `json:"profile_id"`
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
 	FullName  string    `json:"full_name"`
@@ -32,10 +32,11 @@ type GetAllUserResponse struct {
 	Role      string    `json:"role"`
 }
 type UpdateUserProfileRequest struct {
-	ProfileID uuid.UUID `json:"profile_id" validate:"required"`
+	ProfileID uuid.UUID 
 	FullName  string    `json:"full_name"`
 	Phone     string    `json:"phone"`
-	Address   string    `json:"address"`
+	Email     string    `json:"email"`
+	// Address   string    `json:"address"`
 }
 type GetUserAddressResponse struct {
 	ID           uuid.UUID `json:"id"`

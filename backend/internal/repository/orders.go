@@ -149,7 +149,7 @@ func (r *orderRepository) ExpireUninitializedOrders(db *gorm.DB) error {
 }
 
 func (r *orderRepository) Update(db *gorm.DB, order *entity.Order) error {
-	if err := db.Save(order).Error; err != nil {
+	if err := db.Model(&entity.Order{}).Where("id = ?", order.ID).Updates(order).Error; err != nil {
 		return err
 	}
 	return nil

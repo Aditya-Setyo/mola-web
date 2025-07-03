@@ -92,14 +92,14 @@ func (r *cartRepository) GetCartItemByCartIDAndProductIDWithoutVariant(db *gorm.
 
 
 func (r *cartRepository) UpdateCartItems(db *gorm.DB, req *entity.CartItem) error {
-	if err := db.Save(&req).Error; err != nil {
+	if err := db.Model(&entity.CartItem{}).Where("id = ?", req.ID).Updates(req).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
 func (r *cartRepository) UpdateCart(db *gorm.DB, req *entity.Cart) error {
-	if err := db.Save(&req).Error; err != nil {
+	if err := db.Model(&entity.Cart{}).Where("id = ?", req.ID).Updates(req).Error; err != nil {
 		return err
 	}
 	return nil

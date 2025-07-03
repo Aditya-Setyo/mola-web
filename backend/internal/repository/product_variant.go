@@ -58,7 +58,7 @@ func (r *productVariantRepository) Create(db *gorm.DB, productVariant *entity.Pr
 }
 
 func (r *productVariantRepository) Update(db *gorm.DB, productVariant *entity.ProductVariant) error {
-	if err := db.Save(productVariant).Error; err != nil {
+	if err := db.Model(&entity.ProductVariant{}).Where("id = ?", productVariant.ID).Updates(productVariant).Error; err != nil {
 		return err
 	}
 	return nil

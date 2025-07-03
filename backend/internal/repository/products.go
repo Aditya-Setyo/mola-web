@@ -141,7 +141,7 @@ func (r *productRepository) Create(db *gorm.DB, product *entity.Product) error {
 }
 
 func (r *productRepository) Update(db *gorm.DB, product *entity.Product) error {
-	if err := db.Save(product).Error; err != nil {
+	if err := db.Model(&entity.Product{}).Where("id = ?", product.ID).Updates(product).Error; err != nil {
 		return err
 	}
 	return nil
