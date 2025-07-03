@@ -38,7 +38,7 @@ func (r *colorRepository) Create(db *gorm.DB, color *entity.Color) error {
 }
 
 func (r *colorRepository) Update(db *gorm.DB, color *entity.Color) error {
-	if err := db.Save(&color).Error; err != nil {
+	if err := db.Model(&entity.Color{}).Where("id = ?", color.ID).Updates(color).Error; err != nil {
 		return err
 	}
 	return nil

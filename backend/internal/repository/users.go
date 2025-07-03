@@ -15,9 +15,9 @@ type UserRepository interface {
 	FindByResetToken(ctx context.Context, resetToken string) (*entity.User, error)
 	GetUserProfile(ctx context.Context, userID uuid.UUID) (*entity.User, error)
 	UpdateUser(db *gorm.DB, user *entity.User) error
-	UpdateUserProfile(db *gorm.DB, userProfile *entity.UserProfile) error
-	GetUserAddress(ctx context.Context, userID uuid.UUID) (*entity.UserAddress, error)
-	UpdateUserAddress(db *gorm.DB, userAddress *entity.UserAddress) error
+	// UpdateUserProfile(db *gorm.DB, userProfile *entity.UserProfile) error
+	// GetUserAddress(ctx context.Context, userID uuid.UUID) (*entity.UserAddress, error)
+	// UpdateUserAddress(db *gorm.DB, userAddress *entity.UserAddress) error
 	ForgotPassword(db *gorm.DB, email string) error
 }
 
@@ -32,7 +32,6 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 func (r *userRepository) FindAll(ctx context.Context) ([]entity.User, error) {
 	user := make([]entity.User, 0)
 	if err := r.db.WithContext(ctx).
-		Preload("UserProfile").
 		Find(&user).Error; err != nil {
 		return nil, err
 	}
@@ -56,8 +55,6 @@ func (r *userRepository) Create(db *gorm.DB, user *entity.User) error {
 func (r *userRepository) GetUserProfile(ctx context.Context, userID uuid.UUID) (*entity.User, error) {
 	user := new(entity.User)
 	if err := r.db.WithContext(ctx).
-		Preload("UserProfile").
-		Preload("UserAddresses").
 		Where("id = ?", userID).
 		First(&user).Error; err != nil {
 		return nil, err
@@ -68,21 +65,21 @@ func (r *userRepository) GetUserProfile(ctx context.Context, userID uuid.UUID) (
 func (r *userRepository) UpdateUser(db *gorm.DB, user *entity.User) error {
 	return db.Save(user).Error
 }
-func (r *userRepository) UpdateUserProfile(db *gorm.DB, userProfile *entity.UserProfile) error {
-	return db.Where("user_id = ?", userProfile.UserID).Save(userProfile).Error
-}
-func (r *userRepository) GetUserAddress(ctx context.Context, userID uuid.UUID) (*entity.UserAddress, error){
-	userAddress := new(entity.UserAddress)
-	if err := r.db.WithContext(ctx).
-		Where("user_id = ?", userID).
-		First(&userAddress).Error; err != nil {
-		return nil, err
-	}
-	return userAddress, nil
-}
-func (r *userRepository) UpdateUserAddress(db *gorm.DB, userAddress *entity.UserAddress) error {
-	return db.Where("user_id = ?", userAddress.UserID).Save(userAddress).Error
-}
+// func (r *userRepository) UpdateUserProfile(db *gorm.DB, userProfile *entity.UserProfile) error {
+// 	return db.Where("user_id = ?", userProfile.UserID).Save(userProfile).Error
+// }
+// func (r *userRepository) GetUserAddress(ctx context.Context, userID uuid.UUID) (*entity.UserAddress, error){
+// 	userAddress := new(entity.UserAddress)
+// 	if err := r.db.WithContext(ctx).
+// 		Where("user_id = ?", userID).
+// 		First(&userAddress).Error; err != nil {
+// 		return nil, err
+// 	}
+// 	return userAddress, nil
+// }
+// func (r *userRepository) UpdateUserAddress(db *gorm.DB, userAddress *entity.UserAddress) error {
+// 	return db.Where("user_id = ?", userAddress.UserID).Save(userAddress).Error
+// }
 
 func (r *userRepository) ForgotPassword(db *gorm.DB, email string) error {
 	return db.Model(&entity.User{}).Where("email = ?", email).Update("password", "").Error

@@ -37,7 +37,7 @@ func (r *sizeRepository) Create(db *gorm.DB, size *entity.Size) error {
 }
 
 func (r *sizeRepository) Update(db *gorm.DB, size *entity.Size) error {
-	if err := db.Save(size).Error; err != nil {
+	if err := db.Model(&entity.Size{}).Where("id = ?", size.ID).Updates(size).Error; err != nil {
 		return err
 	}
 	return nil

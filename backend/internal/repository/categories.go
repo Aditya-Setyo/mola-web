@@ -38,7 +38,7 @@ func (r *categoryRepository) Create(db *gorm.DB, category *entity.Category) erro
 }
 
 func (r *categoryRepository) Update(db *gorm.DB, category *entity.Category) error {
-	if err := db.Save(category).Error; err != nil {
+	if err := db.Model(&entity.Category{}).Where("id = ?", category.ID).Updates(category).Error; err != nil {
 		return err
 	}
 	return nil

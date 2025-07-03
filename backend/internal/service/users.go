@@ -32,8 +32,8 @@ type UserService interface {
 	GetAll(ctx context.Context) ([]dto.GetAllUserResponse, error)
 	GetUserProfile(ctx context.Context, userID uuid.UUID) (*dto.GetUserProfileResponse, error)
 	UpdateUserProfile(ctx context.Context, UserID uuid.UUID, request *dto.UpdateUserProfileRequest) error
-	GetUserAddress(ctx context.Context, userID uuid.UUID) (*dto.GetUserAddressResponse, error)
-	UpdateUserAddress(ctx context.Context, userID uuid.UUID, userAddress *dto.UpdateUserAddressRequest) error
+	// GetUserAddress(ctx context.Context, userID uuid.UUID) (*dto.GetUserAddressResponse, error)
+	// UpdateUserAddress(ctx context.Context, userID uuid.UUID, userAddress *dto.UpdateUserAddressRequest) error
 	ForgotPassword(ctx context.Context, request string) error
 	ResetPassword(ctx context.Context, request *dto.ResetPasswordRequest) error
 }
@@ -91,6 +91,7 @@ func (s *userService) Register(ctx context.Context, req *dto.RegisterRequest) er
 	user := &entity.User{
 		Email:    req.Email,
 		Name:     req.Name,
+		PhoneNumber: req.PhoneNumber,
 		Password: string(hashedPassword),
 		Role:     "user",
 	}
@@ -99,14 +100,14 @@ func (s *userService) Register(ctx context.Context, req *dto.RegisterRequest) er
 		tx.Error = err
 		return err
 	}
-	err = s.userRepository.UpdateUserProfile(tx, &entity.UserProfile{
-		UserID:      &user.ID,
-		PhoneNumber: req.PhoneNumber,
-	})
-	if err != nil {
-		tx.Error = err
-		return err
-	}
+	// err = s.userRepository.UpdateUser(tx, &entity.UserProfile{
+	// 	UserID:      &user.ID,
+	// 	PhoneNumber: req.PhoneNumber,
+	// })
+	// if err != nil {
+	// 	tx.Error = err
+	// 	return err
+	// }
 	if err := tx.Commit().Error; err != nil {
 		tx.Error = err
 		return err
@@ -206,12 +207,13 @@ func (s *userService) GetAll(ctx context.Context) ([]dto.GetAllUserResponse, err
 	for i, user := range dataUser {
 		results[i] = dto.GetAllUserResponse{
 			UserID:    user.ID,
-			ProfileID: user.UserProfile.ID,
-			FullName:  user.UserProfile.FullName,
+			// ProfileID: user.UserProfile.ID,
+			// FullName:  user.UserProfile.FullName,
 			Name:      user.Name,
 			Email:     user.Email,
-			Phone:     user.UserProfile.PhoneNumber,
+			Phone:     user.PhoneNumber,
 			Role:      user.Role,
+			
 		}
 	}
 
@@ -246,20 +248,10 @@ func (s *userService) GetUserProfile(ctx context.Context, userID uuid.UUID) (*dt
 
 	// Inisialisasi response
 	results := &dto.GetUserProfileResponse{
-		ProfileID: uuid.Nil,
+		// ProfileID: uuid.Nil,
 		Name:      dataUser.Name,
 		Email:     dataUser.Email,
-	}
-
-	if dataUser.UserProfile != nil {
-		results.ProfileID = dataUser.UserProfile.ID
-		results.FullName = dataUser.UserProfile.FullName
-		if dataUser.UserProfile.PhoneNumber != "" {
-			results.Phone = dataUser.UserProfile.PhoneNumber
-		}
-		if dataUser.UserProfile.Address != "" {
-			results.Address = dataUser.UserProfile.Address
-		}
+		Phone:     dataUser.PhoneNumber,
 	}
 
 	// Simpan ke cache
@@ -272,6 +264,12 @@ func (s *userService) GetUserProfile(ctx context.Context, userID uuid.UUID) (*dt
 }
 
 func (s *userService) UpdateUserProfile(ctx context.Context, userID uuid.UUID, request *dto.UpdateUserProfileRequest) error {
+	dataUser, err := s.userRepository.GetUserProfile(ctx, userID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return errors.New("user not found")
+	} else if err != nil {
+		return err
+	}
 	tx := s.DB.WithContext(ctx).Begin()
 	defer func() {
 		if p := recover(); p != nil {
@@ -283,14 +281,17 @@ func (s *userService) UpdateUserProfile(ctx context.Context, userID uuid.UUID, r
 			log.Printf("ERROR: Rolling back transaction due to service error: %v", tx.Error)
 		}
 	}()
-	userProfile := &entity.UserProfile{
+	userProfile := &entity.User{
 		ID:          request.ProfileID,
-		UserID:      &userID,
-		FullName:    request.FullName,
+		Name:    request.FullName,
 		PhoneNumber: request.Phone,
-		Address:     request.Address,
+		Email:       request.Email,
+		Role:        dataUser.Role,
+		Password:    dataUser.Password,
+		CreatedAt:   dataUser.CreatedAt,
 	}
-	err := s.userRepository.UpdateUserProfile(tx, userProfile)
+	log.Println("-----",userProfile.ID)
+	err = s.userRepository.UpdateUser(tx, userProfile)
 	if err != nil {
 		tx.Error = err
 		return err
@@ -304,83 +305,83 @@ func (s *userService) UpdateUserProfile(ctx context.Context, userID uuid.UUID, r
 	return nil
 }
 
-func (s *userService) GetUserAddress(ctx context.Context, userID uuid.UUID) (*dto.GetUserAddressResponse, error) {
-	key := "users:address:" + userID.String()
+// func (s *userService) GetUserAddress(ctx context.Context, userID uuid.UUID) (*dto.GetUserAddressResponse, error) {
+// 	key := "users:address:" + userID.String()
 
-	data := s.cacheable.Get(key)
-	if data != "" {
-		var cached dto.GetUserAddressResponse
-		if err := json.Unmarshal([]byte(data), &cached); err == nil {
-			return &cached, nil
-		}
-	}
+// 	data := s.cacheable.Get(key)
+// 	if data != "" {
+// 		var cached dto.GetUserAddressResponse
+// 		if err := json.Unmarshal([]byte(data), &cached); err == nil {
+// 			return &cached, nil
+// 		}
+// 	}
 
-	var results *dto.GetUserAddressResponse
+// 	var results *dto.GetUserAddressResponse
 
-	dataAddress, err := s.userRepository.GetUserAddress(ctx, userID)
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		results = &dto.GetUserAddressResponse{
-			ID:           uuid.Nil,
-			AddressLine1: "",
-			AddressLine2: "",
-			City:         "",
-			State:        "",
-			PostalCode:   "",
-			Country:      "",
-			IsDefault:    false,
-		}
-		return results, nil
-	} else if err != nil {
-		return nil, err
-	} else {
+// 	dataAddress, err := s.userRepository.GetUserAddress(ctx, userID)
+// 	if errors.Is(err, gorm.ErrRecordNotFound) {
+// 		results = &dto.GetUserAddressResponse{
+// 			ID:           uuid.Nil,
+// 			AddressLine1: "",
+// 			AddressLine2: "",
+// 			City:         "",
+// 			State:        "",
+// 			PostalCode:   "",
+// 			Country:      "",
+// 			IsDefault:    false,
+// 		}
+// 		return results, nil
+// 	} else if err != nil {
+// 		return nil, err
+// 	} else {
 
-		results = &dto.GetUserAddressResponse{
-			ID:           dataAddress.ID,
-			AddressLine1: dataAddress.AddressLine1,
-			AddressLine2: *dataAddress.AddressLine2,
-			City:         dataAddress.City,
-			State:        dataAddress.State,
-			PostalCode:   dataAddress.PostalCode,
-			Country:      dataAddress.Country,
-			IsDefault:    dataAddress.IsDefault,
-		}
-	}
-	marshalledData, err := json.Marshal(results)
-	if err == nil {
-		_ = s.cacheable.Set(key, marshalledData)
-	}
+// 		results = &dto.GetUserAddressResponse{
+// 			ID:           dataAddress.ID,
+// 			AddressLine1: dataAddress.AddressLine1,
+// 			AddressLine2: *dataAddress.AddressLine2,
+// 			City:         dataAddress.City,
+// 			State:        dataAddress.State,
+// 			PostalCode:   dataAddress.PostalCode,
+// 			Country:      dataAddress.Country,
+// 			IsDefault:    dataAddress.IsDefault,
+// 		}
+// 	}
+// 	marshalledData, err := json.Marshal(results)
+// 	if err == nil {
+// 		_ = s.cacheable.Set(key, marshalledData)
+// 	}
 
-	return results, nil
-}
+// 	return results, nil
+// }
 
-func (s *userService) UpdateUserAddress(ctx context.Context, userID uuid.UUID, request *dto.UpdateUserAddressRequest) error {
-	tx := s.DB.WithContext(ctx).Begin()
-	defer func() {
-		if p := recover(); p != nil {
-			tx.Rollback()
-			log.Printf("PANIC RECOVERED: Rolling back transaction due to panic: %v", p)
-			panic(p)
-		} else if tx.Error != nil {
-			tx.Rollback()
-			log.Printf("ERROR: Rolling back transaction due to service error: %v", tx.Error)
-		}
-	}()
-	address := &entity.UserAddress{
-		ID:           request.ID,
-		UserID:       &userID,
-		AddressLine1: request.Address,
-	}
-	err := s.userRepository.UpdateUserAddress(tx, address)
-	if err != nil {
-		tx.Error = err
-		return err
-	}
-	if err := tx.Commit().Error; err != nil {
-		tx.Error = err
-		return err
-	}
-	return nil
-}
+// func (s *userService) UpdateUserAddress(ctx context.Context, userID uuid.UUID, request *dto.UpdateUserAddressRequest) error {
+// 	tx := s.DB.WithContext(ctx).Begin()
+// 	defer func() {
+// 		if p := recover(); p != nil {
+// 			tx.Rollback()
+// 			log.Printf("PANIC RECOVERED: Rolling back transaction due to panic: %v", p)
+// 			panic(p)
+// 		} else if tx.Error != nil {
+// 			tx.Rollback()
+// 			log.Printf("ERROR: Rolling back transaction due to service error: %v", tx.Error)
+// 		}
+// 	}()
+// 	address := &entity.UserAddress{
+// 		ID:           request.ID,
+// 		UserID:       &userID,
+// 		AddressLine1: request.Address,
+// 	}
+// 	err := s.userRepository.UpdateUserAddress(tx, address)
+// 	if err != nil {
+// 		tx.Error = err
+// 		return err
+// 	}
+// 	if err := tx.Commit().Error; err != nil {
+// 		tx.Error = err
+// 		return err
+// 	}
+// 	return nil
+// }
 
 func (s *userService) ForgotPassword(ctx context.Context, email string) error {
 	tx := s.DB.WithContext(ctx).Begin()
