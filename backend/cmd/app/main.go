@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-	cfg, err := configs.NewConfig(".env")
+	cfg, err := configs.NewConfig("/var/www/mola-web/backend/.env")
 	checkError(err)
 
 	db, err := database.InitDatabase(cfg.PostgresConfig)

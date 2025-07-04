@@ -24,8 +24,9 @@ func NewServer(cfg *configs.Config,
 	e.HideBanner = true
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"*"}, // Bisa juga di-set ke origin tertentu
-		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE},
+   		AllowOrigins: []string{"http://molla.my.id"}, // atau gunakan "*" jika masih testing
+    		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.OPTIONS},
+    		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 	}))
 	v1 := e.Group("/api/v1")
 

@@ -11,7 +11,7 @@ const TopSell = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch("http://localhost:8081/api/v1/products");
+        const res = await fetch("http://molla.my.id/api/v1/products");
         const json = await res.json();
 
         const allProducts = Array.isArray(json?.data?.products)
@@ -60,7 +60,7 @@ const TopSell = () => {
                 className="w-full max-w-xs bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden flex flex-col justify-between transition-transform hover:scale-105"
               >
                 <img
-                  src={`http://localhost:8081${product.image_url}`}
+                  src={`http://molla.my.id${product.image_url}`}
                   alt={product.name}
                   className="w-full h-48 object-contain bg-white"
                 />
