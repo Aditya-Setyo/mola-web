@@ -717,15 +717,15 @@ func (s *productService) Update(ctx context.Context, request *dto.UpdateProductR
 	return nil
 }
 
-func isSameUUID(a, b *uuid.UUID) bool {
-	if a == nil && b == nil {
-		return true
-	}
-	if a != nil && b != nil {
-		return *a == *b
-	}
-	return false
-}
+// func isSameUUID(a, b *uuid.UUID) bool {
+// 	if a == nil && b == nil {
+// 		return true
+// 	}
+// 	if a != nil && b != nil {
+// 		return *a == *b
+// 	}
+// 	return false
+// }
 
 func (s *productService) Delete(ctx context.Context, id uuid.UUID) error {
 	tx := s.DB.WithContext(ctx).Begin()

@@ -39,6 +39,7 @@ type PostgresConfig struct {
 type MidtransConfig struct {
 	ServerKey string `env:"SERVER_KEY" envDefault:""`
 	ClientKey string `env:"CLIENT_KEY" envDefault:""`
+	IsProduction string `env:"IS_PRODUCTION" envDefault:"false"`
 }
 
 type GoogleConfig struct {
