@@ -88,7 +88,7 @@ const Reviews = () => {
       return;
     }
 
-    const url = `http://localhost:8081/api/v1/admin/review/${formData.product_id}`;
+    const url = `https://molla.my.id/api/v1/admin/review/${formData.product_id}`;
     const token = localStorage.getItem("token");
 
     try {

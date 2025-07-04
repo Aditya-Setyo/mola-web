@@ -10,7 +10,7 @@ const NewArrival = ({ id }) => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch("http://localhost:8081/api/v1/products");
+        const res = await fetch("https://molla.my.id/api/v1/products");
         const json = await res.json();
 
         const allProducts = Array.isArray(json?.data?.products)
@@ -60,7 +60,7 @@ const NewArrival = ({ id }) => {
             >
               <Link to={`/productdetails/${product.id}`}>
                 <img
-                  src={`http://localhost:8081${product.image_url}`}
+                  src={`https://molla.my.id${product.image_url}`}
                   alt={product.name}
                   className="w-full h-48 object-contain bg-white p-4"
                 />
