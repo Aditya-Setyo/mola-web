@@ -26,7 +26,6 @@ type OrderService interface {
 	CreateOrderItem(ctx context.Context, orderItem entity.OrderItem) error
 	GetAllOrders(ctx context.Context) ([]dto.GetAllOrdersResponse, error)
 	GetAllOrdersPaid(ctx context.Context) ([]dto.GetOrdersPaidResponse, error)
-	// GetCartByUserID(ctx context.Context, userID uuid.UUID) (result *dto.GetCartItemsResponse, err error)
 	Checkout(ctx context.Context, userID uuid.UUID, email string, name string) (*dto.SnapRsponse, error)
 	SetAdminOrderStatus(ctx context.Context, id uuid.UUID, status string) error
 	ShowOrder(ctx context.Context, userID uuid.UUID) ([]dto.ShowOrderResponse, error)
@@ -252,7 +251,13 @@ func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email str
 	}
 
 	m := snap.Client{}
-	m.New(s.config.ServerKey, midtrans.Sandbox)
+	isProduction := s.config.IsProduction == "true"
+	if isProduction {
+		m.New(s.config.ServerKey, midtrans.Production)
+	} else {
+		m.New(s.config.ServerKey, midtrans.Sandbox)
+	}
+
 	totalPaid := float64(cartData.TotalAmount) * 0.3
 	log.Println("totalPaid: ", totalPaid)
 	req := &snap.Request{
