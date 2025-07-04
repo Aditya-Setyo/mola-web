@@ -140,8 +140,8 @@ const Products = () => {
 
     // Tentukan endpoint
     const endpoint = editId
-      ? `http://molla.my.id/api/v1/admin/products/${editId}`
-      : `http://molla.my.id/api/v1/admin/products`;
+      ? `https://molla.my.id/api/v1/admin/products/${editId}`
+      : `https://mola.my.id/api/v1/admin/products`;
 
     try {
       const res = await fetch(endpoint, {

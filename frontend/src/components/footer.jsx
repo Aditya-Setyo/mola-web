@@ -15,7 +15,7 @@ const Footer = () => {
           <h4 className="text-md font-semibold mb-3 text-gray-800">Layanan Pelanggan</h4>
           <ul className="space-y-2 text-sm">
             <li className="hover:text-blue-500 cursor-pointer"> <a
-              href="https://wa.me/1215133863"
+              href="https://wa.me/087798645253"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-blue-500 cursor-pointer"

@@ -146,8 +146,8 @@ const ProductsVariant = () => {
 
     // Endpoint
     const endpoint = editId
-      ? `http://molla.my.id/api/v1/admin/products/${editId}`
-      : `http://molla.my.id/api/v1/admin/products`;
+      ? `https://molla.my.id/api/v1/admin/products/${editId}`
+      : `https://molla.my.id/api/v1/admin/products`;
 
     try {
       const res = await fetch(endpoint, {

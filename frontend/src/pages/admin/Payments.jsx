@@ -8,7 +8,7 @@ const Payments = () => {
 
   const fetchPayments = async () => {
     try {
-      const res = await fetch("http://molla.my.id/api/v1/transactions", {
+      const res = await fetch("https://molla.my.id/api/v1/transactions", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
