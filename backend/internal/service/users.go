@@ -496,6 +496,11 @@ func (s *userService) ResetPassword(ctx context.Context, request *dto.ResetPassw
 	}()
 
 	user, err := s.userRepository.FindByResetToken(ctx, request.Token)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		err = errors.New("token tidak valid")
+		tx.Error = err
+		return err
+	}
 	if err != nil {
 		tx.Error = err
 		return errors.New("user not found")
