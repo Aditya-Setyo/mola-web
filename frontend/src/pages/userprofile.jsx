@@ -14,6 +14,9 @@ const UserProfile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const [emailError, setEmailError] = useState("");
+
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -55,6 +58,13 @@ const UserProfile = () => {
   };
 
   const handleSave = async () => {
+    if (!emailRegex.test(profile.email)) {
+      setEmailError("Masukkan email yang valid.");
+      return;
+    } else {
+      setEmailError("");
+    }
+
     const token = localStorage.getItem("token");
     setSaving(true);
     try {
@@ -114,9 +124,13 @@ const UserProfile = () => {
                 name="email"
                 value={profile.email}
                 onChange={handleChange}
-                className="w-full border border-gray-300 px-4 py-2 rounded bg-white"
+                className={`w-full border px-4 py-2 rounded bg-white ${emailError ? "border-red-500" : "border-gray-300"
+                  }`}
                 readOnly={!isEditing}
               />
+              {emailError && (
+                <p className="text-red-500 text-sm mt-1">{emailError}</p>
+              )}
             </div>
             <div>
               <label className="block text-gray-600 font-medium mb-1">No. Telepon</label>

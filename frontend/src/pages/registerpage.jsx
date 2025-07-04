@@ -12,10 +12,27 @@ const RegisterPage = () => {
   const [phone_number, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [formError, setFormError] = useState("");
 
   // Fungsi handle daftar akun
   const handleRegister = async (e) => {
     e.preventDefault();
+
+    if (!name || !phone_number || !email || !password) {
+      setFormError("Semua kolom harus diisi.");
+      return;
+    } else {
+      setFormError("");
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailError("Format email tidak valid.");
+      return;
+    } else {
+      setEmailError("");
+    }
 
     try {
       // Kirim data ke endpoint register pakai helper apiPost
@@ -91,13 +108,16 @@ const RegisterPage = () => {
             onChange={(e) => setPhoneNumber(e.target.value)}
             className="w-full px-4 py-3 rounded-lg bg-gray-100 text-sm outline-none"
           />
-          <input
-            type="email"
-            placeholder="Masukkan Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 rounded-lg bg-gray-100 text-sm outline-none"
-          />
+          <div>
+            <input
+              type="email"
+              placeholder="Masukkan Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 rounded-lg bg-gray-100 text-sm outline-none"
+            />
+            {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
+          </div>
           <input
             type="password"
             placeholder="••••••••"
@@ -105,6 +125,8 @@ const RegisterPage = () => {
             onChange={(e) => setPassword(e.target.value)}
             className="w-full px-4 py-3 rounded-lg bg-gray-100 text-sm outline-none"
           />
+
+          {formError && <p className="text-red-500 text-xs mt-1">{formError}</p>}
 
           <div className="text-right text-xs text-gray-500">
             <Link to="/resetpage" className="hover:underline">
