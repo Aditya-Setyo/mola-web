@@ -73,6 +73,53 @@ const ShopSkincare = () => {
         </div>
       </section>
 
+      {/* Produk Skincare */}
+      <section ref={productRef} className="px-4 py-12 md:px-20 md:py-10 mb-10">
+        <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center text-gray-800">
+          Produk Skincare Unggulan
+        </h2>
+
+        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-2 gap-6 justify-items-center">
+          {products.length > 0 ? (
+            products.map((product) => (
+              <Link
+                key={product.id}
+                to={`/productdetails/${product.id}`}
+                className="w-full max-w-xs"
+              >
+                <div className="bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden h-full flex flex-col hover:scale-105 hover:shadow-lg transition-transform">
+                  <img
+                    src={`${backendURL}${product.image_url}`}
+                    alt={product.name}
+                    className="w-full h-64 object-contain bg-white"
+                  />
+                  <div className="p-4 text-center">
+                    <h3 className="text-base font-semibold text-gray-800 truncate">
+                      {product.name}
+                    </h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Rp {product.price?.toLocaleString("id-ID")}
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            ))
+          ) : (
+            <p className="text-center col-span-2 text-gray-500">
+              Produk tidak ditemukan.
+            </p>
+          )}
+        </div>
+
+        <div className="flex justify-center mt-12">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </div>
+      </section>
+
       {/* DISKON SECTION */}
       <section
         className="relative bg-cover bg-center bg-no-repeat h-[100vh] md:min-h-screen flex justify-center md:justify-start items-center px-4 sm:px-6 md:px-16"
