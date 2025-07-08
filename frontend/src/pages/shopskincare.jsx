@@ -57,12 +57,12 @@ const ShopSkincare = () => {
 
       {/* Hero Section */}
       <section
-        className="bg-cover bg-center flex flex-col md:flex-row items-center justify-between px-4 sm:px-8 md:px-16 py-12 min-h-[665px]"
+        className="relative w-full h-[100vh] md:min-h-[665px] bg-no-repeat bg-center bg-cover flex items-center justify-center px-4 sm:px-6 md:px-16"
         style={{ backgroundImage: `url(${IlustrasiSkincare})` }}
       >
-        <div className="backdrop-blur-sm p-6 sm:p-10 w-full md:w-1/2 max-w-xl rounded-lg">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-snug text-gray-900">
-            Wujudkan <br /> Kilau Alami yang Memikat 
+        <div className="backdrop-blur-sm bg-white/70 p-6 sm:p-10 rounded-lg max-w-xl w-full md:w-1/2">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-snug text-gray-900">
+            Wujudkan <br /> Kilau Alami yang Memikat
           </h1>
           <button
             onClick={handleScrollToProducts}
@@ -79,7 +79,7 @@ const ShopSkincare = () => {
           Produk Skincare Unggulan
         </h2>
 
-        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-2 gap-6 justify-items-center">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-6 justify-items-center">
           {products.length > 0 ? (
             products.map((product) => (
               <Link
@@ -122,11 +122,11 @@ const ShopSkincare = () => {
 
       {/* Diskon Section */}
       <section
-        className="bg-cover bg-center flex flex-col md:flex-row items-center justify-between px-4 sm:px-8 md:px-16 py-12 min-h-[730px]"
+        className="relative w-full h-[100vh] md:min-h-[665px] bg-no-repeat bg-center bg-cover flex items-center justify-center px-4 sm:px-6 md:px-16"
         style={{ backgroundImage: `url(${IlustrasiSkincare1})` }}
       >
-        <div className="backdrop-blur-sm p-6 sm:p-10 w-full md:w-1/2 max-w-xl rounded-lg">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-snug text-gray-900">
+        <div className="backdrop-blur-sm bg-white/70 p-6 sm:p-10 rounded-lg max-w-xl w-full md:w-1/2">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-snug text-gray-900">
             Penawaran Khusus <br /> Diskon 30%
           </h1>
           <button
@@ -145,7 +145,7 @@ const ShopSkincare = () => {
             <img
               src={IlustrasiSkincare2}
               alt="Anti-Aging Cream"
-              className="max-h-[500px] w-full object-contain"
+              className="w-full max-w-md object-contain"
             />
           </div>
 
