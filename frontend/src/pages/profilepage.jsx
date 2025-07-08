@@ -15,7 +15,7 @@ const ProfilePage = () => {
     useEffect(() => {
         const fetchAllReviews = async () => {
             try {
-                const res = await apiGet(`/products/review/${product.id}`); 
+                const res = await apiGet("/products/review/"); 
                 const data = Array.isArray(res?.data) ? res.data : [];
 
                 const formatted = data.map((review) => ({
