@@ -57,16 +57,16 @@ const ShopSkincare = () => {
 
       {/* Hero Section */}
       <section
-        className="relative w-full h-[100vh] md:min-h-[665px] bg-no-repeat bg-center bg-cover flex items-center justify-center px-4 sm:px-6 md:px-16"
+        className="relative bg-cover bg-center bg-no-repeat min-h-[600px] flex justify-center md:justify-start items-center px-4 sm:px-6 md:px-16"
         style={{ backgroundImage: `url(${IlustrasiSkincare})` }}
       >
-        <div className="backdrop-blur-sm bg-white/70 p-6 sm:p-10 rounded-lg max-w-xl w-full md:w-1/2">
+        <div className="backdrop-blur-sm bg-white/70 p-6 sm:p-10 rounded-lg max-w-xl w-full text-center md:text-left">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-snug text-gray-900">
             Wujudkan <br /> Kilau Alami yang Memikat
           </h1>
           <button
             onClick={handleScrollToProducts}
-            className="bg-black text-white px-6 py-2 rounded mt-6 hover:bg-gray-800 transition"
+            className="bg-black text-white px-6 py-2 rounded mt-6 hover:bg-gray-800 transition duration-300"
           >
             Beli Sekarang
           </button>
@@ -79,7 +79,7 @@ const ShopSkincare = () => {
           Produk Skincare Unggulan
         </h2>
 
-        <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-6 justify-items-center">
+        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-2 gap-6 justify-items-center">
           {products.length > 0 ? (
             products.map((product) => (
               <Link
@@ -122,16 +122,16 @@ const ShopSkincare = () => {
 
       {/* Diskon Section */}
       <section
-        className="relative w-full h-[100vh] md:min-h-[665px] bg-no-repeat bg-center bg-cover flex items-center justify-center px-4 sm:px-6 md:px-16"
+        className="relative bg-cover bg-center bg-no-repeat min-h-[600px] flex justify-center md:justify-start items-center px-4 sm:px-6 md:px-16"
         style={{ backgroundImage: `url(${IlustrasiSkincare1})` }}
       >
-        <div className="backdrop-blur-sm bg-white/70 p-6 sm:p-10 rounded-lg max-w-xl w-full md:w-1/2">
+        <div className="backdrop-blur-sm bg-white/70 p-6 sm:p-10 rounded-lg max-w-xl w-full text-center md:text-left">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-snug text-gray-900">
             Penawaran Khusus <br /> Diskon 30%
           </h1>
           <button
             onClick={handleScrollToProducts}
-            className="bg-black text-white px-6 py-2 rounded mt-6 hover:bg-gray-800 transition"
+            className="bg-black text-white px-6 py-2 rounded mt-6 hover:bg-gray-800 transition duration-300"
           >
             Beli Sekarang
           </button>
@@ -145,7 +145,7 @@ const ShopSkincare = () => {
             <img
               src={IlustrasiSkincare2}
               alt="Anti-Aging Cream"
-              className="w-full max-w-md object-contain"
+              className="max-h-[500px] w-full object-contain"
             />
           </div>
 

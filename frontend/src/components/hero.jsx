@@ -5,14 +5,14 @@ import { HashLink } from "react-router-hash-link";
 const Hero = () => {
   return (
     <section
-      className="relative w-full h-[100vh] md:min-h-[665px] bg-no-repeat bg-center bg-cover flex items-center justify-center px-4 sm:px-6 md:px-16"
+      className="relative w-full h-[100vh] md:min-h-[665px] bg-no-repeat bg-center bg-cover flex items-center justify-center md:justify-start px-4 sm:px-6 md:px-16"
       style={{
         backgroundImage: `url(${ilustrasidashboard})`,
         backgroundPosition: "top center",
         backgroundSize: "cover",
       }}
     >
-      <div className="backdrop-blur-sm bg-white/70 p-6 sm:p-10 rounded-lg max-w-xl w-full md:w-1/2">
+      <div className="backdrop-blur-sm bg-white/70 p-6 sm:p-10 rounded-lg max-w-xl w-full text-center md:text-left">
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-snug text-gray-900">
           TEMUKAN PRODUK PILIHAN GAYA HIDUP ANDA
         </h1>
