@@ -75,7 +75,7 @@ const Products = () => {
 
       console.log("Kategori response:", dataCat);
 
-      setProducts(dataProd?.data?.products?.filter(p => p.has_variant) || []);
+      setProducts(dataProd?.data?.products || []);
       setCategories(dataCat?.data?.categories || dataCat?.categories || []);
       setSizes(dataSize?.data?.sizes || []);
       setColors(dataColor?.data?.colors || []);
