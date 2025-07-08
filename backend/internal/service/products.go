@@ -502,7 +502,7 @@ func (s *productService) Create(ctx context.Context, request *dto.CreateProductR
 	defer src.Close()
 
 	// ✅ Buat folder kalau belum ada
-	imageDir := "public/products/images"
+	imageDir := "/var/www/mola-web/backend/public/products/images"
 	err = os.MkdirAll(imageDir, os.ModePerm)
 	if err != nil {
 		log.Printf("ERROR CREATE DIR: %v", err)

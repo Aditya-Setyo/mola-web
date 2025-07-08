@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/sidebar";
-import { apiGet, apiDelete, apiPost, apiPut } from "../../api"; // impor fungsi fetch dari api.js
-import { backendURL } from "../../api"; // untuk akses gambar dari backend
+import { apiGet, apiDelete } from "../../api";
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -14,7 +13,6 @@ const Products = () => {
   const [editId, setEditId] = useState(null);
   const [sizes, setSizes] = useState([]);
   const [colors, setColors] = useState([]);
-  const [expandedDesc, setExpandedDesc] = useState({});
 
   const [formData, setFormData] = useState({
     name: "",
@@ -23,44 +21,12 @@ const Products = () => {
     category: "",
     image: null,
     image_url: "",
-    size: "",
-    color: "",
     description: "",
+    has_variant: true,
     variants: [{ color_id: "", size_id: "", stock: "" }]
   });
 
   const token = localStorage.getItem("token")?.trim();
-
-  const fetchProducts = async () => {
-    try {
-      const dataProd = await apiGet("/products");
-      setProducts(dataProd?.data?.products || []);
-    } catch (err) {
-      console.error("Gagal ambil produk:", err);
-    }
-  };
-
-  const fetchMasterData = async () => {
-    try {
-      const catData = await apiGet("/categories", { headers: { Authorization: `Bearer ${token}` } });
-      const sizeData = await apiGet("/sizes", { headers: { Authorization: `Bearer ${token}` } });
-      const colorData = await apiGet("/colors", { headers: { Authorization: `Bearer ${token}` } });
-
-      setCategories(catData?.data?.categories || []);
-      setSizes(sizeData?.data?.sizes || []);
-      setColors(colorData?.data?.colors || []);
-    } catch (err) {
-      console.error("Gagal mengambil data master:", err);
-    }
-  };
-
-
-
-  useEffect(() => {
-    fetchProducts();
-    fetchMasterData();
-  }, []);
-
 
   const fetchData = async () => {
     try {
@@ -69,7 +35,7 @@ const Products = () => {
       const dataSize = await apiGet("/sizes");
       const dataColor = await apiGet("/colors");
 
-      setProducts(dataProd?.data?.products?.filter(p => p.has_variant) || []);
+      setProducts(dataProd?.data?.products || []);
       setCategories(dataCat?.data?.categories || []);
       setSizes(dataSize?.data?.sizes || []);
       setColors(dataColor?.data?.colors || []);
@@ -78,10 +44,15 @@ const Products = () => {
     }
   };
 
-
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const handleAddVariant = () => {
-    setFormData({ ...formData, variants: [...formData.variants, { color_id: "", size_id: "", stock: "" }] });
+    setFormData({
+      ...formData,
+      variants: [...formData.variants, { color_id: "", size_id: "", stock: "" }]
+    });
   };
 
   const handleVariantChange = (index, field, value) => {
@@ -104,41 +75,46 @@ const Products = () => {
       category: "",
       image: null,
       image_url: "",
-      size: "",
-      color: "",
       description: "",
-      variants: [{ color_id: "", size_id: "", stock: "" }],
+      has_variant: true,
+      variants: [{ color_id: "", size_id: "", stock: "" }]
     });
     setEditId(null);
     setEditMode(false);
     setUploadType("file");
   };
 
-
   const handleSubmit = async () => {
+    if (formData.has_variant && formData.variants.length === 0) {
+      alert("Tambahkan minimal satu varian!");
+      return;
+    }
+
     const data = new FormData();
     data.append("name", formData.name);
     data.append("price", formData.price);
     data.append("category_id", formData.category);
     data.append("description", formData.description);
-    data.append("has_variant", true); // wajib string untuk FormData
+    data.append("has_variant", formData.has_variant ? "true" : "false");
 
-    // Upload file atau URL
     if (uploadType === "file" && formData.image) {
       data.append("image", formData.image);
     }
+
     if (uploadType === "url" && formData.image_url) {
       data.append("image_url", formData.image_url);
     }
 
-    // Tambahkan varian (array warna & ukuran)
-    formData.variants.forEach((variant, index) => {
-      data.append(`variants[${index}].color_id`, variant.color_id);
-      data.append(`variants[${index}].size_id`, variant.size_id);
-      data.append(`variants[${index}].stock`, variant.stock);
-    });
+    if (formData.has_variant) {
+      formData.variants.forEach((variant, index) => {
+        data.append(`variants[${index}].color_id`, variant.color_id);
+        data.append(`variants[${index}].size_id`, variant.size_id);
+        data.append(`variants[${index}].stock`, variant.stock);
+      });
+    } else {
+      data.append("stock", formData.stock);
+    }
 
-    // Tentukan endpoint
     const endpoint = editId
       ? `https://molla.my.id/api/v1/admin/products/${editId}`
       : `https://molla.my.id/api/v1/admin/products`;
@@ -147,10 +123,9 @@ const Products = () => {
       const res = await fetch(endpoint, {
         method: editId ? "PUT" : "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
-          // JANGAN set "Content-Type" untuk FormData!
+          Authorization: `Bearer ${token}`
         },
-        body: data,
+        body: data
       });
 
       if (!res.ok) {
@@ -163,11 +138,9 @@ const Products = () => {
       fetchData();
     } catch (err) {
       console.error("Gagal simpan produk:", err);
-      alert("Gagal simpan produk. Cek konsol untuk detail.");
+      alert("Gagal simpan produk. Cek konsol.");
     }
   };
-
-
 
   const handleEdit = async (prod) => {
     setEditId(prod.id);
@@ -175,38 +148,38 @@ const Products = () => {
     setShowModal(true);
     setUploadType("url");
 
-    // Ambil ulang detail lengkap produk dari backend (harus ada endpoint /products/:id)
     const response = await apiGet(`/products/${prod.id}`);
     const fullProd = response?.data?.product;
 
     setFormData({
       name: fullProd.name,
       price: fullProd.price,
+      stock: fullProd.stock || "",
       category: fullProd.category_id,
       image: null,
       image_url: fullProd.image_url || "",
       description: fullProd.description || "",
-      variants: fullProd.variants?.map(v => ({
-        color_id: v.color_id,
-        size_id: v.size_id,
-        stock: v.stock
-      })) || []
+      has_variant: fullProd.has_variant,
+      variants:
+        fullProd.variants?.map((v) => ({
+          color_id: v.color_id,
+          size_id: v.size_id,
+          stock: v.stock
+        })) || []
     });
   };
-
 
   const handleDelete = async (id) => {
     if (!window.confirm("Yakin ingin menghapus produk ini?")) return;
     try {
       await apiDelete(`/admin/products/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }
       });
       fetchData();
     } catch (err) {
       console.error("Gagal hapus produk:", err);
     }
   };
-
 
 
 
