@@ -15,20 +15,23 @@ const ProfilePage = () => {
     useEffect(() => {
         const fetchAllReviews = async () => {
             try {
-                const res = await apiGet("/products/review"); // pastikan endpoint sesuai
-                const data = Array.isArray(res?.data) ? res.data : [];
+                const res = await apiGet(`/products/review/${product.id}`);
+                const productReviews = Array.isArray(res?.data?.reviews)
+                    ? res.data.reviews
+                    : [];
 
-                const formatted = data.map((review) => ({
+                const formatted = productReviews.map((review) => ({
                     id: review.id,
                     user_name: review.user_name || "Pengguna",
                     rating: review.rating || 0,
                     review: review.review || "Tidak ada komentar.",
-                    product_name: review.product_name || "Tanpa Nama",
+                    product_name: product?.name || "Tanpa Nama",
                 }));
 
                 setReviews(formatted);
-            } catch (error) {
-                console.error("Gagal mengambil data review:", error);
+            } catch (err) {
+                console.error(`Gagal ambil ulasan untuk produk ${product.id}:`, err);
+                setReviews([]);
             }
         };
 
