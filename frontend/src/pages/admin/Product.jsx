@@ -65,29 +65,6 @@ const Products = () => {
     fetchMasterData();
   }, []);
 
-  const fetchData = async () => {
-    try {
-
-      const dataProd = await apiGet("/products", headers);
-      const dataCat = await apiGet("/categories", headers);
-      const dataSize = await apiGet("/sizes", headers);
-      const dataColor = await apiGet("/colors", headers);
-
-      console.log("Kategori response:", dataCat);
-
-      setProducts(dataProd?.data?.products || []);
-      setCategories(dataCat?.data?.categories || dataCat?.categories || []);
-      setSizes(dataSize?.data?.sizes || []);
-      setColors(dataColor?.data?.colors || []);
-    } catch (err) {
-      console.error("Gagal ambil data:", err);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const handleAddVariant = () => {
     setFormData({
       ...formData,
