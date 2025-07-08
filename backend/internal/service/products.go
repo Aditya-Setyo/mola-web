@@ -487,13 +487,50 @@ func (s *productService) GetProductReviews(ctx context.Context, productID uuid.U
 }
 
 func (s *productService) Create(ctx context.Context, request *dto.CreateProductRequest) error {
-	src, err := request.Image.Open()
-	if err != nil {
-		return errors.New("failed to open image")
+	// ✅ Cek apakah file image nil
+	if request.Image == nil {
+		log.Println("ERROR: request.Image is nil")
+		return errors.New("no image uploaded")
 	}
 
+	// ✅ Coba buka image
+	src, err := request.Image.Open()
+	if err != nil {
+		log.Printf("ERROR OPEN IMAGE: %v", err)
+		return errors.New("failed to open image")
+	}
+	defer src.Close()
+
+	// ✅ Buat folder kalau belum ada
+	imageDir := "public/products/images"
+	err = os.MkdirAll(imageDir, os.ModePerm)
+	if err != nil {
+		log.Printf("ERROR CREATE DIR: %v", err)
+		return fmt.Errorf("failed to create image directory: %v", err)
+	}
+
+	// ✅ Simpan image ke folder
+	fileName := fmt.Sprintf("%d_%s", time.Now().Unix(), request.Image.Filename)
+	imagePath := filepath.Join(imageDir, fileName)
+	dst, err := os.Create(imagePath)
+	if err != nil {
+		log.Printf("ERROR CREATE FILE: %s, err: %v", imagePath, err)
+		return fmt.Errorf("failed to create image file: %v", err)
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, src); err != nil {
+		log.Printf("ERROR COPY IMAGE: %v", err)
+		return fmt.Errorf("failed to save image: %v", err)
+	}
+
+	log.Printf("SUKSES SIMPAN GAMBAR DI: %s", imagePath)
+	*request.ImageURL = "/static/products/images/" + fileName
+
+	// Mulai transaksi DB
 	log.Println("req", request)
 	log.Println("variant", request.Variants)
+
 	tx := s.DB.WithContext(ctx).Begin()
 	defer func() {
 		if p := recover(); p != nil {
@@ -506,20 +543,6 @@ func (s *productService) Create(ctx context.Context, request *dto.CreateProductR
 		}
 	}()
 
-	fileName := fmt.Sprintf("%d_%s", time.Now().Unix(), request.Image.Filename)
-	imagePath := filepath.Join("public/products/images", fileName)
-	dst, err := os.Create(imagePath)
-	if err != nil {
-		return err
-	}
-	defer dst.Close()
-
-	if _, err := io.Copy(dst, src); err != nil {
-		return err
-	}
-	*request.ImageURL = "/static/products/images/" + fileName
-
-	// Otomatis tentukan hasVariant
 	hasVariant := request.HasVariant
 	product := &entity.Product{
 		Name:        request.Name,
@@ -531,17 +554,16 @@ func (s *productService) Create(ctx context.Context, request *dto.CreateProductR
 		Weight:      request.Weight,
 		Stock:       request.Stock,
 	}
+
 	err = s.repo.Create(tx, product)
 	if err != nil {
 		tx.Error = err
 		return err
 	}
-	var variant *entity.ProductVariant
-	if !hasVariant {
-		product.Stock = request.Stock
-	} else {
+
+	if hasVariant {
 		for _, v := range request.Variants {
-			variant = &entity.ProductVariant{
+			var variant = &entity.ProductVariant{
 				ProductID: product.ID,
 				ColorID:   v.ColorID,
 				SizeID:    v.SizeID,
@@ -561,7 +583,6 @@ func (s *productService) Create(ctx context.Context, request *dto.CreateProductR
 	}
 
 	_ = s.invalidateProductListCaches()
-
 	return nil
 }
 
