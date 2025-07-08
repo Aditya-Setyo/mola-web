@@ -128,7 +128,7 @@ const Products = () => {
     data.append("price", formData.price);
     data.append("category_id", formData.category);
     data.append("description", formData.description);
-    data.append("has_variant", true); // wajib string untuk FormData
+    data.append("has_variant", formData.has_variant ? "true" : "false");
 
     // Upload file atau URL
     if (uploadType === "file" && formData.image) {
