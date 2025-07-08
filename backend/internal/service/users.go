@@ -444,7 +444,7 @@ func (s *userService) sendResetEmail(toEmail, token string) error {
 	log.Println("Sending email from", from)
 
 	// Load template HTML
-	templatePath := "./template/reset_password_email.html"
+	templatePath := "/var/www/mola-web/backend/template/reset_password_email.html"
 	tmpl, err := template.ParseFiles(templatePath)
 	if err != nil {
 		return err
