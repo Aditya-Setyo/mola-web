@@ -11,11 +11,12 @@ import { apiGet } from "../api";
 const ProfilePage = () => {
     const [reviews, setReviews] = useState([]);
     const [showAll, setShowAll] = useState(false);
+    const [product, setProduct] = useState(null);
 
     useEffect(() => {
         const fetchAllReviews = async () => {
             try {
-                const res = await apiGet("/products/review/"); 
+                const res = await apiGet(`/products/review/${product.id}`); 
                 const data = Array.isArray(res?.data) ? res.data : [];
 
                 const formatted = data.map((review) => ({
