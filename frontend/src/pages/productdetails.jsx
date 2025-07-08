@@ -293,29 +293,38 @@ const ProductDetailPage = () => {
       <section className="px-4 py-8 md:px-20 md:py-10">
         <div className="grid md:grid-cols-2 gap-10">
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex flex-row md:flex-col gap-2">
+            {/* Thumbnail samping */}
+            <div className="flex md:flex-col gap-2">
               {[1, 2, 3].map((n) => (
-                <img
+                <div
                   key={n}
-                  src={
-                    product.image_url
-                      ? `${backendURL}${product.image_url}`
-                      : "https://via.placeholder.com/80?text=No+Img"
-                  }
-                  alt={`thumb-${n}`}
-                  className="w-16 h-16 object-cover rounded border"
-                />
+                  className="w-16 h-16 rounded overflow-hidden border shadow-sm hover:shadow-md transition"
+                >
+                  <img
+                    src={
+                      product.image_url
+                        ? `${backendURL}${product.image_url}`
+                        : "https://via.placeholder.com/80?text=No+Img"
+                    }
+                    alt={`thumb-${n}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               ))}
             </div>
-            <img
-              src={
-                product.image_url
-                  ? `${backendURL}${product.image_url}`
-                  : "https://via.placeholder.com/400x500?text=No+Image"
-              }
-              alt={product.name}
-              className="w-full h-auto object-contain rounded-lg"
-            />
+
+            {/* Gambar utama */}
+            <div className="flex-1 max-w-xl mx-auto md:mx-0 aspect-square rounded-lg overflow-hidden border shadow">
+              <img
+                src={
+                  product.image_url
+                    ? `${backendURL}${product.image_url}`
+                    : "https://via.placeholder.com/400x400?text=No+Image"
+                }
+                alt={product.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
           </div>
 
           <div>
