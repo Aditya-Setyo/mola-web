@@ -62,3 +62,13 @@ func (h *TransactionHandler) Refund(ctx echo.Context) error {
 	}
 	return ctx.JSON(http.StatusOK, response.SuccessResponse(fmt.Sprintf("success refund %s", request.TransactionID), map[string]interface{}{}))
 }
+
+func (h *TransactionHandler) GetAllTransactions(ctx echo.Context) error {
+	transactions, err := h.TransactionService.GetAll(ctx.Request().Context())
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, response.ErrorResponse(http.StatusInternalServerError, err.Error()))
+	}
+	return ctx.JSON(http.StatusOK, response.SuccessResponse("success", map[string]interface{}{
+		"transactions": transactions,
+	}))
+}

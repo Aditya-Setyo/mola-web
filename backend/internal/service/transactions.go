@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha512"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"log"
 	"mola-web/configs"
@@ -24,6 +25,7 @@ type TransactionService interface {
 	PaymentNotification(ctx context.Context, request *dto.MidtransNotification) error
 	Refund(ctx context.Context, request *dto.RefundRequest) error
 	Cancel(ctx context.Context, request *dto.CancelRequest) error
+	GetAll(ctx context.Context) ([]dto.GetAllPayments, error)
 }
 
 type transactionService struct {
@@ -48,6 +50,39 @@ func NewTransactionService(db *gorm.DB, productRepo repository.ProductRepository
 		cacheable:       cacheable,
 		config:          config,
 	}
+}
+type PaymentPayload struct {
+	TransactionTime string `json:"transaction_time"`
+}
+
+func (s *transactionService) GetAll(ctx context.Context) ([]dto.GetAllPayments, error) {
+	// Ambil semua data payment + preload relasi Order dan Order.User
+	payments, err := s.transactionRepo.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []dto.GetAllPayments
+	for _, payment := range payments {
+		if payment.Order == nil || payment.Order.User == nil {
+			continue // skip jika relasi tidak ada
+		}
+		var payload PaymentPayload
+		if err := json.Unmarshal(payment.Payload, &payload); err != nil {
+			// fallback ke CreatedAt jika gagal unmarshal
+			payload.TransactionTime = payment.CreatedAt.Format("2006-01-02 15:04:05")
+		}
+		result = append(result, dto.GetAllPayments{
+			TransactionID:  payment.TransactionID,
+			UserName: payment.Order.User.Name,
+			Total:    payment.Amount,
+			Metode:   *payment.PaymentMethod,
+			Status:   payment.TransactionStatus,
+			Waktu:    payload.TransactionTime, // format waktu sesuai kebutuhan
+		})
+	}
+
+	return result, nil
 }
 
 func CalculateMidtransSignature(

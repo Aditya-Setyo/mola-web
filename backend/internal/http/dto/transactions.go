@@ -74,3 +74,12 @@ type CancelRequest struct {
 	TransactionID string `json:"transaction_id" validate:"required"`
 	Reason        string `json:"reason" validate:"required"`
 }
+
+type GetAllPayments struct {
+	TransactionID string `json:"transaction_id" validate:"required"`
+	UserName string    `json:"user_name" validate:"required"`
+	Total float64 `json:"total" validate:"required"`
+	Metode string `json:"metode" validate:"required"`
+	Status string `json:"status" validate:"required"`
+	Waktu string `json:"waktu" validate:"required"`
+}
