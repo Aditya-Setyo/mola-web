@@ -125,7 +125,7 @@ func (s *userService) Login(ctx context.Context, request *dto.LoginRequest) (str
 		return "", errors.New("email or password invalid")
 	}
 
-	expiredTime := time.Now().Local().Add(time.Minute * 60)
+	expiredTime := time.Now().Local().Add(time.Hour * 24 * 7)
 
 	claims := token.JwtCustomClaims{
 		UserID: user.ID,
