@@ -273,7 +273,7 @@ func PrivateRoutes(
 			Roles:   []string{"admin"},
 		},
 		{
-			Method:  http.MethodPost,
+			Method:  http.MethodGet,
 			Path:    "/transactions",
 			Handler: transactionHandler.GetAllTransactions,
 			Roles:   []string{"admin"},
