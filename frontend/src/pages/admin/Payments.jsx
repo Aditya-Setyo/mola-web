@@ -1,7 +1,6 @@
 // src/pages/admin/Payments.jsx
 import React, { useEffect, useState } from "react";
 import Sidebar from "../../components/sidebar";
-import { apiGet } from "../../api";
 
 const Payments = () => {
   const [payments, setPayments] = useState([]);
@@ -9,7 +8,7 @@ const Payments = () => {
 
   const fetchPayments = async () => {
     try {
-      const res = await apiGet("https://molla.my.id/api/v1/transactions", {
+      const res = await fetch("https://molla.my.id/api/v1/transactions", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
