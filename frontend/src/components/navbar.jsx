@@ -19,23 +19,23 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleSearch = async () => {
-  if (!searchQuery.trim()) return;
+    if (!searchQuery.trim()) return;
 
-  try {
-    const res = await apiGet(`/products/name/${searchQuery.trim()}`, false);
-    const products = res?.data?.products || [];
+    try {
+      const res = await apiGet(`/products/name/${searchQuery.trim()}`, false);
+      const products = res?.data?.products || [];
 
-    if (products.length > 0) {
-      // Kirim hasil pencarian ke halaman hasil
-      navigate("/searchpage", { state: { results: products, keyword: searchQuery.trim() } });
-    } else {
-      alert("Produk tidak ditemukan");
+      if (products.length > 0) {
+        // Kirim hasil pencarian ke halaman hasil
+        navigate("/searchpage", { state: { results: products, keyword: searchQuery.trim() } });
+      } else {
+        alert("Produk tidak ditemukan");
+      }
+    } catch (err) {
+      console.error("Gagal mencari produk:", err);
+      alert("Terjadi kesalahan saat pencarian.");
     }
-  } catch (err) {
-    console.error("Gagal mencari produk:", err);
-    alert("Terjadi kesalahan saat pencarian.");
-  }
-};
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -103,7 +103,7 @@ const Navbar = () => {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) =>  setSearchQuery(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari Nama Produk..."
               className="bg-transparent flex-1 py-1 px-2 text-sm outline-none"
               onKeyDown={(e) => {
@@ -147,19 +147,28 @@ const Navbar = () => {
           )}
 
           <div className="flex items-center mt-2 space-x-3">
-            <input
-              type="text"
-              placeholder="Search..."
-              className="border rounded-xl px-3 py-1 text-sm bg-gray-100 flex-1"
-            />
+            <div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari Nama Produk..."
+                className="border rounded-xl px-3 py-1 text-sm bg-gray-100 flex-1"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSearch();
+                }}
+              />
+              <button onClick={handleSearch} className="text-gray-600 text-sm px-2">🔍</button>
+            </div>
             {isLoggedIn ? (
-              <><button onClick={() => navigate("/riwayatpage")} className="ml-10"> {/* Riwayat */}
-                <img src={LogoRiwayat} alt="Riwayat" className="w-6 h-6" />
-              </button>
+              <>
                 <button onClick={() => navigate("/chartpage")} className="ml-10"> {/* Keranjang */}
                   <img src={LogoKeranjang} alt="Chart" className="w-6 h-6" />
                 </button>
-                <button onClick={() => navigate("/userprofile")}>
+                <button onClick={() => navigate("/riwayatpage")} className="ml-10"> {/* Riwayat */}
+                  <img src={LogoRiwayat} alt="Riwayat" className="w-6 h-6" />
+                </button>
+                <button onClick={() => navigate("/userprofile")}> {/*User Profile*/}
                   <img src={LogoAccount} alt="Profile" className="w-6 h-6" />
                 </button>
               </>
@@ -168,7 +177,7 @@ const Navbar = () => {
                 <button onClick={() => navigate("/loginpage")}> {/* Akun */}
                   <img src={LogoAccount} alt="Account" className="w-6 h-6" />
                 </button>
-                <button onClick={() => navigate("/chartpage")} className="ml-10"> {/* Keranjang */}
+                <button onClick={() => navigate("/chartpage")}> {/* Keranjang */}
                   <img src={LogoKeranjang} alt="Chart" className="w-6 h-6" />
                 </button>
               </>
