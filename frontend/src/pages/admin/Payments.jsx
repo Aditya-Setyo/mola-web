@@ -11,8 +11,10 @@ const Payments = () => {
       const res = await fetch("https://molla.my.id/api/v1/transactions", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json();
-      setPayments(Array.isArray(data) ? data : []);
+      const json = await res.json();
+
+      const transactions = json?.data?.transactions;
+      setPayments(Array.isArray(transactions) ? transactions : []);
     } catch (err) {
       console.error("Gagal mengambil data pembayaran:", err);
     }
@@ -42,13 +44,20 @@ const Payments = () => {
             <tbody>
               {payments.length > 0 ? (
                 payments.map((item) => (
-                  <tr key={item.id} className="border-t hover:bg-gray-50">
+                  <tr
+                    key={item.transaction_id}
+                    className="border-t hover:bg-gray-50"
+                  >
                     <td className="px-4 py-2">{item.transaction_id}</td>
                     <td className="px-4 py-2">{item.user_name}</td>
-                    <td className="px-4 py-2">Rp {item.total?.toLocaleString()}</td>
-                    <td className="px-4 py-2">{item.method}</td>
+                    <td className="px-4 py-2">
+                      Rp {item.total?.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-2">{item.metode}</td>
                     <td className="px-4 py-2">{item.status}</td>
-                    <td className="px-4 py-2">{new Date(item.waktu).toLocaleString()}</td>
+                    <td className="px-4 py-2">
+                      {new Date(item.waktu).toLocaleString()}
+                    </td>
                   </tr>
                 ))
               ) : (
