@@ -269,6 +269,8 @@ func (h *ProductHandler) Update(ctx echo.Context) error {
 	// HasVariant
 	if hasVariantStr == "true" {
 		req.HasVariant = true
+	}else {
+		req.HasVariant = false
 	}
 
 	// Price
