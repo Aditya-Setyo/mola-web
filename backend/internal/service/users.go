@@ -125,7 +125,7 @@ func (s *userService) Login(ctx context.Context, request *dto.LoginRequest) (str
 		return "", errors.New("email or password invalid")
 	}
 
-	expiredTime := time.Now().Local().Add(time.Minute * 60)
+	expiredTime := time.Now().Local().Add(time.Hour * 24 * 7)
 
 	claims := token.JwtCustomClaims{
 		UserID: user.ID,
@@ -444,7 +444,7 @@ func (s *userService) sendResetEmail(toEmail, token string) error {
 	log.Println("Sending email from", from)
 
 	// Load template HTML
-	templatePath := "./template/reset_password_email.html"
+	templatePath := "/var/www/mola-web/backend/template/reset_password_email.html"
 	tmpl, err := template.ParseFiles(templatePath)
 	if err != nil {
 		return err

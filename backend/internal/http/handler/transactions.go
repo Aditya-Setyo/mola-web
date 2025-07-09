@@ -10,7 +10,6 @@ import (
 	"mola-web/pkg/response"
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"gorm.io/datatypes"
 )
@@ -31,7 +30,7 @@ func (h *TransactionHandler) PaymentNotification(ctx echo.Context) error {
 		log.Println("Failed to read request body:", err)
 		return ctx.NoContent(http.StatusBadRequest)
 	}
-	
+
 	ctx.Request().Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
 	request := new(dto.MidtransNotification)
@@ -41,19 +40,14 @@ func (h *TransactionHandler) PaymentNotification(ctx echo.Context) error {
 	}
 
 	request.Payload = datatypes.JSON(bodyBytes)
-	userId, ok := ctx.Get("user_id").(uuid.UUID)
-	if !ok {
-		return ctx.JSON(http.StatusBadRequest, response.ErrorResponse(http.StatusBadRequest, "Unauthorized"))
-	}
-	
 
-	err = h.TransactionService.PaymentNotification(ctx.Request().Context(), request, userId)
+	err = h.TransactionService.PaymentNotification(ctx.Request().Context(), request)
 	if err != nil {
 		log.Println("Failed to process payment notification:", err)
-		return ctx.NoContent(http.StatusInternalServerError) 
+		return ctx.NoContent(http.StatusInternalServerError)
 	}
 
-	return ctx.NoContent(http.StatusOK) 
+	return ctx.NoContent(http.StatusOK)
 }
 
 func (h *TransactionHandler) Refund(ctx echo.Context) error {
@@ -67,4 +61,14 @@ func (h *TransactionHandler) Refund(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, response.ErrorResponse(http.StatusInternalServerError, err.Error()))
 	}
 	return ctx.JSON(http.StatusOK, response.SuccessResponse(fmt.Sprintf("success refund %s", request.TransactionID), map[string]interface{}{}))
+}
+
+func (h *TransactionHandler) GetAllTransactions(ctx echo.Context) error {
+	transactions, err := h.TransactionService.GetAll(ctx.Request().Context())
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, response.ErrorResponse(http.StatusInternalServerError, err.Error()))
+	}
+	return ctx.JSON(http.StatusOK, response.SuccessResponse("success", map[string]interface{}{
+		"transactions": transactions,
+	}))
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha512"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"log"
 	"mola-web/configs"
@@ -15,14 +16,16 @@ import (
 	"strconv"
 
 	"github.com/google/uuid"
+	"github.com/midtrans/midtrans-go"
 	"github.com/midtrans/midtrans-go/coreapi"
 	"gorm.io/gorm"
 )
 
 type TransactionService interface {
-	PaymentNotification(ctx context.Context, request *dto.MidtransNotification, userID uuid.UUID) error
+	PaymentNotification(ctx context.Context, request *dto.MidtransNotification) error
 	Refund(ctx context.Context, request *dto.RefundRequest) error
 	Cancel(ctx context.Context, request *dto.CancelRequest) error
+	GetAll(ctx context.Context) ([]dto.GetAllPayments, error)
 }
 
 type transactionService struct {
@@ -48,6 +51,39 @@ func NewTransactionService(db *gorm.DB, productRepo repository.ProductRepository
 		config:          config,
 	}
 }
+type PaymentPayload struct {
+	TransactionTime string `json:"transaction_time"`
+}
+
+func (s *transactionService) GetAll(ctx context.Context) ([]dto.GetAllPayments, error) {
+	// Ambil semua data payment + preload relasi Order dan Order.User
+	payments, err := s.transactionRepo.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []dto.GetAllPayments
+	for _, payment := range payments {
+		if payment.Order == nil || payment.Order.User == nil {
+			continue // skip jika relasi tidak ada
+		}
+		var payload PaymentPayload
+		if err := json.Unmarshal(payment.Payload, &payload); err != nil {
+			// fallback ke CreatedAt jika gagal unmarshal
+			payload.TransactionTime = payment.CreatedAt.Format("2006-01-02 15:04:05")
+		}
+		result = append(result, dto.GetAllPayments{
+			TransactionID:  payment.TransactionID,
+			UserName: payment.Order.User.Name,
+			Total:    payment.Amount,
+			Metode:   *payment.PaymentMethod,
+			Status:   payment.TransactionStatus,
+			Waktu:    payload.TransactionTime, // format waktu sesuai kebutuhan
+		})
+	}
+
+	return result, nil
+}
 
 func CalculateMidtransSignature(
 	orderID string,
@@ -64,7 +100,7 @@ func CalculateMidtransSignature(
 	return hex.EncodeToString(hashBytes)
 }
 
-func (s *transactionService) PaymentNotification(ctx context.Context, request *dto.MidtransNotification, userID uuid.UUID) error {
+func (s *transactionService) PaymentNotification(ctx context.Context, request *dto.MidtransNotification) error {
 	var c coreapi.Client
 	tx := s.DB.WithContext(ctx).Begin()
 	defer func() {
@@ -115,7 +151,11 @@ func (s *transactionService) PaymentNotification(ctx context.Context, request *d
 		tx.Error = err
 		return errors.New("failed to create payment")
 	}
-
+	if s.config.IsProduction == "true" {
+		c.New(s.config.ServerKey, midtrans.Production)
+	} else {
+		c.New(s.config.ServerKey, midtrans.Sandbox)
+	}
 	transactionStatusResp, e := c.CheckTransaction(request.OrderID)
 	if e != nil {
 		return e
@@ -209,8 +249,6 @@ func (s *transactionService) PaymentNotification(ctx context.Context, request *d
 		}
 		result = updateOrder("expired", false)
 	}
-	key := "carts:" + userID.String()
-	_ = s.cacheable.Delete(key)
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Error = err

@@ -25,8 +25,8 @@ func NewServer(cfg *configs.Config,
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
    		AllowOrigins: []string{"http://molla.my.id"}, // atau gunakan "*" jika masih testing
-    		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.OPTIONS},
-    		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
+    	AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.OPTIONS},
+    	AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 	}))
 	v1 := e.Group("/api/v1")
 

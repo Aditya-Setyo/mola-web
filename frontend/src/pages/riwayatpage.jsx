@@ -57,6 +57,7 @@ const RiwayatPage = () => {
                                         <th className="px-4 py-3">Kode Pesanan</th>
                                         <th className="px-4 py-3">Status</th>
                                         <th className="px-4 py-3">Total</th>
+                                        <th className="px-4 py-3">Total Bayar (30%)</th>
                                         <th className="px-4 py-3">Produk</th>
                                         <th className="px-4 py-3">Jumlah</th>
                                     </tr>
@@ -67,6 +68,7 @@ const RiwayatPage = () => {
                                             <td className="px-4 py-2">{order.order_code}</td>
                                             <td className="px-4 py-2 capitalize">{order.payment_status}</td>
                                             <td className="px-4 py-2">Rp {order.total_amount.toLocaleString()}</td>
+                                            <td className="px-4 py-2">Rp {order.total_paid.toLocaleString()}</td>
                                             <td className="px-4 py-2">
                                                 <ul className="space-y-1">
                                                     {order.order_items?.map((item, i) => (
@@ -94,6 +96,7 @@ const RiwayatPage = () => {
                                     <h2 className="font-semibold text-lg mb-2">{order.order_code}</h2>
                                     <p className="text-sm text-gray-600 mb-1">Status: <span className="capitalize">{order.payment_status}</span></p>
                                     <p className="text-sm text-gray-600 mb-1">Total: Rp {order.total_amount.toLocaleString()}</p>
+                                    <p className="text-sm text-gray-600 mb-1">Total Bayar(30%): Rp {order.total_paid.toLocaleString()}</p>
                                     <div className="text-sm text-gray-700 mt-2">
                                         {order.order_items?.map((item, i) => (
                                             <div key={i} className="flex justify-between">

@@ -226,7 +226,9 @@ func (h *ProductHandler) Create(ctx echo.Context) error {
 
 func (h *ProductHandler) Update(ctx echo.Context) error {
 	var req dto.UpdateProductRequest
-
+		if err := ctx.Request().ParseMultipartForm(32 << 20); err != nil {
+		return ctx.JSON(http.StatusBadRequest, response.ErrorResponse(http.StatusBadRequest, "Failed to parse form"))
+	}
 	// Ambil ID produk dari URL
 	productID, err := uuid.Parse(ctx.Param("productID"))
 	if err != nil {
@@ -267,6 +269,8 @@ func (h *ProductHandler) Update(ctx echo.Context) error {
 	// HasVariant
 	if hasVariantStr == "true" {
 		req.HasVariant = true
+	}else {
+		req.HasVariant = false
 	}
 
 	// Price

@@ -219,13 +219,13 @@ func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email str
 	}
 	for _, item := range cartData.CartItems {
 		orderItem := entity.OrderItem{
-			OrderID:   orderID,
-			ProductID: item.Product.ID,
+			OrderID:          orderID,
+			ProductID:        item.Product.ID,
 			ProductVariantID: nil,
-			Quantity: item.Quantity,
-			Price:    item.Product.Price,
-			Subtotal: item.Subtotal,
-			Note:     item.Note,
+			Quantity:         item.Quantity,
+			Price:            item.Product.Price,
+			Subtotal:         item.Subtotal,
+			Note:             item.Note,
 		}
 		if item.Product.HasVariant {
 			for _, value := range item.Product.Variants {
@@ -237,8 +237,7 @@ func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email str
 				}
 				orderItem.ProductVariantID = &value.ID
 			}
-	}
-
+		}
 
 		if err := s.orderRepo.CreateOrderItem(tx, &orderItem); err != nil {
 			tx.Error = err
@@ -271,6 +270,9 @@ func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email str
 		},
 		Items:           &items,
 		EnabledPayments: enabledPaymentsTypes,
+		Callbacks: &snap.Callbacks{
+			Finish: "https://molla.my.id/dashboard", // ubah ke route frontend kamu
+		},
 	}
 
 	snapResp, _ := m.CreateTransaction(req)
@@ -426,7 +428,6 @@ func (s *orderService) ShowOrder(ctx context.Context, userID uuid.UUID) ([]dto.S
 	return results, nil
 }
 
-
 func (s *orderService) GetAllOrders(ctx context.Context) ([]dto.GetAllOrdersResponse, error) {
 	key := "orders:all-orders"
 	var results []dto.GetAllOrdersResponse
@@ -483,7 +484,7 @@ func (s *orderService) GetAllOrders(ctx context.Context) ([]dto.GetAllOrdersResp
 				variants = append(variants, variantDTO)
 
 			} else {
-				
+
 			}
 
 			// Ambil nama kategori jika ada
@@ -534,8 +535,6 @@ func (s *orderService) GetAllOrders(ctx context.Context) ([]dto.GetAllOrdersResp
 
 	return results, nil
 }
-
-
 
 func (s *orderService) ExpireUninitializedOrders() error {
 	tx := s.DB.Begin()

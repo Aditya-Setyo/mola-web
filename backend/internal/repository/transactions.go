@@ -10,7 +10,6 @@ import (
 type TransactionRepository interface {
 	GetAll(ctx context.Context) ([]entity.Payment, error)
 	CreatePayment(db *gorm.DB, payment *entity.Payment) error
-
 }
 
 type transactionRepository struct {
@@ -21,10 +20,12 @@ func NewTransactionRepository(db *gorm.DB) TransactionRepository {
 	return &transactionRepository{db}
 }
 
-
 func (r *transactionRepository) GetAll(ctx context.Context) ([]entity.Payment, error) {
 	var payments []entity.Payment
-	if err := r.db.WithContext(ctx).Find(&payments).Error; err != nil {
+	if err := r.db.WithContext(ctx).
+		Preload("Order").
+		Preload("Order.User").
+		Find(&payments).Error; err != nil {
 		return nil, err
 	}
 	return payments, nil

@@ -609,7 +609,7 @@ func (s *productService) Update(ctx context.Context, request *dto.UpdateProductR
 		defer src.Close()
 
 		fileName := fmt.Sprintf("%d_%s", time.Now().Unix(), request.Image.Filename)
-		imagePath := filepath.Join("public/products/images", fileName)
+		imagePath := filepath.Join("/var/www/mola-web/backend/public/products/images", fileName)
 		dst, err := os.Create(imagePath)
 		if err != nil {
 			tx.Error = err
