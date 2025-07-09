@@ -141,11 +141,23 @@ func (r *productRepository) Create(db *gorm.DB, product *entity.Product) error {
 }
 
 func (r *productRepository) Update(db *gorm.DB, product *entity.Product) error {
-	if err := db.Model(&entity.Product{}).Where("id = ?", product.ID).Updates(product).Error; err != nil {
+	updateFields := map[string]interface{}{
+		"name":        product.Name,
+		"category_id": product.CategoryID,
+		"description": product.Description,
+		"image_url":   product.ImageURL,
+		"has_variant": product.HasVariant, // 👈 wajib ini!
+		"stock":       product.Stock,
+		"price":       product.Price,
+		"weight":      product.Weight,
+	}
+
+	if err := db.Model(&entity.Product{}).Where("id = ?", product.ID).Updates(updateFields).Error; err != nil {
 		return err
 	}
 	return nil
 }
+
 
 func (r *productRepository) Delete(db *gorm.DB, id uuid.UUID) error {
 	if err := db.Delete(&entity.Product{}, id).Error; err != nil {
