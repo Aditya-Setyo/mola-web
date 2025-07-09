@@ -15,6 +15,7 @@ import (
 	"strconv"
 
 	"github.com/google/uuid"
+	"github.com/midtrans/midtrans-go"
 	"github.com/midtrans/midtrans-go/coreapi"
 	"gorm.io/gorm"
 )
@@ -115,7 +116,11 @@ func (s *transactionService) PaymentNotification(ctx context.Context, request *d
 		tx.Error = err
 		return errors.New("failed to create payment")
 	}
-
+	if s.config.IsProduction == "true" {
+		c.New(s.config.ServerKey, midtrans.Production)
+	} else {
+		c.New(s.config.ServerKey, midtrans.Sandbox)
+	}
 	transactionStatusResp, e := c.CheckTransaction(request.OrderID)
 	if e != nil {
 		return e
