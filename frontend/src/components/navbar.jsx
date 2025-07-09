@@ -147,13 +147,12 @@ const Navbar = () => {
           )}
 
           <div className="flex items-center mt-2 space-x-3">
-            <div>
+            <div className="border rounded-xl px-3 py-1 text-sm bg-gray-100 flex-1">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cari Nama Produk..."
-                className="border rounded-xl px-3 py-1 text-sm bg-gray-100 flex-1"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSearch();
                 }}
