@@ -20,7 +20,7 @@ import (
 )
 
 type TransactionService interface {
-	PaymentNotification(ctx context.Context, request *dto.MidtransNotification, userID uuid.UUID) error
+	PaymentNotification(ctx context.Context, request *dto.MidtransNotification) error
 	Refund(ctx context.Context, request *dto.RefundRequest) error
 	Cancel(ctx context.Context, request *dto.CancelRequest) error
 }
@@ -64,7 +64,7 @@ func CalculateMidtransSignature(
 	return hex.EncodeToString(hashBytes)
 }
 
-func (s *transactionService) PaymentNotification(ctx context.Context, request *dto.MidtransNotification, userID uuid.UUID) error {
+func (s *transactionService) PaymentNotification(ctx context.Context, request *dto.MidtransNotification) error {
 	var c coreapi.Client
 	tx := s.DB.WithContext(ctx).Begin()
 	defer func() {
@@ -209,8 +209,6 @@ func (s *transactionService) PaymentNotification(ctx context.Context, request *d
 		}
 		result = updateOrder("expired", false)
 	}
-	key := "carts:" + userID.String()
-	_ = s.cacheable.Delete(key)
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Error = err
