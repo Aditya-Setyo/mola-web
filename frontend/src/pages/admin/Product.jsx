@@ -70,7 +70,7 @@ const Products = () => {
       const dataSize = await apiGet("/sizes");
       const dataColor = await apiGet("/colors");
 
-      setProducts(dataProd?.data?.products?.filter(p => p.has_variant) || []);
+      setProducts(dataProd?.data?.products || []);
       setCategories(dataCat?.data?.categories || []);
       setSizes(dataSize?.data?.sizes || []);
       setColors(dataColor?.data?.colors || []);
