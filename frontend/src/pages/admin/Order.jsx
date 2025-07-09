@@ -48,6 +48,7 @@ const Orders = () => {
                 <th className="px-4 py-3 text-left">Produk</th>
                 <th className="px-4 py-3 text-left">Jumlah</th>
                 <th className="px-4 py-3 text-left">Total Harga</th>
+                <th className="px-4 py-3 text-left">Total Bayar (30%)</th>
                 <th className="px-4 py-3 text-left">Status</th>
               </tr>
             </thead>
@@ -72,6 +73,7 @@ const Orders = () => {
                       </div>
                     </td>
                     <td className="px-4 py-2">Rp {order.total_amount.toLocaleString()}</td>
+                    <td className="px-4 py-2">Rp {order.total_paid.toLocaleString()}</td>
                     <td className="px-4 py-2">{order.payment_status}</td>
                   </tr>
                 ))

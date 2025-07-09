@@ -71,6 +71,7 @@ func PublicRoutes(
 			Path:    "/products/review/:productID",
 			Handler: productHandler.GetReviews,
 		},
+		
 	}
 }
 
@@ -269,6 +270,12 @@ func PrivateRoutes(
 			Method:  http.MethodPost,
 			Path:    "/admin/review/:productID",
 			Handler: productHandler.AddReview,
+			Roles:   []string{"admin"},
+		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/transactions",
+			Handler: transactionHandler.GetAllTransactions,
 			Roles:   []string{"admin"},
 		},
 	}

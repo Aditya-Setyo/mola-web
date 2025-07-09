@@ -48,7 +48,7 @@ const Payments = () => {
                     <td className="px-4 py-2">Rp {item.total?.toLocaleString()}</td>
                     <td className="px-4 py-2">{item.method}</td>
                     <td className="px-4 py-2">{item.status}</td>
-                    <td className="px-4 py-2">{new Date(item.created_at).toLocaleString()}</td>
+                    <td className="px-4 py-2">{new Date(item.waktu).toLocaleString()}</td>
                   </tr>
                 ))
               ) : (
