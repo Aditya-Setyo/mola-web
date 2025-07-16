@@ -163,10 +163,10 @@ const Navbar = () => {
             </div>
             {isLoggedIn ? (
               <>
-                <button onClick={() => navigate("/chartpage")} className="ml-10"> {/* Keranjang */}
+                <button onClick={() => navigate("/chartpage")}> {/* Keranjang */}
                   <img src={LogoKeranjang} alt="Chart" className="w-6 h-6" />
                 </button>
-                <button onClick={() => navigate("/riwayatpage")} className="ml-10"> {/* Riwayat */}
+                <button onClick={() => navigate("/riwayatpage")}> {/* Riwayat */}
                   <img src={LogoRiwayat} alt="Riwayat" className="w-6 h-6" />
                 </button>
                 <button onClick={() => navigate("/userprofile")}> {/*User Profile*/}
