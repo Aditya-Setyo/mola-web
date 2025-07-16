@@ -153,7 +153,7 @@ const Navbar = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="px-3 py-1 text-sm flex-1 "
+                className="px-3 py-1 text-base flex-1 "
                 placeholder="Cari Nama Produk..."
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSearch();
