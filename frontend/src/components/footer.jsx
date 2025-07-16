@@ -1,6 +1,7 @@
 import React from "react";
-import { FaFacebookF, FaInstagram, FaTwitter, FaTiktok } from "react-icons/fa";
+import { FaFacebookF, FaInstagram, FaTiktok } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import LogoShoppe from "../assets/LogoShoppe"
 
 const Footer = () => {
   return (
@@ -39,13 +40,10 @@ const Footer = () => {
           <h4 className="text-md font-semibold mb-3 text-gray-800">Ikuti Kami :</h4>
           <div className="flex gap-4">
             <a href="#" className="hover:text-blue-600">
-              <FaFacebookF />
+              <img src={LogoShoppe} alt="logo Shoppe" />
             </a>
-            <a href="#" className="hover:text-pink-500">
+            <a href="https://www.instagram.com/molla_bag1?igsh=eTJzMWl1dDY1bmp2" className="hover:text-pink-500">
               <FaInstagram />
-            </a>
-            <a href="#" className="hover:text-black">
-              <FaTiktok />
             </a>
           </div>
         </div>
