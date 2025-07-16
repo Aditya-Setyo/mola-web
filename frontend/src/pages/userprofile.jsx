@@ -3,6 +3,7 @@ import Navbar from "../components/navbar";
 import Footer from "../components/footer";
 import { useNavigate } from "react-router-dom";
 import { apiGet, apiPost, apiPut } from "../api";
+import { FaUser } from "react-icons/fa";
 
 const UserProfile = () => {
   const [profile, setProfile] = useState({
@@ -97,11 +98,7 @@ const UserProfile = () => {
         </div>
         <div className="flex flex-col md:flex-row md:space-x-10">
           <div className="flex flex-col items-center text-center mb-6 md:mb-0">
-            <img
-              src="https://via.placeholder.com/150"
-              alt="User Profile"
-              className="w-32 h-32 rounded-full border border-gray-300"
-            />
+            <FaUser className="w-32 h-32 rounded-full border border-gray-300"/>
             <h2 className="mt-4 text-lg font-semibold text-gray-700">{profile.name}</h2>
             <p className="text-sm text-gray-500">{profile.email}</p>
           </div>

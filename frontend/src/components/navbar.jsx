@@ -33,7 +33,8 @@ const Navbar = () => {
       }
     } catch (err) {
       console.error("Gagal mencari produk:", err);
-      alert("Terjadi kesalahan saat pencarian.");
+      // alert("Terjadi kesalahan saat pencarian.");
+      alert("Produk tidak ditemukan");
     }
   };
 
