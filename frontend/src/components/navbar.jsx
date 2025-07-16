@@ -146,8 +146,8 @@ const Navbar = () => {
             </div>
           )}
 
-          <div className="flex items-center mt-2 space-x-3 bg-gray-100 ounded-xl">
-            <div className="flex items-center border rounded-xl bg-gray-100 px-2">
+          <div className="flex items-center mt-2 space-x-3 ounded-xl">
+            <div className="flex items-center  mt-2 space-x-3 border rounded-xl px-2">
               <input
                 type="text"
                 value={searchQuery}
