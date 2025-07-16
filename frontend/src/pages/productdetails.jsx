@@ -137,13 +137,14 @@ const ProductDetailPage = () => {
 
       console.log("📦 Payload Checkout:", payload);
 
-      const checkout = await apiPost("/orders/checkout", payload);
-      const redirectUrl = checkout?.data?.redirect_url || checkout?.redirect_url;
+      const checkout = await apiPost("/orders/checkout");
+      const redirectUrl = checkout?.data?.redirect_url?.redirect_url || checkout?.redirect_url;
 
       if (redirectUrl) {
+        alert("Mengalihkan ke pembayaran...");
         window.location.href = redirectUrl;
       } else {
-        alert("URL pembayaran tidak ditemukan.");
+        alert("Gagal mendapatkan URL pembayaran.");
       }
     } catch (error) {
       console.error("Gagal proses pembayaran:", error);
