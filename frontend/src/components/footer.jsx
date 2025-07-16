@@ -1,7 +1,7 @@
 import React from "react";
 import { FaFacebookF, FaInstagram, FaTiktok } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import LogoShoppe from "../assets/LogoShoppe"
+import LogoShoppe from "../assets/logoshoppe.png";
 
 const Footer = () => {
   return (
