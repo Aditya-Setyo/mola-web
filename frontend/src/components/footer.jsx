@@ -39,11 +39,11 @@ const Footer = () => {
         <div>
           <h4 className="text-md font-semibold mb-3 text-gray-800">Ikuti Kami :</h4>
           <div className="flex gap-4">
-            <a href="#" className="hover:text-blue-600">
-              <img src={LogoShoppe} alt="logo Shoppe" className="w-6 h-6"/>
-            </a>
             <a href="https://www.instagram.com/molla_bag1?igsh=eTJzMWl1dDY1bmp2" className="hover:text-pink-500">
-              <FaInstagram className="w-6 h-6" />
+              <FaInstagram className="w-5 h-5" />
+            </a>
+            <a href="#" className="hover:text-blue-600">
+              <img src={LogoShoppe} alt="logo Shoppe" className="w-6 h-6" />
             </a>
           </div>
         </div>
