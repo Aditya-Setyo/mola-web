@@ -20,7 +20,7 @@ const sidebarItems = [
     {label: "Variant Products", icon: <FaPalette/>, path: "/admin/variantpage"},
     { label: "Master Data", icon: <FaTags />, path: "/admin/masterdata" },
     { label: "Users", icon: <FaUser />, path: "/admin/users" },
-    { label: "Orders", icon: <FaClipboardList />, path: "/admin/order" },
+    { label: "Orders", icon: <FaClipboardList />, path: "/admin/orders" },
     { label: "Payments", icon: <FaCreditCard />, path: "/admin/payments" },
     { label: "Reviews", icon: <FaStar />, path: "/admin/reviews" },
     { label: "Sales Report", icon: <FaChartLine  />, path: "/admin/salesreportpage" },
