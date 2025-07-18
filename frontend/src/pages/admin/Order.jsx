@@ -7,24 +7,22 @@ const Orders = () => {
 
   const fetchOrders = async () => {
     try {
-      const res = await apiGet("/admin/orders"); // panggil endpoint
-      console.log(" Full response:", res); // Lihat seluruh respons
+      const res = await apiGet("/admin/orders");
+      console.log("Full response:", res);
 
       const orderList = res?.data?.orders || [];
-      console.log(" Orders loaded:", orderList); // Debug hasil final
+      console.log("Orders loaded:", orderList);
 
       setOrders(orderList);
     } catch (err) {
-      console.error(" Gagal mengambil pesanan:", err.message);
+      console.error("Gagal mengambil pesanan:", err.message);
     }
   };
-
-
 
   const updateStatus = async (orderID, newStatus) => {
     try {
       await apiPut(`/admin/orders/aproval/${orderID}`, { status: newStatus });
-      fetchOrders(); // refresh
+      fetchOrders();
     } catch (err) {
       console.error("Gagal mengubah status pesanan:", err);
     }
@@ -60,21 +58,33 @@ const Orders = () => {
                     <td className="px-4 py-2">{order.user_name}</td>
                     <td className="px-4 py-2">
                       <div className="flex flex-col gap-1">
-                        {order.order_items.map((item, index) => (
-                          <span key={index}>{item.product.name}</span>
-                        ))}
+                        {Array.isArray(order.order_items) && order.order_items.length > 0 ? (
+                          order.order_items.map((item, index) => (
+                            <span key={index}>{item.product?.name || "Produk tidak tersedia"}</span>
+                          ))
+                        ) : (
+                          <span>-</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-2">
                       <div className="flex flex-col gap-1">
-                        {order.order_items.map((item, index) => (
-                          <span key={index}>{item.quantity}</span>
-                        ))}
+                        {Array.isArray(order.order_items) && order.order_items.length > 0 ? (
+                          order.order_items.map((item, index) => (
+                            <span key={index}>{item.quantity}</span>
+                          ))
+                        ) : (
+                          <span>-</span>
+                        )}
                       </div>
                     </td>
-                    <td className="px-4 py-2">Rp {order.total_amount.toLocaleString()}</td>
-                    <td className="px-4 py-2">Rp {order.total_paid.toLocaleString()}</td>
-                    <td className="px-4 py-2">{order.payment_status}</td>
+                    <td className="px-4 py-2">
+                      Rp {order.total_amount?.toLocaleString() || "0"}
+                    </td>
+                    <td className="px-4 py-2">
+                      Rp {order.total_paid?.toLocaleString() || "0"}
+                    </td>
+                    <td className="px-4 py-2">{order.payment_status || "-"}</td>
                   </tr>
                 ))
               ) : (
