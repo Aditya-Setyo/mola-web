@@ -12,7 +12,7 @@ const ProfilePage = () => {
     const [reviews, setReviews] = useState([]);
     const [showAll, setShowAll] = useState(false);
     const [products, setProducts] = useState([]);
-
+    const [loadingReviews, setLoadingReviews] = useState(false);
 
     useEffect(() => {
         const fetchAllProducts = async () => {
@@ -32,13 +32,13 @@ const ProfilePage = () => {
     useEffect(() => {
         const fetchAllReviews = async () => {
             try {
+                setLoadingReviews(true);
                 const allReviews = [];
 
                 for (const product of products) {
                     const res = await apiGet(`/products/review/${product.id}`);
                     const data = Array.isArray(res?.data) ? res.data : [];
 
-                    // Lewati produk yang tidak punya review
                     if (data.length === 0) continue;
 
                     const formatted = data.map((review) => ({
@@ -55,6 +55,8 @@ const ProfilePage = () => {
                 setReviews(allReviews);
             } catch (error) {
                 console.error("Gagal mengambil data review:", error);
+            } finally {
+                setLoadingReviews(false);
             }
         };
 
@@ -63,7 +65,8 @@ const ProfilePage = () => {
         }
     }, [products]);
 
-    const displayedReviews = showAll ? reviews : reviews.slice(0, 6);
+    const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
+    const displayedReviews = showAll ? reviews : shuffle(reviews).slice(0, 6);
 
     return (
         <div>
@@ -78,7 +81,7 @@ const ProfilePage = () => {
                     </h1>
                     <div>
                         <p className="text-gray-700 mb-4 leading-relaxed">
-                            MOLA hadir untuk menginspirasi setiap individu agar tampil percaya diri, sehat, dan bergaya melalui produk fashion, skincare, dan aksesoris berkualitas. Kami percaya bahwa penampilan yang baik dimulai dari perawatan diri yang tepat dan pilihan gaya yang sesuai. Oleh karena itu, MOLA berkomitmen menyediakan produk yang tidak hanya estetik, tetapi juga aman, ramah lingkungan, dan terjangkau.
+                            MOLA hadir untuk menginspirasi setiap individu agar tampil percaya diri, sehat, dan bergaya melalui produk fashion, skincare, dan aksesoris berkualitas...
                         </p>
                         <button className="bg-gray-900 text-white px-6 py-2 rounded hover:bg-gray-800 transition flex items-center space-x-2">
                             <span>Read more</span>
@@ -138,7 +141,7 @@ const ProfilePage = () => {
 
                     <div className="relative space-y-6">
                         <p className="text-gray-700 leading-relaxed text-sm md:text-base">
-                            <strong className="text-gray-800">MOLA</strong> hadir untuk menginspirasi setiap individu agar tampil percaya diri, sehat, dan bergaya melalui produk fashion, skincare, dan aksesoris berkualitas.
+                            <strong className="text-gray-800">MOLA</strong> hadir untuk menginspirasi setiap individu...
                         </p>
 
                         <div className="relative">
@@ -171,29 +174,40 @@ const ProfilePage = () => {
             <section className="px-4 py-12 md:px-20 md:py-10 mb-10">
                 <h2 className="md:text-3xl font-bold mb-8 text-center text-gray-800">What People Say</h2>
 
-                <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-10 justify-items-center">
-                    {displayedReviews.map((person, index) => (
-                        <div
-                            key={index}
-                            className="w-full max-w-sm bg-white rounded-lg shadow-md overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-lg"
-                        >
-                            <div className="p-6">
-                                <p className="text-gray-600 text-sm mb-6 italic">"{person.review}"</p>
-                                <div className="flex items-center">
-                                    <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center mr-4 text-white font-bold">
-                                        {person.user_name.charAt(0).toUpperCase()}
+                {loadingReviews ? (
+                    <p className="text-center text-gray-500">Memuat review...</p>
+                ) : reviews.length === 0 ? (
+                    <p className="text-center text-gray-500">Belum ada review untuk saat ini.</p>
+                ) : (
+                    <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-10 justify-items-center">
+                        {displayedReviews.map((person, index) => (
+                            <div
+                                key={index}
+                                className="w-full max-w-sm bg-white rounded-lg shadow-md overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-lg"
+                            >
+                                <div className="p-6">
+                                    <div className="flex items-center text-yellow-400 text-xs mb-2">
+                                        {Array.from({ length: 5 }, (_, i) => (
+                                            <span key={i}>{i < person.rating ? "★" : "☆"}</span>
+                                        ))}
                                     </div>
-                                    <div>
-                                        <h3 className="text-sm font-bold text-gray-800">{person.user_name}</h3>
-                                        <p className="text-xs text-gray-500">{person.product_name}</p>
+                                    <p className="text-gray-600 text-sm mb-6 italic">"{person.review}"</p>
+                                    <div className="flex items-center">
+                                        <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center mr-4 text-white font-bold">
+                                            {person.user_name.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-bold text-gray-800">{person.user_name}</h3>
+                                            <p className="text-xs text-gray-500">{person.product_name}</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                )}
 
-                {reviews.length > 6 && (
+                {reviews.length > 6 && !loadingReviews && (
                     <div className="flex justify-center mt-8">
                         <button
                             onClick={() => setShowAll(!showAll)}
