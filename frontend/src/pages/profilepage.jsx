@@ -37,7 +37,7 @@ const ProfilePage = () => {
 
                 for (const product of products) {
                     const res = await apiGet(`/products/review/${product.id}`);
-                    const data = Array.isArray(res?.data) ? res.data : [];
+                    const data = Array.isArray(res?.data?.reviews) ? res.data.reviews : [];
 
                     if (data.length === 0) continue;
 
@@ -46,7 +46,7 @@ const ProfilePage = () => {
                         user_name: review.user_name || "Pengguna",
                         rating: review.rating || 0,
                         review: review.review || "Tidak ada komentar.",
-                        product_name: product.name || "Tanpa Nama",
+                        product_name: product?.name || "Tanpa Nama",
                     }));
 
                     allReviews.push(...formatted);
