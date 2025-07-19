@@ -11,7 +11,7 @@ import { apiGet } from "../api";
 const ProfilePage = () => {
     const [reviews, setReviews] = useState([]);
     const [showAll, setShowAll] = useState(false);
-    const [products, setProducts] = useState(null);
+    const [products, setProducts] = useState([]);
 
 
     useEffect(() => {
