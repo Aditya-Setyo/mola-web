@@ -14,6 +14,7 @@ const ProfilePage = () => {
     const [showAll, setShowAll] = useState(false);
     const [products, setProducts] = useState([]);
     const [loadingReviews, setLoadingReviews] = useState(false);
+    const [showMoreAbout, setShowMoreAbout] = useState(false);
 
     useEffect(() => {
         const fetchAllProducts = async () => {
@@ -82,10 +83,20 @@ const ProfilePage = () => {
                     </h1>
                     <div>
                         <p className="text-gray-700 mb-4 leading-relaxed">
-                            MOLA hadir untuk menginspirasi setiap individu agar tampil percaya diri, sehat, dan bergaya melalui produk fashion, skincare, dan aksesoris berkualitas...
+                            MOLA hadir untuk menginspirasi setiap individu agar tampil percaya diri, sehat, dan bergaya melalui produk fashion, skincare, dan aksesoris berkualitas.
+                            Kami percaya bahwa penampilan yang baik dimulai dari perawatan diri yang tepat dan pilihan gaya yang sesuai.
+                            {showMoreAbout && (
+                                <>
+                                    {" "}
+                                    Oleh karena itu, MOLA berkomitmen menyediakan produk yang tidak hanya estetik, tetapi juga aman, ramah lingkungan, dan terjangkau. Kami juga terus mengembangkan inovasi untuk mendukung gaya hidup modern dan sehat bagi masyarakat Indonesia.
+                                </>
+                            )}
                         </p>
-                        <button className="bg-gray-900 text-white px-6 py-2 rounded hover:bg-gray-800 transition flex items-center space-x-2">
-                            <span>Read more</span>
+                        <button
+                            onClick={() => setShowMoreAbout(!showMoreAbout)}
+                            className="bg-gray-900 text-white px-6 py-2 rounded hover:bg-gray-800 transition flex items-center space-x-2"
+                        >
+                            <span>{showMoreAbout ? "Sembunyikan" : "Selengkapnya"}</span>
                             <span className="ml-2">→</span>
                         </button>
                     </div>
@@ -164,7 +175,7 @@ const ProfilePage = () => {
                     </h1>
                     <HashLink smooth to="/dashboard#newarrival">
                         <button className="bg-gray-900 text-white px-6 py-2 rounded hover:bg-gray-800 transition flex items-center whitespace-nowrap self-start md:self-auto">
-                            <span>See more</span>
+                            <span>Selengkapnya</span>
                             <span className="ml-2">→</span>
                         </button>
                     </HashLink>
