@@ -4,12 +4,24 @@ import Sidebar from "../../components/sidebar";
 import DashboardCard from "../../components/dashboardCard";
 import DataTable from "../../components/dataTable";
 import { apiGet } from "../../api";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 const AdminPage = () => {
   const navigate = useNavigate();
 
-  const [summary, setSummary] = useState({ products: 0, users: 0, orders: 0, revenue: 0 });
+  const [summary, setSummary] = useState({
+    products: 0,
+    users: 0,
+    orders: 0,
+    revenue: 0,
+  });
   const [products, setProducts] = useState([]);
   const [users, setUsers] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -23,6 +35,11 @@ const AdminPage = () => {
         apiGet("/admin/sales-report", true),
       ]);
 
+      const revenue = resSummary.data?.reports?.reduce(
+        (sum, item) => sum + (item.total_sales || 0),
+        0
+      );
+
       setProducts(resProducts.data?.products || []);
       setUsers(resUsers.data?.users || []);
       setOrders(resOrders.data?.orders || []);
@@ -30,8 +47,9 @@ const AdminPage = () => {
         products: resProducts.data?.products?.length || 0,
         users: resUsers.data?.users?.length || 0,
         orders: resOrders.data?.orders?.length || 0,
-        revenue: resSummary.data?.total_revenue || 0,
+        revenue: revenue || 0,
       });
+
       console.log("📦 Sales Report:", resSummary);
     } catch (err) {
       console.error("❌ Gagal mengambil data dashboard:", err);
@@ -87,7 +105,7 @@ const AdminPage = () => {
           </ResponsiveContainer>
         </div>
 
-        {/* Tables */}
+        {/* Tabel Produk */}
         <div className="mb-6 overflow-x-auto">
           <DataTable
             title="🛒 Produk Terbaru"
@@ -96,6 +114,7 @@ const AdminPage = () => {
           />
         </div>
 
+        {/* Tabel Pengguna */}
         <div className="mb-6 overflow-x-auto">
           <DataTable
             title="👥 Pengguna Terbaru"
@@ -104,6 +123,7 @@ const AdminPage = () => {
           />
         </div>
 
+        {/* Tabel Order */}
         <div className="mb-10 overflow-x-auto">
           <DataTable
             title="📦 Order Terakhir"
