@@ -20,7 +20,7 @@ const ProfilePage = () => {
                 console.log("Fetching products...");
                 const res = await apiGet("/products");
                 console.log("Response dari /products:", res);
-                setProducts(res.data || []);
+                setProducts(res.data.products || []);
             } catch (err) {
                 console.error("Gagal mengambil produk:", err);
             }
