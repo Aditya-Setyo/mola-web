@@ -14,27 +14,48 @@ const ProfilePage = () => {
     const [product, setProduct] = useState(null);
 
     useEffect(() => {
+        const fetchAllProducts = async () => {
+            try {
+                const res = await apiGet("/products");
+                setProducts(res.data || []);
+            } catch (err) {
+                console.error("Gagal mengambil produk:", err);
+            }
+        };
+
+        fetchAllProducts();
+    }, []);
+
+    useEffect(() => {
         const fetchAllReviews = async () => {
             try {
-                const res = await apiGet(`/products/review/${product.id}`); 
-                const data = Array.isArray(res?.data) ? res.data : [];
+                const allReviews = [];
 
-                const formatted = data.map((review) => ({
-                    id: review.id,
-                    user_name: review.user_name || "Pengguna",
-                    rating: review.rating || 0,
-                    review: review.review || "Tidak ada komentar.",
-                    product_name: review.product_name || "Tanpa Nama",
-                }));
+                for (const product of products) {
+                    const res = await apiGet(`/products/review/${product.id}`);
+                    const data = Array.isArray(res?.data) ? res.data : [];
 
-                setReviews(formatted);
+                    const formatted = data.map((review) => ({
+                        id: review.id,
+                        user_name: review.user_name || "Pengguna",
+                        rating: review.rating || 0,
+                        review: review.review || "Tidak ada komentar.",
+                        product_name: product.name || "Tanpa Nama", // dari data produk
+                    }));
+
+                    allReviews.push(...formatted);
+                }
+
+                setReviews(allReviews);
             } catch (error) {
                 console.error("Gagal mengambil data review:", error);
             }
         };
 
-        fetchAllReviews();
-    }, []);
+        if (products.length > 0) {
+            fetchAllReviews();
+        }
+    }, [products]);
 
     const displayedReviews = showAll ? reviews : reviews.slice(0, 6);
 

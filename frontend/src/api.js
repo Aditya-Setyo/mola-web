@@ -17,7 +17,7 @@ const getHeaders = (withAuth = true) => {
 
 // GET request (opsi withAuth = false jika tidak perlu token)
 export const apiGet = async (endpoint, withAuth = true) => {
-    console.log("🔍 Memanggil endpoint:", endpoint, "| withAuth =", withAuth);
+    // console.log("🔍 Memanggil endpoint:", endpoint, "| withAuth =", withAuth);
 
     const response = await fetch(`${baseURL}${endpoint}`, {
       method: "GET",
