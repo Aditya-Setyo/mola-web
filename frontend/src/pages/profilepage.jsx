@@ -17,9 +17,10 @@ const ProfilePage = () => {
     useEffect(() => {
         const fetchAllProducts = async () => {
             try {
+                console.log("Fetching products...");
                 const res = await apiGet("/products");
+                console.log("Response dari /products:", res);
                 setProducts(res.data || []);
-                console.log("Fetching reviews for products:", products);
             } catch (err) {
                 console.error("Gagal mengambil produk:", err);
             }
