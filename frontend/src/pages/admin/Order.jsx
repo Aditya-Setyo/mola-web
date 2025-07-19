@@ -8,10 +8,10 @@ const Orders = () => {
   const fetchOrders = async () => {
     try {
       const res = await apiGet("/admin/orders");
-      console.log("Full response:", res);
+      // console.log("Full response:", res);
 
       const orderList = res?.data?.orders || [];
-      console.log("Orders loaded:", orderList);
+      // console.log("Orders loaded:", orderList);
 
       setOrders(orderList);
     } catch (err) {

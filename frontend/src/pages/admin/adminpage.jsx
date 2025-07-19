@@ -30,7 +30,7 @@ const AdminPage = () => {
         products: resProducts.data?.products?.length || 0,
         users: resUsers.data?.users?.length || 0,
         orders: resOrders.data?.orders?.length || 0,
-        revenue: resSummary.total_revenue || 0,
+        revenue: resSummary.data?.total_revenue || 0,
       });
     } catch (err) {
       console.error("❌ Gagal mengambil data dashboard:", err);
