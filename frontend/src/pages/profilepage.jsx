@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
 import Hero from "../components/hero";
 import { apiGet } from "../api";
+import { FaUser } from "react-icons/fa";
 
 const ProfilePage = () => {
     const [reviews, setReviews] = useState([]);
@@ -179,7 +180,7 @@ const ProfilePage = () => {
                 ) : reviews.length === 0 ? (
                     <p className="text-center text-gray-500">Belum ada review untuk saat ini.</p>
                 ) : (
-                    <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-10 justify-items-center">
+                    <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-10 justify-items-center">
                         {displayedReviews.map((person, index) => (
                             <div
                                 key={index}
@@ -193,8 +194,8 @@ const ProfilePage = () => {
                                     </div>
                                     <p className="text-gray-600 text-sm mb-6 italic">"{person.review}"</p>
                                     <div className="flex items-center">
-                                        <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center mr-4 text-white font-bold">
-                                            {person.user_name.charAt(0).toUpperCase()}
+                                        <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center mr-4 text-white text-lg">
+                                            <FaUser />
                                         </div>
                                         <div>
                                             <h3 className="text-sm font-bold text-gray-800">{person.user_name}</h3>
@@ -218,7 +219,6 @@ const ProfilePage = () => {
                     </div>
                 )}
             </section>
-
             <Footer />
         </div>
     );
