@@ -19,6 +19,7 @@ const ProfilePage = () => {
             try {
                 const res = await apiGet("/products");
                 setProducts(res.data || []);
+                console.log("Fetching reviews for products:", products);
             } catch (err) {
                 console.error("Gagal mengambil produk:", err);
             }
@@ -43,6 +44,7 @@ const ProfilePage = () => {
                         review: review.review || "Tidak ada komentar.",
                         product_name: product.name || "Tanpa Nama", // dari data produk
                     }));
+                    console.log(`Reviews for product ${product.id}:`, data);
 
                     allReviews.push(...formatted);
                 }
