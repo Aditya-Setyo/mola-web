@@ -15,7 +15,7 @@ const ConfirmToken = () => {
         signInWithPopup(auth, googleProvider)
             .then((result) => {
                 const user = result.user;
-                console.log("Login Google berhasil:", user.displayName);
+                // console.log("Login Google berhasil:", user.displayName);
                 alert(`Selamat datang, ${user.displayName}`);
                 navigate("/dashboard"); // atau ke dashboard kamu
             })

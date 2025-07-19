@@ -18,7 +18,7 @@ const ChartPage = () => {
   const handleCheckout = async () => {
   try {
     const res = await apiPost("/orders/checkout");
-    console.log("Checkout response:", res);
+    // console.log("Checkout response:", res);
 
     const redirectUrl = res?.data?.redirect_url?.redirect_url;
     if (redirectUrl) {

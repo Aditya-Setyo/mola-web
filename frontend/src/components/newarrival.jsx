@@ -17,7 +17,7 @@ const NewArrival = ({ id }) => {
           ? json.data.products
           : [];
 
-        console.log("🔥 Semua Produk:", allProducts);
+        // console.log("🔥 Semua Produk:", allProducts);
 
         const BaruOnly = allProducts.filter((product) => {
           const categoryName =
@@ -27,7 +27,7 @@ const NewArrival = ({ id }) => {
           return categoryName?.toLowerCase().includes("produk baru");
         });
 
-        console.log("Produk Baru:", BaruOnly);
+        // console.log("Produk Baru:", BaruOnly);
 
         const total = BaruOnly.length;
         const pages = Math.ceil(total / itemsPerPage);

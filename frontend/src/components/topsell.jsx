@@ -18,7 +18,7 @@ const TopSell = () => {
           ? json.data.products
           : [];
 
-        console.log("🔥 Semua Produk:", allProducts);
+        // console.log("🔥 Semua Produk:", allProducts);
 
         // Ambil nama kategori dari berbagai kemungkinan struktur
         const TeratasOnly = allProducts.filter((product) => {
@@ -29,7 +29,7 @@ const TopSell = () => {
           return categoryName?.toLowerCase().includes("penjualan teratas");
         });
 
-        console.log("Produk Teratas:", TeratasOnly);
+        // console.log("Produk Teratas:", TeratasOnly);
 
         const total = TeratasOnly.length;
         const pages = Math.ceil(total / itemsPerPage);

@@ -75,7 +75,7 @@ const LoginPage = () => {
       }
 
       localStorage.setItem("token", token);
-      console.log("Token disimpan ke localStorage:", token);
+      // console.log("Token disimpan ke localStorage:", token);
 
       const decoded = jwtDecode(token);
       const role = decoded.role;

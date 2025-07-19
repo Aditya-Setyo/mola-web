@@ -61,7 +61,7 @@ const ProductDetailPage = () => {
     }
 
     try {
-      console.log("Payload ke /carts:", payload);
+      // console.log("Payload ke /carts:", payload);
       await apiPost("/carts", payload);
       alert("Produk berhasil ditambahkan ke keranjang!");
       navigate("/chartpage");
@@ -135,7 +135,7 @@ const ProductDetailPage = () => {
         item_details: [item],
       };
 
-      console.log("📦 Payload Checkout:", payload);
+      // console.log("📦 Payload Checkout:", payload);
 
       const checkout = await apiPost("/orders/checkout", payload);
       const redirectUrl = checkout?.data?.redirect_url?.redirect_url || checkout?.redirect_url;
