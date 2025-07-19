@@ -32,6 +32,7 @@ const AdminPage = () => {
         orders: resOrders.data?.orders?.length || 0,
         revenue: resSummary.data?.total_revenue || 0,
       });
+      console.log("📦 Sales Report:", resSummary);
     } catch (err) {
       console.error("❌ Gagal mengambil data dashboard:", err);
     }
