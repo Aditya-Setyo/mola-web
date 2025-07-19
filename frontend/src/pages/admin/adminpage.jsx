@@ -78,10 +78,10 @@ const AdminPage = () => {
           <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-800">📈 Grafik Penjualan</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={orders.slice(0, 10)}>
-              <XAxis dataKey="id" />
+              <XAxis dataKey="user_name" />
               <YAxis />
-              <Tooltip />
-              <Bar dataKey="total" fill="#4F46E5" />
+              <Tooltip formatter={(value) => `Rp ${parseInt(value).toLocaleString()}`} />
+              <Bar dataKey="total_paid" fill="#4F46E5" />
             </BarChart>
           </ResponsiveContainer>
         </div>
