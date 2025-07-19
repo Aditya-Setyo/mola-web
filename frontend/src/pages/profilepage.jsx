@@ -38,14 +38,16 @@ const ProfilePage = () => {
                     const res = await apiGet(`/products/review/${product.id}`);
                     const data = Array.isArray(res?.data) ? res.data : [];
 
+                    // Lewati produk yang tidak punya review
+                    if (data.length === 0) continue;
+
                     const formatted = data.map((review) => ({
                         id: review.id,
                         user_name: review.user_name || "Pengguna",
                         rating: review.rating || 0,
                         review: review.review || "Tidak ada komentar.",
-                        product_name: product.name || "Tanpa Nama", // dari data produk
+                        product_name: product.name || "Tanpa Nama",
                     }));
-                    console.log(`Reviews for product ${product.id}:`, data);
 
                     allReviews.push(...formatted);
                 }
@@ -56,7 +58,7 @@ const ProfilePage = () => {
             }
         };
 
-        if (products.length > 0) {
+        if (products?.length > 0) {
             fetchAllReviews();
         }
     }, [products]);
