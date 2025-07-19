@@ -11,7 +11,7 @@ const TopSell = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch("http://molla.my.id/api/v1/products");
+        const res = await fetch("https://molla.my.id/api/v1/products");
         const json = await res.json();
 
         const allProducts = Array.isArray(json?.data?.products)
