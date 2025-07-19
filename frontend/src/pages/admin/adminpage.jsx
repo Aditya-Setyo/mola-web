@@ -107,7 +107,7 @@ const AdminPage = () => {
           <DataTable
             title="📦 Order Terakhir"
             data={orders.slice(0, 5)}
-            columns={["id", "Pembeli", "Total", "Status"]}
+            columns={["id", "user_name", "total_amount", "Status"]}
           />
         </div>
       </main>
