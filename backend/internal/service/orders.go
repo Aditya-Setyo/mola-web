@@ -176,12 +176,14 @@ func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email str
 
 	orderCode := GenerateOrderCode()
 	var totalAmount float64
+	var total float64
 	var items []midtrans.ItemDetails
 	var enabledPaymentsTypes []snap.SnapPaymentType
 	enabledPaymentsTypes = append(enabledPaymentsTypes, snap.AllSnapPaymentType...)
 	for i, item := range filteredItems {
-		itemTotal := float64(item.Product.Price) * 0.3 * float64(item.Quantity)
-		totalAmount += itemTotal
+		itemTotal := float64(item.Product.Price) * float64(item.Quantity)
+		totalAmount += itemTotal * 0.3
+		total += itemTotal
 
 		productName := item.Product.Name
 		if item.Product.HasVariant {
@@ -222,7 +224,7 @@ func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email str
 		OrderCode:     orderCode,
 		Status:        "pending",
 		IsPaid:        false,
-		TotalAmount:   float64(totalAmount),
+		TotalAmount:   float64(total),
 		// TotalWeight:   float64(cartData.TotalWeight),
 		PaymentStatus: "pending",
 	}
