@@ -164,7 +164,7 @@ func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email str
 	filteredItems := []dto.CartItems{}
 	for _, item := range cartData.CartItems {
 		for _, selectedID := range selectedItems {
-			if item.Product.ID == selectedID {
+			if item.CartItemsID == selectedID {
 				filteredItems = append(filteredItems, item)
 			}
 		}
