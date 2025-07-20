@@ -57,3 +57,7 @@ type GetOrdersPaidResponse struct {
 	Resi          string    `json:"resi"`
 	ProductName   []string  `json:"product_name"`
 }
+
+type CheckoutRequest struct {
+	SelectedItems []uuid.UUID `json:"selected_items"`
+}

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"mola-web/internal/http/dto"
 	"mola-web/internal/service"
 	"mola-web/pkg/response"
 	"net/http"
@@ -36,7 +37,12 @@ func (h *OrderHandler) Checkout(ctx echo.Context) error {
 	email := ctx.Get("email").(string)
 	name := ctx.Get("name").(string)
 
-	redirectURL, err := h.orderService.Checkout(ctx.Request().Context(), userID, email, name)
+	var req dto.CheckoutRequest
+	if err := ctx.Bind(&req); err != nil {
+		return ctx.JSON(http.StatusBadRequest, response.ErrorResponse(http.StatusBadRequest, "Invalid request"))
+	}
+
+	redirectURL, err := h.orderService.Checkout(ctx.Request().Context(), userID, email, name,  req.SelectedItems)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, response.ErrorResponse(http.StatusInternalServerError, err.Error()))
 	}
