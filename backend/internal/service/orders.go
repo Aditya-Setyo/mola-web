@@ -26,7 +26,7 @@ type OrderService interface {
 	CreateOrderItem(ctx context.Context, orderItem entity.OrderItem) error
 	GetAllOrders(ctx context.Context) ([]dto.GetAllOrdersResponse, error)
 	GetAllOrdersPaid(ctx context.Context) ([]dto.GetOrdersPaidResponse, error)
-	Checkout(ctx context.Context, userID uuid.UUID, email string, name string) (*dto.SnapRsponse, error)
+	Checkout(ctx context.Context, userID uuid.UUID, email string, name string, selectedItems []uuid.UUID) (*dto.SnapRsponse, error)
 	SetAdminOrderStatus(ctx context.Context, id uuid.UUID, status string) error
 	ShowOrder(ctx context.Context, userID uuid.UUID) ([]dto.ShowOrderResponse, error)
 	ExpireUninitializedOrders() error
@@ -140,7 +140,7 @@ func (s *orderService) CreateOrderItem(ctx context.Context, orderItem entity.Ord
 	return nil
 }
 
-func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email string, name string) (*dto.SnapRsponse, error) {
+func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email string, name string, selectedItems []uuid.UUID) (*dto.SnapRsponse, error) {
 	tx := s.DB.WithContext(ctx).Begin()
 	defer func() {
 		if p := recover(); p != nil {
@@ -160,30 +160,45 @@ func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email str
 		tx.Error = err
 		return nil, err
 	}
+
+	filteredItems := []dto.CartItems{}
+	for _, item := range cartData.CartItems {
+		for _, selectedID := range selectedItems {
+			if item.Product.ID == selectedID {
+				filteredItems = append(filteredItems, item)
+			}
+		}
+	}
+	if len(filteredItems) == 0 {
+		tx.Error = errors.New("no selected items in cart")
+		return nil, tx.Error
+	}
+
 	orderCode := GenerateOrderCode()
+	var totalAmount float64
 	var items []midtrans.ItemDetails
 	var enabledPaymentsTypes []snap.SnapPaymentType
 	enabledPaymentsTypes = append(enabledPaymentsTypes, snap.AllSnapPaymentType...)
+	for i, item := range filteredItems {
+		itemTotal := float64(item.Product.Price) * 0.3 * float64(item.Quantity)
+		totalAmount += itemTotal
 
-	for i, item := range cartData.CartItems {
-		totalPrice := item.Product.Price * 0.3
 		productName := item.Product.Name
-
-		// Jika punya varian
 		if item.Product.HasVariant {
-			for _, value := range item.Product.Variants {
-				if value.Color != "" {
-					productName += " - " + value.Color
+			for _, v := range item.Product.Variants {
+				if v.Color != "" {
+					productName += " - " + v.Color
 				}
-				if value.Size != "" {
-					productName += " - " + value.Size + " | "
+				if v.Size != "" {
+					productName += " - " + v.Size
 				}
 			}
 		}
+
 		items = append(items, midtrans.ItemDetails{
 			ID:    item.Product.ID.String(),
 			Name:  productName,
-			Price: int64(totalPrice),
+			Price: int64(float64(item.Product.Price) * 0.3),
 			Qty:   int32(item.Quantity),
 		})
 		if item.Product.HasVariant {
@@ -195,21 +210,20 @@ func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email str
 				}
 			}
 		} else {
-			err = s.productService.UpdateStockProductOnOrder(tx, cartData.CartItems[i].Product.ID, int64(cartData.CartItems[i].Quantity))
+			err = s.productService.UpdateStockProductOnOrder(tx, filteredItems[i].Product.ID, int64(filteredItems[i].Quantity))
 			if err != nil {
 				tx.Error = err
 				return nil, err
 			}
 		}
 	}
-
 	order := entity.Order{
 		UserID:        userID,
 		OrderCode:     orderCode,
 		Status:        "pending",
 		IsPaid:        false,
-		TotalAmount:   float64(cartData.TotalAmount),
-		TotalWeight:   float64(cartData.TotalWeight),
+		TotalAmount:   float64(totalAmount),
+		// TotalWeight:   float64(cartData.TotalWeight),
 		PaymentStatus: "pending",
 	}
 	orderID, err := s.orderRepo.CreateOrder(tx, &order)
@@ -217,7 +231,8 @@ func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email str
 		tx.Error = err
 		return nil, err
 	}
-	for _, item := range cartData.CartItems {
+
+	for _, item := range filteredItems {
 		orderItem := entity.OrderItem{
 			OrderID:          orderID,
 			ProductID:        item.Product.ID,
@@ -243,11 +258,102 @@ func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email str
 			tx.Error = err
 			return nil, err
 		}
+		if err := s.cartRepo.RemoveCartItem(tx, &item.CartItemsID); err != nil {
+			tx.Error = err
+			return nil, err
+		}
 	}
-	if err := s.cartRepo.ClearCart(tx, cartData.CartID); err != nil {
-		tx.Error = err
-		return nil, err
-	}
+
+
+
+	// orderCode := GenerateOrderCode()
+	// var items []midtrans.ItemDetails
+	// var enabledPaymentsTypes []snap.SnapPaymentType
+	// enabledPaymentsTypes = append(enabledPaymentsTypes, snap.AllSnapPaymentType...)
+
+	// for i, item := range cartData.CartItems {
+	// 	totalPrice := item.Product.Price * 0.3
+	// 	productName := item.Product.Name
+
+	// 	// Jika punya varian
+	// 	if item.Product.HasVariant {
+	// 		for _, value := range item.Product.Variants {
+	// 			if value.Color != "" {
+	// 				productName += " - " + value.Color
+	// 			}
+	// 			if value.Size != "" {
+	// 				productName += " - " + value.Size + " | "
+	// 			}
+	// 		}
+	// 	}
+	// 	items = append(items, midtrans.ItemDetails{
+	// 		ID:    item.Product.ID.String(),
+	// 		Name:  productName,
+	// 		Price: int64(totalPrice),
+	// 		Qty:   int32(item.Quantity),
+	// 	})
+	// 	if item.Product.HasVariant {
+	// 		for _, value := range item.Product.Variants {
+	// 			err = s.productService.UpdateStockProductVariantOnOrder(tx, value.ID, int64(item.Quantity))
+	// 			if err != nil {
+	// 				tx.Error = err
+	// 				return nil, err
+	// 			}
+	// 		}
+	// 	} else {
+	// 		err = s.productService.UpdateStockProductOnOrder(tx, cartData.CartItems[i].Product.ID, int64(cartData.CartItems[i].Quantity))
+	// 		if err != nil {
+	// 			tx.Error = err
+	// 			return nil, err
+	// 		}
+	// 	}
+	// }
+
+	// order := entity.Order{
+	// 	UserID:        userID,
+	// 	OrderCode:     orderCode,
+	// 	Status:        "pending",
+	// 	IsPaid:        false,
+	// 	TotalAmount:   float64(cartData.TotalAmount),
+	// 	TotalWeight:   float64(cartData.TotalWeight),
+	// 	PaymentStatus: "pending",
+	// }
+	// orderID, err := s.orderRepo.CreateOrder(tx, &order)
+	// if err != nil {
+	// 	tx.Error = err
+	// 	return nil, err
+	// }
+	// for _, item := range cartData.CartItems {
+	// 	orderItem := entity.OrderItem{
+	// 		OrderID:          orderID,
+	// 		ProductID:        item.Product.ID,
+	// 		ProductVariantID: nil,
+	// 		Quantity:         item.Quantity,
+	// 		Price:            item.Product.Price,
+	// 		Subtotal:         item.Subtotal,
+	// 		Note:             item.Note,
+	// 	}
+	// 	if item.Product.HasVariant {
+	// 		for _, value := range item.Product.Variants {
+	// 			log.Println("value: ================", value.ID)
+	// 			if value.ID == uuid.Nil {
+	// 				// User tidak memilih variant padahal harus
+	// 				tx.Error = errors.New("product variant must be selected for product: " + item.Product.Name)
+	// 				return nil, tx.Error
+	// 			}
+	// 			orderItem.ProductVariantID = &value.ID
+	// 		}
+	// 	}
+
+	// 	if err := s.orderRepo.CreateOrderItem(tx, &orderItem); err != nil {
+	// 		tx.Error = err
+	// 		return nil, err
+	// 	}
+	// }
+	// if err := s.cartRepo.ClearCart(tx, cartData.CartID); err != nil {
+	// 	tx.Error = err
+	// 	return nil, err
+	// }
 
 	m := snap.Client{}
 	isProduction := s.config.IsProduction == "true"
@@ -257,7 +363,8 @@ func (s *orderService) Checkout(ctx context.Context, userID uuid.UUID, email str
 		m.New(s.config.ServerKey, midtrans.Sandbox)
 	}
 
-	totalPaid := float64(cartData.TotalAmount) * 0.3
+	// totalPaid := float64(cartData.TotalAmount) * 0.3
+	totalPaid := totalAmount
 	log.Println("totalPaid: ", totalPaid)
 	req := &snap.Request{
 		TransactionDetails: midtrans.TransactionDetails{
