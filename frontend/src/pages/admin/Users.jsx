@@ -112,9 +112,7 @@ const Users = () => {
                       <th className="px-4 py-3 text-left">Email</th>
                       <th className="px-4 py-3 text-left">Role</th>
                       <th className="px-4 py-3 text-left">Nomor HP</th>
-                      <th className="px-4 py-3 text-left">Alamat</th>
                       <th className="px-4 py-3 text-left">Status</th>
-                      <th className="px-4 py-3 text-left">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
