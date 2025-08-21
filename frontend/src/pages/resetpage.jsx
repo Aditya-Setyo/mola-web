@@ -11,11 +11,9 @@ const ResetPage = () => {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
 
-  /* ────────────────── HANDLE SUBMIT ────────────────── */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 1️⃣ Validasi kosong & format
     if (!email.trim()) {
       setError("Email tidak boleh kosong.");
       return;
