@@ -80,10 +80,9 @@ const ProductDetailPage = () => {
     }
 
     try {
-      // Cek apakah ada transaksi yang belum selesai
+      // Cek transaksi pending
       const res = await apiGet("/orders/show", true);
       const orders = Array.isArray(res?.data) ? res.data : [];
-
       const pending = orders.find(
         (o) => o.payment_status === "pending" && o.redirect_url
       );
@@ -94,24 +93,32 @@ const ProductDetailPage = () => {
         return;
       }
 
-      if (!product || !product.id || !product.name || !product.price) {
+      if (!product || !product.id || !product.price) {
         alert("Data produk tidak lengkap untuk checkout.");
         return;
       }
 
-      let selectedItem = {
-        product_id: product.id,
-        quantity,
-        product_variant_id: product.has_variant
-          ? product.variants.find(v => v.size === selectedSize && v.color === selectedColor)?.id
-          : null,
-        size: product.has_variant ? selectedSize : null,
-        color: product.has_variant ? selectedColor : null,
-      };
+      let selectedItem = { product_id: product.id, quantity };
 
-      if (product.has_variant && (!selectedSize || !selectedColor || !selectedItem.product_variant_id)) {
-        alert("Pilih ukuran dan warna terlebih dahulu.");
-        return;
+      // Produk punya varian → wajib pilih varian
+      if (product.has_variant) {
+        if (!selectedSize || !selectedColor) {
+          alert("Pilih ukuran dan warna terlebih dahulu.");
+          return;
+        }
+
+        const variant = product.variants.find(
+          (v) => v.size === selectedSize && v.color === selectedColor
+        );
+
+        if (!variant || !variant.id) {
+          alert("Varian yang dipilih tidak tersedia.");
+          return;
+        }
+
+        selectedItem.product_variant_id = variant.id;
+        selectedItem.size = selectedSize;
+        selectedItem.color = selectedColor;
       }
 
       const payload = { selected_items: [selectedItem] };
@@ -119,8 +126,6 @@ const ProductDetailPage = () => {
       console.log("📦 Payload Checkout:", payload);
 
       const checkout = await apiPost("/orders/checkout", payload);
-
-      // Beberapa backend menyimpan redirect_url di data.redirect_url
       const redirectUrl = checkout?.data?.redirect_url?.redirect_url || checkout?.redirect_url;
 
       if (redirectUrl) {
