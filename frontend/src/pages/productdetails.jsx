@@ -72,74 +72,42 @@ const ProductDetailPage = () => {
   };
 
   const handleBuyNow = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      alert("Silakan login terlebih dahulu untuk melakukan pembelian.");
-      navigate("/loginpage");
-      return;
-    }
-
     try {
-      // Cek transaksi pending
-      const res = await apiGet("/orders/show", true);
-      const orders = Array.isArray(res?.data) ? res.data : [];
+      // ambil data user (misalnya alamat default & metode bayar dari state / context)
+      const userAddressId = user?.default_address_id || null;
+      const paymentMethod = "midtrans"; // atau bisa ambil dari pilihan user
 
-      const pending = orders.find(
-        (o) => o.payment_status === "pending" && o.redirect_url
-      );
-
-      if (pending) {
-        alert("Anda masih memiliki transaksi yang belum selesai. Mengarahkan ke halaman pembayaran...");
-        window.location.href = pending.redirect_url;
-        return;
-      }
-
-      
-      if (!product || !product.id) {
-        alert("Data produk tidak lengkap untuk checkout.");
-        return;
-      }
-
-      let item = {
-        product_id: product.id,
-        quantity,
-      };
-
-      if (product.has_variant) {
-        const variant = product.variants?.find(
-          (v) => v.size === selectedSize && v.color === selectedColor
-        );
-
-        if (!variant || !variant.id) {
-          alert("Pilih ukuran dan warna terlebih dahulu.");
-          return;
-        }
-
-        item.product_variant_id = variant.id;
-      }
-
+      // buat payload fleksibel
       const payload = {
-        selected_items: [item],
+        selected_items: [
+          {
+            product_id: product.id,
+            quantity,
+            ...(selectedVariant ? { product_variant_id: selectedVariant.id } : {})
+          }
+        ],
+        ...(userAddressId ? { shipping_address_id: userAddressId } : {}),
+        ...(paymentMethod ? { payment_method: paymentMethod } : {})
       };
 
       console.log("📦 Payload Checkout:", payload);
 
-      // Checkout ke API
-      const checkout = await apiPost("/orders/checkout", payload, true);
-      const redirectUrl =
-        checkout?.data?.redirect_url?.redirect_url || checkout?.data?.redirect_url;
+      const response = await apiPost("/orders/checkout", payload);
 
-      if (redirectUrl) {
-        alert("Mengalihkan ke pembayaran...");
-        window.location.href = redirectUrl;
+      if (response.success) {
+        console.log("✅ Checkout berhasil:", response);
+        // arahkan ke halaman pembayaran / midtrans snap
+        navigate(`/payment/${response.data.order_id}`);
       } else {
-        alert("Gagal mendapatkan URL pembayaran.");
+        console.error("❌ Gagal checkout:", response.message);
+        alert("Checkout gagal: " + response.message);
       }
-    } catch (error) {
-      console.error("Gagal proses pembayaran:", error);
-      alert("Terjadi kesalahan saat memproses pembayaran.");
+    } catch (err) {
+      console.error("🚨 Error saat checkout:", err);
+      alert("Terjadi kesalahan: " + err.message);
     }
   };
+
 
   const [categories, setCategories] = useState([]);
   useEffect(() => {
