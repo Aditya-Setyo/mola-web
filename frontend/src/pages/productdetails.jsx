@@ -135,7 +135,7 @@ const ProductDetailPage = () => {
         item_details: [item],
       };
 
-      // console.log("📦 Payload Checkout:", payload);
+      console.log("📦 Payload Checkout:", payload);
 
       const checkout = await apiPost("/orders/checkout", payload);
       const redirectUrl = checkout?.data?.redirect_url?.redirect_url || checkout?.redirect_url;
