@@ -117,8 +117,7 @@ const ProductDetailPage = () => {
         }
 
         selectedItem.product_variant_id = variant.id;
-        selectedItem.size = selectedSize;
-        selectedItem.color = selectedColor;
+        // Jangan kirim size/color, cukup product_variant_id
       }
 
       const payload = { selected_items: [selectedItem] };
@@ -140,7 +139,6 @@ const ProductDetailPage = () => {
       alert("Terjadi kesalahan saat memproses pembayaran.");
     }
   };
-
 
   const [categories, setCategories] = useState([]);
   useEffect(() => {
