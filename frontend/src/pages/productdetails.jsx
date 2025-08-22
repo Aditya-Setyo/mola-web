@@ -79,52 +79,61 @@ const ProductDetailPage = () => {
       return;
     }
 
-    if (!product || !product.id || !product.name || !product.price) {
-      alert("Data produk tidak lengkap untuk checkout.");
-      return;
-    }
-
     try {
-      // Cek apakah ada transaksi pending
-      const cartRes = await apiGet("/carts", true);
-      const pendingUrl = cartRes?.data?.cart?.payment_url;
-      if (pendingUrl) {
+      // Cek apakah ada transaksi pending di cart
+      const resCart = await apiGet("/carts", true);
+      const pendingPaymentUrl = resCart?.data?.cart?.payment_url;
+      if (pendingPaymentUrl) {
         alert("Anda masih memiliki transaksi yang belum selesai. Mengarahkan ke halaman pembayaran...");
-        window.location.href = pendingUrl;
+        window.location.href = pendingPaymentUrl;
         return;
       }
 
-      let item = {
-        product_id: product.id,
-        quantity: quantity || 1,
-      };
+      if (!product || !product.id) {
+        alert("Data produk tidak lengkap.");
+        return;
+      }
+
+      let variantId = null;
 
       if (product.has_variant) {
-        const variant = product.variants?.find(
+        const selectedVariant = product.variants?.find(
           (v) => v.size === selectedSize && v.color === selectedColor
         );
-
-        if (!variant || !variant.id) {
+        if (!selectedVariant) {
           alert("Pilih ukuran dan warna terlebih dahulu.");
           return;
         }
-
-        item.product_variant_id = variant.id;
+        variantId = selectedVariant.id;
+      } else {
+        // Produk tanpa variant, ambil default variant
+        if (!product.variants || product.variants.length === 0) {
+          alert("Produk tidak memiliki variant default.");
+          return;
+        }
+        variantId = product.variants[0].id;
       }
+
+      const item = {
+        product_id: product.id,
+        product_variant_id: variantId,
+        quantity,
+      };
 
       const payload = { selected_items: [item] };
       console.log("📦 Payload Checkout:", payload);
 
-      const checkoutRes = await apiPost("/orders/checkout", payload, true);
-      const redirectUrl = checkoutRes?.data?.redirect_url?.redirect_url || checkoutRes?.redirect_url;
+      const checkout = await apiPost("/orders/checkout", payload, true);
+      const redirectUrl = checkout?.data?.redirect_url?.redirect_url || checkout?.redirect_url;
 
       if (redirectUrl) {
+        alert("Mengalihkan ke pembayaran...");
         window.location.href = redirectUrl;
       } else {
         alert("Gagal mendapatkan URL pembayaran.");
       }
-    } catch (err) {
-      console.error("🚨 Error saat checkout:", err);
+    } catch (error) {
+      console.error("🚨 Error saat checkout:", error);
       alert("Terjadi kesalahan saat memproses pembayaran.");
     }
   };
