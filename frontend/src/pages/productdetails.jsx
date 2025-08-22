@@ -72,73 +72,74 @@ const ProductDetailPage = () => {
   };
 
   const handleBuyNow = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      alert("Silakan login terlebih dahulu untuk melakukan pembelian.");
-      navigate("/loginpage");
+  const token = localStorage.getItem("token");
+  if (!token) {
+    alert("Silakan login terlebih dahulu untuk melakukan pembelian.");
+    navigate("/loginpage");
+    return;
+  }
+
+  try {
+    // Cek transaksi pending
+    const res = await apiGet("/orders/show", true);
+    const orders = Array.isArray(res?.data) ? res.data : [];
+    const pending = orders.find(
+      (o) => o.payment_status === "pending" && o.redirect_url
+    );
+
+    if (pending) {
+      alert("Anda masih memiliki transaksi yang belum selesai. Mengarahkan ke halaman pembayaran...");
+      window.location.href = pending.redirect_url;
       return;
     }
 
-    try {
-      // Cek transaksi pending
-      const res = await apiGet("/orders/show", true);
-      const orders = Array.isArray(res?.data) ? res.data : [];
-      const pending = orders.find(
-        (o) => o.payment_status === "pending" && o.redirect_url
+    if (!product || !product.id || !product.price) {
+      alert("Data produk tidak lengkap untuk checkout.");
+      return;
+    }
+
+    // Siapkan payload sesuai jenis produk
+    let selectedItem = { product_id: product.id, quantity };
+
+    if (product.has_variant) {
+      // Pastikan user sudah pilih varian
+      if (!selectedSize || !selectedColor) {
+        alert("Pilih ukuran dan warna terlebih dahulu.");
+        return;
+      }
+
+      const variant = product.variants.find(
+        (v) => v.size === selectedSize && v.color === selectedColor
       );
 
-      if (pending) {
-        alert("Anda masih memiliki transaksi yang belum selesai. Mengarahkan ke halaman pembayaran...");
-        window.location.href = pending.redirect_url;
+      if (!variant || !variant.id) {
+        alert("Varian yang dipilih tidak tersedia.");
         return;
       }
 
-      if (!product || !product.id || !product.price) {
-        alert("Data produk tidak lengkap untuk checkout.");
-        return;
-      }
-
-      let selectedItem = { product_id: product.id, quantity };
-
-      // Produk punya varian → wajib pilih varian
-      if (product.has_variant) {
-        if (!selectedSize || !selectedColor) {
-          alert("Pilih ukuran dan warna terlebih dahulu.");
-          return;
-        }
-
-        const variant = product.variants.find(
-          (v) => v.size === selectedSize && v.color === selectedColor
-        );
-
-        if (!variant || !variant.id) {
-          alert("Varian yang dipilih tidak tersedia.");
-          return;
-        }
-
-        selectedItem.product_variant_id = variant.id;
-        // Jangan kirim size/color, cukup product_variant_id
-      }
-
-      const payload = { selected_items: [selectedItem] };
-
-      console.log("📦 Payload Checkout:", payload);
-
-      const checkout = await apiPost("/orders/checkout", payload);
-      const redirectUrl = checkout?.data?.redirect_url?.redirect_url || checkout?.redirect_url;
-
-      if (redirectUrl) {
-        alert("Mengalihkan ke pembayaran...");
-        window.location.href = redirectUrl;
-      } else {
-        alert("Gagal mendapatkan URL pembayaran.");
-      }
-
-    } catch (error) {
-      console.error("🚨 Error saat checkout:", error);
-      alert("Terjadi kesalahan saat memproses pembayaran.");
+      // Hanya kirim product_variant_id
+      selectedItem.product_variant_id = variant.id;
     }
-  };
+
+    const payload = { selected_items: [selectedItem] };
+
+    console.log("📦 Payload Checkout:", payload);
+
+    const checkout = await apiPost("/orders/checkout", payload);
+    const redirectUrl = checkout?.data?.redirect_url?.redirect_url || checkout?.redirect_url;
+
+    if (redirectUrl) {
+      alert("Mengalihkan ke pembayaran...");
+      window.location.href = redirectUrl;
+    } else {
+      alert("Gagal mendapatkan URL pembayaran.");
+    }
+
+  } catch (error) {
+    console.error("🚨 Error saat checkout:", error);
+    alert("Terjadi kesalahan saat memproses pembayaran.");
+  }
+};
 
   const [categories, setCategories] = useState([]);
   useEffect(() => {
