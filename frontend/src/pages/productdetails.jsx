@@ -80,7 +80,7 @@ const ProductDetailPage = () => {
     }
 
     try {
-      // 1️⃣ Cek transaksi pending seperti di ChartPage
+      // Cek transaksi pending
       const res = await apiGet("/orders/show", true);
       const orders = Array.isArray(res?.data) ? res.data : [];
 
@@ -96,32 +96,42 @@ const ProductDetailPage = () => {
         return;
       }
 
-      // 2️⃣ Persiapkan item untuk checkout
       if (!product || !product.id || !product.name || !product.price) {
         alert("Data produk tidak lengkap untuk checkout.");
         return;
       }
 
-      let item = {
+      // Buat selected_items mirip payload di keranjang
+      const selectedItem = {
         product_id: product.id,
         quantity,
-        ...(product.has_variant
-          ? {
-            product_variant_id:
-              product.variants.find(
-                (v) => v.size === selectedSize && v.color === selectedColor
-              )?.id,
-          }
-          : {}),
       };
 
-      // 3️⃣ Buat payload seperti di ChartPage
-      const payload = { selected_items: [item] };
+      if (product.has_variant) {
+        if (!selectedSize || !selectedColor) {
+          alert("Pilih ukuran dan warna terlebih dahulu.");
+          return;
+        }
 
+        const variant = product.variants?.find(
+          (v) => v.size === selectedSize && v.color === selectedColor
+        );
+
+        if (!variant) {
+          alert("Varian tidak ditemukan.");
+          return;
+        }
+
+        selectedItem.product_variant_id = variant.id;
+        selectedItem.size = selectedSize;
+        selectedItem.color = selectedColor;
+      }
+
+      const payload = { selected_items: [selectedItem] };
       console.log("📦 Payload Checkout:", payload);
 
-      // 4️⃣ Kirim ke API checkout
       const checkout = await apiPost("/orders/checkout", payload);
+
       const redirectUrl =
         checkout?.data?.redirect_url?.redirect_url || checkout?.redirect_url;
 
@@ -132,7 +142,7 @@ const ProductDetailPage = () => {
         alert("Gagal mendapatkan URL pembayaran.");
       }
     } catch (error) {
-      console.error("Gagal proses pembayaran:", error);
+      console.error("🚨 Error saat checkout:", error);
       alert("Terjadi kesalahan saat memproses pembayaran.");
     }
   };
