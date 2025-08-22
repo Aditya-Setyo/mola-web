@@ -80,7 +80,7 @@ const ProductDetailPage = () => {
     }
 
     try {
-      // Cek apakah ada transaksi yang belum selesai
+      // 🔍 Cek transaksi yang masih pending
       const res = await apiGet("/orders/show", true);
       const orders = Array.isArray(res?.data) ? res.data : [];
 
@@ -94,15 +94,15 @@ const ProductDetailPage = () => {
         return;
       }
 
-      if (!product || !product.id || !product.name || !product.price) {
+      // 🔍 Validasi produk
+      if (!product || !product.id || !product.price) {
         alert("Data produk tidak lengkap untuk checkout.");
         return;
       }
 
+      // 🔍 Siapkan item
       let item = {
-        id: product.id,
-        name: product.name,
-        price: product.price,
+        product_id: product.id,
         quantity,
       };
 
@@ -119,26 +119,17 @@ const ProductDetailPage = () => {
         item.product_variant_id = variant.id;
       }
 
-      const orderId = `ORDER-${Date.now()}`;
-      const grossAmount = product.price * quantity;
-
-      if (!grossAmount || grossAmount < 10000) {
-        alert("Total pembayaran minimal Rp10.000 agar bisa diproses.");
-        return;
-      }
-
+      // 🔍 Payload untuk backend
       const payload = {
-        transaction_details: {
-          order_id: orderId,
-          gross_amount: grossAmount,
-        },
-        item_details: [item],
+        selected_items: [item],
       };
 
       console.log("📦 Payload Checkout:", payload);
 
-      const checkout = await apiPost("/orders/checkout", payload);
-      const redirectUrl = checkout?.data?.redirect_url?.redirect_url || checkout?.redirect_url;
+      // 🔍 Checkout
+      const checkout = await apiPost("/orders/checkout", payload, true);
+      const redirectUrl =
+        checkout?.data?.redirect_url?.redirect_url || checkout?.data?.redirect_url;
 
       if (redirectUrl) {
         alert("Mengalihkan ke pembayaran...");
@@ -151,6 +142,7 @@ const ProductDetailPage = () => {
       alert("Terjadi kesalahan saat memproses pembayaran.");
     }
   };
+
 
 
   const [categories, setCategories] = useState([]);
